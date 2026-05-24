@@ -34,7 +34,7 @@ Drop the skills into your Claude environment and it behaves like a senior recon 
 ```
 claude-osint/
 ├── skills/
-│   ├── osint-methodology/SKILL.md     # how to think
+│   ├── osint-methodology/SKILL.md     # how to think (pipeline · rubric · anti-patterns · deliverables)
 │   ├── offensive-osint/SKILL.md       # router — dispatches to sub-skills below
 │   ├── recon-asset-discovery/SKILL.md # subdomains · ASN · CT · DNS · WHOIS
 │   ├── web-surface/SKILL.md           # probe paths · curl probes · Wayback · Postman

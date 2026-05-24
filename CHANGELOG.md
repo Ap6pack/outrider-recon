@@ -9,6 +9,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [2.2.1] — 2026-05-24
 
+### Changed
+
+- **`osint-methodology` trimmed from 1,694 → 455 lines.** Retained full methodology core: confidence levels + upgrade workflows, 5-stage pipeline + time budgets, asset graph + triage rules, severity rubric, OpSec + detectability + back-off, breach × identity correlation, anti-patterns, bug-bounty submission, client deliverable templates. Removed duplicate implementation content now covered by the offensive-osint sub-skills.
+
 ### Added
 
 - **7 remaining offensive-osint sub-skills** (all under 500 lines):
