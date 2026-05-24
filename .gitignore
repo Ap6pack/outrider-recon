@@ -10,8 +10,12 @@ Thumbs.db
 
 # Engagement artifacts (NEVER commit these)
 evidence/
+findings/
 runs/
 scans/
+mcp-proxy.jar
+refreshSession.js
+skills/hackerone/
 *.scan.db
 *.findings.db
 *.assets.db
@@ -22,10 +26,12 @@ scans/
 secrets-found.*
 breach-data/
 stealer-logs/
+*/OWASP_
 
 # API keys / config that shouldn't ship
 .env
 .env.local
+.claude/settings.local.json
 *.key
 *.pem
 *.p12
@@ -56,3 +62,5 @@ node_modules/
 # Local sync artifacts
 *.local.md
 *.synced
+CLAUDE.md
+docs/OWASP_WSTG_Checklist.xlsx

@@ -2,7 +2,7 @@
 
 # claude-osint
 
-> 2 paired Claude skills · **90+ recon modules** · 48 secret-regex patterns · 80+ dorks · 9 read-only credential validators · 27 attack-path templates · 4,600+ lines of structured tradecraft. Drop-in `SKILL.md` files that turn Claude into a god-mode external recon operator for authorized red-team and bug-bounty engagements.
+> Modular Claude skills · **90+ recon modules** · 48 secret-regex patterns · 80+ dorks · 9 read-only credential validators · 27 attack-path templates. Drop-in `SKILL.md` files that turn Claude into a focused external recon operator for authorized red-team and bug-bounty engagements.
 
 Built by **[ElementalSoul](https://github.com/elementalsouls)** — GenAI Security Research.
 
@@ -10,14 +10,16 @@ Built by **[ElementalSoul](https://github.com/elementalsouls)** — GenAI Securi
 
 ## What is this?
 
-`claude-osint` is a paired set of skills for the [Claude skills system](https://docs.claude.com/en/docs/claude-code/skills). Each skill is a structured `SKILL.md` file that primes Claude with expert-level methodology for one half of the offensive recon problem:
+`claude-osint` is a modular set of skills for the [Claude skills system](https://docs.claude.com/en/docs/claude-code/skills). Each skill is a structured `SKILL.md` file that primes Claude with expert-level methodology for a specific slice of the offensive recon problem:
 
-- **`osint-methodology`** - *how to think.* Strategic + procedural. Asset-graph discipline, severity rubric, time budgeting, identity-fabric mapping, deliverable templates.
-- **`offensive-osint`** - *what to reach for.* Tactical arsenal. Probe paths, regexes, payloads, scoring rules, curl one-liners, tool URLs.
+- **`osint-methodology`** — *how to think.* Strategic + procedural. Asset-graph discipline, severity rubric, time budgeting, identity-fabric mapping, deliverable templates.
+- **`offensive-osint`** — *router.* Dispatches to the right sub-skill based on task type. Load this first; it tells Claude which focused sub-skill to reach for.
+- **`identity-fabric`** — *IdP + SSO surface.* Concrete endpoints for Entra, Okta, ADFS, SAML, M365 deep enum, GraphQL field-suggestion, LinkedIn employee enum.
+- *(additional sub-skills being added — see [Skill Index](#skill-index) for the full capability map)*
 
-Drop both into your Claude environment and it behaves like a senior recon analyst: it knows the techniques, the tooling, the edge cases, and the escalation paths — and it stays in scope.
+Drop the skills into your Claude environment and it behaves like a senior recon analyst: it knows the techniques, the tooling, the edge cases, and the escalation paths — and it stays in scope.
 
-~4,600 lines of structured tradecraft · 96.9% PASS on a 32-prompt self-evaluation · ~85–90% practitioner coverage for the recon phase of authorized engagements.
+96.9% PASS on a 32-prompt self-evaluation · ~85–90% practitioner coverage for the recon phase of authorized engagements.
 
 ---
 
@@ -26,14 +28,19 @@ Drop both into your Claude environment and it behaves like a senior recon analys
 ```
 claude-osint/
 ├── skills/
-│   ├── osint-methodology/SKILL.md     # how to think  (455 lines)
-│   └── offensive-osint/
-│       ├── SKILL.md                   # what to reach for (4,168 lines)
-│       ├── scripts/secret_scan.py     # stdlib-only secret scanner
-│       └── scripts/h1_reference.py    # HackerOne disclosed-reports reference agent
+│   ├── osint-methodology/SKILL.md     # how to think
+│   ├── offensive-osint/SKILL.md       # router — dispatches to sub-skills below
+│   ├── identity-fabric/SKILL.md       # Entra · Okta · ADFS · SAML · M365 · LinkedIn
+│   └── report-template/SKILL.md      # bug-bounty report scaffold
+├── skills/offensive-osint/scripts/
+│   ├── h1_reference.py               # HackerOne disclosed-reports reference agent (no API key)
+│   └── secret_scan.py                # stdlib-only secret scanner (JSONL output)
+├── scripts/
+│   └── sync-skill-content.sh         # restore full skill content from docs/full-skills/
 ├── docs/                              # architecture · coverage · install · usage
 ├── examples/                          # 4 end-to-end engagement walk-throughs
 ├── tests/smoke-test-prompts.md        # 32-prompt self-evaluation
+├── CLAUDE.md.example                  # copy to CLAUDE.md and customise for your engagement
 └── assets/banner.png
 ```
 
@@ -105,8 +112,8 @@ Each skill directory is self-contained. Drop into `~/.claude/skills/` and Claude
 | GitHub code-search dorks (13 templates) | arsenal |
 | 9 read-only credential validators (Postman / AWS / GitHub / Slack / Anthropic / OpenAI / npm / Atlassian / DataDog) | arsenal |
 | Post-discovery enumeration workflows (IAM enum · repo enum · workspace enum · JWT triage) | arsenal |
-| `secret_scan.py` runnable helper (stdlib-only, JSONL output) | arsenal |
-| `h1_reference.py` — HackerOne disclosed-reports reference agent (no API key, top-voted / top-bounty / keyword / program filter) | arsenal |
+| `secret_scan.py` — stdlib-only secret scanner (JSONL output) | scripts |
+| `h1_reference.py` — HackerOne disclosed-reports reference (top-voted / keyword / program filter) | scripts |
 | 80+ dork corpus across 9 categories | arsenal |
 
 ### Breach Intelligence
@@ -189,41 +196,39 @@ flowchart LR
     Root(["🦅 claude-osint"])
 
     Root --> M["📘 osint-methodology<br/><i>how to think</i>"]
-    Root --> A["🛠️ offensive-osint<br/><i>what to reach for</i>"]
+    Root --> R["🗺️ offensive-osint<br/><i>router</i>"]
 
     M --> M1[Recon Pipeline]
     M --> M2[Asset Graph]
-    M --> M3[Identity Fabric]
-    M --> M4[Findings Rubric]
-    M --> M5[Reporting Templates]
-    M --> M6[OpSec & Detectability]
+    M --> M3[Findings Rubric]
+    M --> M4[Reporting Templates]
+    M --> M5[OpSec & Detectability]
 
-    A --> A1[Probe Wordlists]
-    A --> A2[Vendor Fingerprints]
-    A --> A3[Cloud · K8s · CI-CD]
-    A --> A4[Secret Catalog]
-    A --> A5[Read-Only Validators]
-    A --> A6[Email Security]
-    A --> A7[Human Intel]
-    A --> A8[Sector Notes]
+    R --> S1["🔍 recon-asset-discovery<br/><i>subdomains · DNS · ASN · CT</i>"]
+    R --> S2["🌐 web-surface<br/><i>probes · Swagger · GraphQL · Wayback</i>"]
+    R --> S3["🪪 identity-fabric<br/><i>Entra · Okta · ADFS · M365 · LinkedIn</i>"]
+    R --> S4["🔑 secrets-and-dorks<br/><i>48 regexes · 80+ dorks · validators</i>"]
+    R --> S5["⚡ post-discovery<br/><i>JWT · AWS IAM · GitHub · Slack enum</i>"]
+    R --> S6["☁️ cloud-and-infra<br/><i>cloud-native · K8s · CI-CD</i>"]
+    R --> S7["👥 people-breach-intel<br/><i>breach · HudsonRock · crypto · media</i>"]
+    R --> S8["📊 analysis-and-reporting<br/><i>scoring · severity matrix · archiving</i>"]
 
     style Root fill:#dc2626,stroke:#7f1d1d,color:#fff
     style M fill:#1e293b,stroke:#475569,color:#f1f5f9
-    style A fill:#7c2d12,stroke:#9a3412,color:#fef3c7
+    style R fill:#7c2d12,stroke:#9a3412,color:#fef3c7
     style M1 fill:#0f172a,stroke:#334155,color:#cbd5e1
     style M2 fill:#0f172a,stroke:#334155,color:#cbd5e1
     style M3 fill:#0f172a,stroke:#334155,color:#cbd5e1
     style M4 fill:#0f172a,stroke:#334155,color:#cbd5e1
     style M5 fill:#0f172a,stroke:#334155,color:#cbd5e1
-    style M6 fill:#0f172a,stroke:#334155,color:#cbd5e1
-    style A1 fill:#1c1917,stroke:#44403c,color:#fed7aa
-    style A2 fill:#1c1917,stroke:#44403c,color:#fed7aa
-    style A3 fill:#1c1917,stroke:#44403c,color:#fed7aa
-    style A4 fill:#1c1917,stroke:#44403c,color:#fed7aa
-    style A5 fill:#1c1917,stroke:#44403c,color:#fed7aa
-    style A6 fill:#1c1917,stroke:#44403c,color:#fed7aa
-    style A7 fill:#1c1917,stroke:#44403c,color:#fed7aa
-    style A8 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S1 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S2 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S3 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S4 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S5 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S6 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S7 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S8 fill:#1c1917,stroke:#44403c,color:#fed7aa
 ```
 
 ---
@@ -271,18 +276,17 @@ flowchart TD
 ### With Claude Code
 
 ```bash
-# Install both skills (one-time, after clone)
+# 1. Clone and install skills
 git clone https://github.com/elementalsouls/Claude-OSINT.git
-cd Claude-OSINT
-chmod +x ./scripts/sync-skill-content.sh
-./scripts/sync-skill-content.sh
 mkdir -p ~/.claude/skills
-cp -r skills/osint-methodology ~/.claude/skills/
-cp -r skills/offensive-osint   ~/.claude/skills/
-ls ~/.claude/skills/
+cp -r Claude-OSINT/skills/* ~/.claude/skills/
+
+# 2. Set up your local Claude config
+cp Claude-OSINT/CLAUDE.md.example Claude-OSINT/CLAUDE.md
+# Edit CLAUDE.md — fill in your platform and handle for traffic tagging
 ```
 
-Then, in any Claude Code session, ask an OSINT question — both skills auto-load and trigger on relevant phrases (50+ trigger phrases each).
+Then in any Claude Code session, ask an OSINT question — skills auto-load and trigger on relevant phrases.
 
 ### With the Claude Skills System
 

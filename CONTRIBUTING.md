@@ -29,9 +29,10 @@ Thanks for considering a contribution. These skills are battle-tested but always
 1. **Fork** the repo on GitHub.
 2. **Create a feature branch:** `git checkout -b feat/add-vendor-fingerprint-zscaler`
 3. **Make your changes:**
-   - Edit the relevant `SKILL.md` file in `skills/<skill-name>/SKILL.md`.
+   - To edit an existing skill: modify `skills/<skill-name>/SKILL.md` directly.
+   - To add a new capability area: create a new peer directory `skills/<new-skill-name>/SKILL.md`. Each sub-skill should be under 500 lines and self-contained. Add it to the sub-skill map in `skills/offensive-osint/SKILL.md`.
    - Update `CHANGELOG.md` under an `[Unreleased]` heading at the top.
-   - If you're adding a new section, also update the README's "What's in the box" tables.
+   - If you're adding a new section or sub-skill, update the README's Skill Index and Structure block.
    - If you're adding a new triggerable concept, add a trigger phrase to the YAML frontmatter.
 4. **Run the smoke tests** locally:
    - Install the modified skill in Claude Code or attach to a Claude.ai project.

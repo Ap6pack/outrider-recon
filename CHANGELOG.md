@@ -7,26 +7,27 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [Unreleased]
+## [2.2] — 2026-05-24
 
-### `offensive-osint` — feat: HackerOne hacktivity reference agent (§29.3)
+### Architecture
 
-- Added `skills/offensive-osint/scripts/h1_reference.py` — stdlib-only Python script (no API key required) that queries HackerOne's public GraphQL API for disclosed reports, surfacing community-validated findings during recon.
-- Supports: top-voted sort (community-validated techniques), top-bounty sort (business-impact framing), keyword search with cursor pagination (50 results/page), client-side severity and CWE filters, program-specific lookups, JSON output for piping.
-- Documents three empirically discovered H1 GraphQL server crashes worked around in the script: named variables + substate filter + report fields, `disclosed_at` field + substate filter, sort + substate filter + report fields.
-- Added §29.3 "HackerOne Disclosed Reports Reference" to `offensive-osint` with usage recipes for session-start baseline loading, tech-stack keyword search, pre-probe attack-class reference, and report-writing comparables.
-- Added trigger phrases: `hackerone reference`, `h1 hacktivity`, `disclosed reports`, `community bug reports`, `prior disclosures`, `bug bounty reference`.
-- Added smoke-test prompt #33.
+- **Refactored `offensive-osint` from monolith to router + sub-skills.** The 4,168-line single file has been replaced with a 62-line router (`skills/offensive-osint/SKILL.md`) that dispatches to focused sub-skills by task type. Each sub-skill is self-contained and under 500 lines, preventing context overload in long sessions.
+- **Added `identity-fabric` sub-skill** (`skills/identity-fabric/SKILL.md`, 426 lines). Covers Microsoft Entra, Okta, ADFS, Google Workspace, generic OIDC, SAML metadata, AWS account-ID extraction, M365 deep enum (Teams/SharePoint/OneDrive/OAuth/Power Platform), GraphQL field-suggestion enumeration, and LinkedIn employee enumeration with role prioritization (§22 + §41 from the original arsenal).
+- **Added `report-template` skill** (`skills/report-template/SKILL.md`). Generic bug-bounty report scaffold.
 
-### `osint-methodology` — refactor: trimmed from 1,694 to 455 lines (v2.2)
+### Setup
 
-- Removed duplicate implementation content already covered by `offensive-osint` (§11–§15, §27–§29 original).
-- Compressed 9 implementation-detail sections (Identity Fabric, API, JS, Mobile, Cloud, WAF/CDN, Vuln Prioritization, Phishing) into a single §11 pointer block — each now a 2-sentence description + companion skill reference.
-- Collapsed §16–§21 (Cryptocurrency, Image/Video/Chronolocation, Threat Actor, People, Infrastructure OSINT, Automation, Synthetic Media) into a single §13 specialty domains section (~20 lines total).
-- Retained full methodology core: confidence levels + upgrade workflows (§2), 5-stage pipeline + priority order + time budgets (§7), asset graph taxonomy + triage rules (§8), severity rubric + escalation rules (§9), OpSec + detectability + back-off (§6), breach × identity correlation (§12), anti-patterns (§14).
-- Trimmed §30 Bug Bounty Submission (~90 lines → ~15) and §31 Client Deliverable Templates (~150 lines → ~20); retained essential structures (report skeleton, risk translation matrix).
-- Renumbered: §26 Anti-Patterns → §14; §30 Bug Bounty → §15; §31 Deliverables → §16; §32 Self-Test → §17; §33 Changelog → §18.
-- Updated skill self-test to 12 prompts aligned with new section numbers.
+- **Added `CLAUDE.md.example`** — boilerplate Claude project config for users to copy and customise. Replaces the practice of committing engagement-specific `CLAUDE.md` files to the repo. Users run `cp CLAUDE.md.example CLAUDE.md` after cloning and fill in their own platform and handle.
+
+### Added scripts
+
+- **`skills/offensive-osint/scripts/h1_reference.py`** — stdlib-only Python script (no API key required) that queries HackerOne's public GraphQL API for disclosed reports. Supports top-voted/top-bounty sort, keyword search with cursor pagination, severity and CWE filters, program-specific lookups, JSON output.
+
+### Repo hygiene
+
+- **Updated `.gitignore`** — added: `findings/`, `mcp-proxy.jar`, `refreshSession.js`, `skills/hackerone/`, `.claude/settings.local.json`, `CLAUDE.md`. These are engagement artifacts and local config that must never be committed to a public repo.
+- **Updated README.md** — structure block, tagline, What is this?, capability map, usage steps, and scripts section updated to reflect new architecture.
+- **Updated CONTRIBUTING.md** — step 3 covers adding new sub-skills as peer directories; restored `CODE_OF_CONDUCT.md` link.
 
 ---
 
