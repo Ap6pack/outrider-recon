@@ -2,7 +2,7 @@
 
 ## Scope of these skills
 
-These skills are intended for **external OSINT-driven reconnaissance against authorized targets**. They explicitly **exclude**:
+This pipeline is intended for **external OSINT-driven reconnaissance against authorized targets**. They explicitly **exclude**:
 
 - Active exploitation, post-exploitation, lateral movement
 - Active Directory attacks, Kerberoasting, BloodHound queries
@@ -13,11 +13,11 @@ These skills are intended for **external OSINT-driven reconnaissance against aut
 
 ## Responsible-use posture
 
-The skills include a **soft scope-check** that triggers when a user asks Claude to act against an unverified third-party target:
+The pipeline includes a **soft scope-check** that triggers when a user asks Claude to act against an unverified third-party target:
 
 > *"Quick scope check: is this a target you own or have written authorization to assess (e.g., a red-team engagement, in-scope bug-bounty asset, or your own infrastructure)?"*
 
-Skill content also includes:
+Pipeline content also includes:
 
 - An "Authorization & Legal Posture" section at the top of each SKILL.md.
 - Hard "Do NOT" rules covering destructive probes, credential-validator misuse, scope violations.
@@ -28,7 +28,7 @@ Skill content also includes:
 
 If you find:
 
-- A trigger phrase that causes Claude to attempt active exploitation despite the OSINT-only scope.
+- A trigger phrase that causes Claude to attempt active exploitation despite the authorized-recon-only scope.
 - A copy-paste curl probe that has unintended destructive side effects.
 - Validator endpoints that aren't actually read-only.
 - Any pattern that could enable unauthorized access if misused.
@@ -36,7 +36,7 @@ If you find:
 **Please report it privately:**
 
 1. Open a GitHub issue with title `SECURITY:` (no details) AND request privacy.
-2. Or email the maintainer (see repo profile).
+2. Or email the maintainer directly: adamslinuxemail@gmail.com
 3. Do **not** post the details in a public issue / PR / discussion.
 
 We aim to respond within **5 business days** and resolve within **30 days** for substantive issues.
@@ -45,7 +45,7 @@ We aim to respond within **5 business days** and resolve within **30 days** for 
 
 If you used these skills during an authorized engagement and found a vulnerability in someone else's product / service:
 
-- Use the responsible-disclosure templates in `osint-methodology` §30.
+- Use the responsible-disclosure templates in the pipeline's methodology skill (§15).
 - For bug-bounty programs: follow the program's submission process.
 - For unprogrammed targets: follow the CVD process in §30.4.
 
@@ -53,13 +53,14 @@ If you used these skills during an authorized engagement and found a vulnerabili
 
 | Version | Support status |
 |---|---|
-| 2.1.x (current) | ✅ Active |
-| 2.0.x | ⚠️ Bug fixes only |
+| 2.2.x (current) | ✅ Active |
+| 2.1.x | ⚠️ Bug fixes only |
+| 2.0.x | ❌ End of life |
 | 1.x | ❌ End of life |
 
 ## Security best practices for users
 
-- Pin the skill version (`v2.1`) in any production deployment.
+- Pin the pipeline version (`v2.2`) in any production deployment.
 - Run `scripts/sync-skill-content.sh` (or manual cp) only against this repo's bundled `docs/full-skills/` files; don't fetch from arbitrary sources.
 - Verify SHA-256 of any binary helper scripts before execution.
 - Don't commit your engagement-specific notes into a fork of this repo.

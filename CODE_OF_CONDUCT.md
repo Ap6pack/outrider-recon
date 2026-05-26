@@ -28,7 +28,7 @@ Examples of unacceptable behavior:
 
 This project is offensive-security adjacent. We expect contributors to:
 
-- Stay strictly within the OSINT-only scope. Active exploitation discussions belong elsewhere.
+- Stay within the authorized reconnaissance scope. Active exploitation discussions belong elsewhere.
 - Never share real PII, breach corpus content, or real credentials in issues / PRs / discussions.
 - Use sock-puppet / anonymized data when illustrating examples.
 - Respect the authorization principle in all examples — `acme.example`, `target.example`, etc., never real third-party domains.
@@ -43,7 +43,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainers. All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainer at adamslinuxemail@gmail.com. All complaints will be reviewed and investigated promptly and fairly.
 
 ## Attribution
 

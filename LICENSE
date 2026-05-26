@@ -1,6 +1,6 @@
 MIT License
 
-Copyright (c) 2026 ElementalSoul / Claude-OSINT contributors
+Copyright (c) 2026 Adam Rhys Heaton (Ap6pack) / outrider-recon contributors
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -24,7 +24,7 @@ SOFTWARE.
 
 ADDITIONAL NOTICE FOR OFFENSIVE-SECURITY USE:
 
-These skills are intended for use against assets the operator owns or has
+This pipeline is intended for use against assets the operator owns or has
 explicit written authorization to assess (red-team rules of engagement,
 bug-bounty in-scope assets, ASM contracts). The contributors accept no
 responsibility for misuse. Users are solely responsible for compliance with

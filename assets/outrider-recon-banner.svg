@@ -1,0 +1,147 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 360" preserveAspectRatio="xMidYMid meet">
+  <defs>
+    <radialGradient id="void" cx="30%" cy="50%" r="80%">
+      <stop offset="0%" stop-color="#1a0a0a"/>
+      <stop offset="40%" stop-color="#0a0608"/>
+      <stop offset="100%" stop-color="#000000"/>
+    </radialGradient>
+    <linearGradient id="ember" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#ff4d1a"/>
+      <stop offset="50%" stop-color="#ff8800"/>
+      <stop offset="100%" stop-color="#ffaa00"/>
+    </linearGradient>
+    <pattern id="scanlines" x="0" y="0" width="3" height="3" patternUnits="userSpaceOnUse">
+      <rect width="3" height="1" fill="#ffffff" opacity="0.02"/>
+    </pattern>
+    <filter id="noise">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="2" seed="5"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 0.3  0 0 0 0 0.1  0 0 0 0.08 0"/>
+      <feComposite in2="SourceGraphic" operator="in"/>
+    </filter>
+    <filter id="emberglow" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="6" result="b1"/>
+      <feGaussianBlur stdDeviation="2" result="b2"/>
+      <feMerge>
+        <feMergeNode in="b1"/>
+        <feMergeNode in="b2"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <rect width="1280" height="360" fill="url(#void)"/>
+  <rect width="1280" height="360" fill="url(#scanlines)"/>
+
+  <!-- topographic contour lines -->
+  <g stroke="#ff4d1a" stroke-width="0.4" fill="none" opacity="0.12">
+    <path d="M 0 80 Q 200 60 400 90 T 800 70 T 1280 95"/>
+    <path d="M 0 120 Q 180 100 380 130 T 780 105 T 1280 135"/>
+    <path d="M 0 160 Q 220 140 420 170 T 820 145 T 1280 175"/>
+    <path d="M 0 200 Q 200 180 400 210 T 800 185 T 1280 215"/>
+    <path d="M 0 240 Q 240 220 440 250 T 840 225 T 1280 255"/>
+    <path d="M 0 280 Q 200 260 400 290 T 800 265 T 1280 295"/>
+    <path d="M 0 320 Q 220 300 420 330 T 820 305 T 1280 335"/>
+  </g>
+
+  <!-- outrider's route across the map -->
+  <path d="M -20 280 Q 200 200 380 220 T 720 160 L 900 140 L 1100 110 L 1300 90"
+        stroke="url(#ember)" stroke-width="1.5" fill="none" opacity="0.7"
+        stroke-dasharray="2 3"/>
+
+  <!-- waypoints -->
+  <g fill="#ff4d1a" opacity="0.6">
+    <circle cx="200" cy="232" r="2"/>
+    <circle cx="450" cy="208" r="2"/>
+    <circle cx="720" cy="160" r="3"/>
+    <circle cx="1000" cy="125" r="2"/>
+  </g>
+
+  <!-- current position marker -->
+  <g transform="translate(720, 160)">
+    <circle r="14" fill="none" stroke="url(#ember)" stroke-width="1" opacity="0.5"/>
+    <circle r="9" fill="none" stroke="url(#ember)" stroke-width="1.5" opacity="0.8"/>
+    <circle r="3" fill="#ffaa00" filter="url(#emberglow)"/>
+    <line x1="-20" y1="0" x2="-15" y2="0" stroke="#ff4d1a" stroke-width="1"/>
+    <line x1="15" y1="0" x2="20" y2="0" stroke="#ff4d1a" stroke-width="1"/>
+    <line x1="0" y1="-20" x2="0" y2="-15" stroke="#ff4d1a" stroke-width="1"/>
+    <line x1="0" y1="15" x2="0" y2="20" stroke="#ff4d1a" stroke-width="1"/>
+  </g>
+
+  <g font-family="'Courier New', monospace" font-size="9" fill="#ff8800" opacity="0.7">
+    <text x="745" y="155">36°N 44°E</text>
+    <text x="745" y="167" fill="#666" font-size="7">SECTOR-7 // CONTACT</text>
+  </g>
+
+  <!-- top status bar -->
+  <g font-family="'Courier New', monospace" font-size="10" letter-spacing="1.5">
+    <text x="40" y="32" fill="#666">[</text>
+    <text x="48" y="32" fill="#ff8800">RECON</text>
+    <text x="88" y="32" fill="#666">]</text>
+    <text x="100" y="32" fill="#444">→</text>
+    <text x="115" y="32" fill="#999">awaiting handler input</text>
+    <text x="1240" y="32" fill="#ff4d1a" text-anchor="end">●</text>
+    <text x="1230" y="32" fill="#888" text-anchor="end">LIVE</text>
+  </g>
+
+  <!-- WORDMARK: "out" dim, "RIDER" hot, with glitch echo -->
+  <g transform="translate(80, 220)">
+    <text x="0" y="0"
+          font-family="'Arial Black', 'Helvetica', sans-serif"
+          font-size="100" font-weight="900"
+          fill="#444" letter-spacing="-4">out</text>
+    <text x="172" y="0"
+          font-family="'Arial Black', 'Helvetica', sans-serif"
+          font-size="100" font-weight="900"
+          fill="#ff4d1a" letter-spacing="-4"
+          opacity="0.2">RIDER</text>
+    <text x="170" y="0"
+          font-family="'Arial Black', 'Helvetica', sans-serif"
+          font-size="100" font-weight="900"
+          fill="url(#ember)" letter-spacing="-4"
+          filter="url(#emberglow)">RIDER</text>
+  </g>
+
+  <!-- terminal-style command tagline -->
+  <g transform="translate(80, 260)">
+    <text x="0" y="0" font-family="'Courier New', monospace" font-size="14" letter-spacing="0">
+      <tspan fill="#666">$</tspan>
+      <tspan fill="#aaa" dx="8">recon</tspan>
+      <tspan fill="#666" dx="4">--mode</tspan>
+      <tspan fill="#ff8800" dx="4">autonomous</tspan>
+      <tspan fill="#666" dx="8">--human-gate</tspan>
+      <tspan fill="#ff4d1a" dx="4">on-critical</tspan>
+    </text>
+  </g>
+
+  <!-- manifesto line -->
+  <g transform="translate(80, 300)">
+    <text x="0" y="0" font-family="'Courier New', monospace" font-size="11" fill="#666" letter-spacing="1">
+      one ahead of the column. mapping what comes next.
+    </text>
+  </g>
+
+  <!-- right-side HUD panel -->
+  <g transform="translate(1100, 220)" font-family="'Courier New', monospace" font-size="9" letter-spacing="1">
+    <text x="0" y="0" fill="#444">// AGENTS</text>
+    <text x="0" y="14" fill="#999">recon</text>
+    <text x="80" y="14" fill="#16a34a" text-anchor="end">●</text>
+    <text x="0" y="26" fill="#999">secrets</text>
+    <text x="80" y="26" fill="#16a34a" text-anchor="end">●</text>
+    <text x="0" y="38" fill="#999">identity</text>
+    <text x="80" y="38" fill="#16a34a" text-anchor="end">●</text>
+    <text x="0" y="50" fill="#999">cloud</text>
+    <text x="80" y="50" fill="#f59e0b" text-anchor="end">●</text>
+    <text x="0" y="62" fill="#999">post-disc</text>
+    <text x="80" y="62" fill="#666" text-anchor="end">○</text>
+
+    <text x="0" y="84" fill="#444">// FINDINGS</text>
+    <text x="0" y="98" fill="#dc2626">CRIT</text>
+    <text x="80" y="98" fill="#dc2626" text-anchor="end">02</text>
+    <text x="0" y="110" fill="#f59e0b">HIGH</text>
+    <text x="80" y="110" fill="#f59e0b" text-anchor="end">07</text>
+    <text x="0" y="122" fill="#999">MED</text>
+    <text x="80" y="122" fill="#999" text-anchor="end">14</text>
+  </g>
+
+  <rect width="1280" height="360" filter="url(#noise)" opacity="0.4"/>
+</svg>

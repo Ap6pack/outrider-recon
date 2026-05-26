@@ -1,6 +1,6 @@
-# Contributing to Claude-OSINT
+# Contributing to outrider-recon
 
-Thanks for considering a contribution. These skills are battle-tested but always improvable. Below is what's most welcome and how to submit changes.
+Thanks for considering a contribution. This pipeline is battle-tested but always improvable. Below is what's most welcome and how to submit changes.
 
 ## Most-needed contributions
 
@@ -30,19 +30,19 @@ Thanks for considering a contribution. These skills are battle-tested but always
 2. **Create a feature branch:** `git checkout -b feat/add-vendor-fingerprint-zscaler`
 3. **Make your changes:**
    - To edit an existing skill: modify `skills/<skill-name>/SKILL.md` directly.
-   - To add a new capability area: create a new peer directory `skills/<new-skill-name>/SKILL.md`. Each sub-skill should be under 500 lines and self-contained. Add it to the sub-skill map in `skills/offensive-osint/SKILL.md`.
+   - To add a new capability area: create a new peer directory `skills/<new-skill-name>/SKILL.md`. Each sub-skill should be under 500 lines and self-contained. Register it in the router (`skills/offensive-osint/SKILL.md`).
    - Update `CHANGELOG.md` under an `[Unreleased]` heading at the top.
-   - If you're adding a new section or sub-skill, update the README's Skill Index and Structure block.
+   - If you're adding a new sub-skill, update the README's Capability Index and Structure block.
    - If you're adding a new triggerable concept, add a trigger phrase to the YAML frontmatter.
 4. **Run the smoke tests** locally:
-   - Install the modified skill in Claude Code or attach to a Claude.ai project.
+   - Install the pipeline in Claude Code (`cp -r skills/* ~/.claude/skills/`).
    - Run any relevant prompt from `tests/smoke-test-prompts.md` and verify behavior.
    - If you added a new section, add at least one self-test prompt for it.
 5. **Commit with a clear message:**
    - Format: `<type>(<scope>): <subject>`
    - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-   - Examples: `feat(arsenal): add Zscaler vendor fingerprint to §16.16`, `fix(methodology): correct EPSS threshold tier in §28.2`, `docs(readme): update coverage table for v2.2`
-6. **Push and open a PR** with:
+   - Examples: `feat(arsenal): add Zscaler vendor fingerprint to §16.16`, `fix(methodology): correct EPSS threshold tier in §28.2`, `docs(readme): update capability index for v2.2`
+6. **Push and open a PR** to `Ap6pack/outrider-recon` with:
    - Clear description of what changed and why.
    - Reference any related issues.
    - Note any breaking changes (rare; mostly section renumbering).

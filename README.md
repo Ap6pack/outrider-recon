@@ -1,19 +1,19 @@
-![claude-osint banner](assets/banner.png)
+![outrider-recon banner](assets/outrider-recon-banner.svg)
 
-# claude-osint
+# outrider-recon
 
-> Modular Claude skills · **90+ recon modules** · 48 secret-regex patterns · 80+ dorks · 9 read-only credential validators · 27 attack-path templates. Drop-in `SKILL.md` files that turn Claude into a focused external recon operator for authorized red-team and bug-bounty engagements.
-
-Built by **[ElementalSoul](https://github.com/elementalsouls)** — GenAI Security Research.
+> Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native — scopes, enumerates, pivots, and escalates without hand-holding. **90+ capabilities** · 48 secret patterns · 80+ dorks · 9 read-only validators · 27 attack-path templates.
 
 ---
 
 ## What is this?
 
-`claude-osint` is a modular set of skills for the [Claude skills system](https://docs.claude.com/en/docs/claude-code/skills). Each skill is a structured `SKILL.md` file that primes Claude with expert-level methodology for a specific slice of the offensive recon problem:
+`outrider-recon` is an autonomous agentic recon pipeline built on Claude. Rather than a passive reference, it operates as a senior recon analyst — it plans, executes, pivots on findings, and escalates to impact without waiting to be prompted at each step.
+
+The pipeline is structured as a router + specialized sub-agents, each owning a slice of the external attack surface:
 
 - **`osint-methodology`** — *how to think.* Strategic + procedural. Asset-graph discipline, severity rubric, time budgeting, identity-fabric mapping, deliverable templates.
-- **`offensive-osint`** — *router.* Dispatches to the right sub-skill based on task type. Load this first.
+- **`offensive-osint`** — *router.* Dispatches to the right sub-agent based on task type. Entry point for the pipeline.
 - **`recon-asset-discovery`** — subdomains, ASN/BGP, CT logs, WHOIS/RDAP, DNS catalog, geospatial, regional search engines.
 - **`web-surface`** — Swagger/GraphQL probe paths, curl one-liners, vendor fingerprints, CDN bypass, Wayback CDX, Postman, endpoint scoring.
 - **`identity-fabric`** — Entra, Okta, ADFS, SAML, M365 deep enum, GraphQL field-suggestion, LinkedIn employee enum.
@@ -23,7 +23,7 @@ Built by **[ElementalSoul](https://github.com/elementalsouls)** — GenAI Securi
 - **`people-breach-intel`** — HudsonRock, breach data, username/email/phone, people search, social media, crypto, media.
 - **`analysis-and-reporting`** — scoring rubrics, attack-path hints, severity decision matrix, sector-specific notes.
 
-Drop the skills into your Claude environment and it behaves like a senior recon analyst: it knows the techniques, the tooling, the edge cases, and the escalation paths — and it stays in scope.
+Deploy the pipeline into your Claude environment and it operates as a senior recon analyst: it knows the techniques, the tooling, the edge cases, and the escalation paths — and it stays in scope.
 
 96.9% PASS on a 32-prompt self-evaluation · ~85–90% practitioner coverage for the recon phase of authorized engagements.
 
@@ -32,7 +32,7 @@ Drop the skills into your Claude environment and it behaves like a senior recon 
 ## Structure
 
 ```
-claude-osint/
+outrider-recon/
 ├── skills/
 │   ├── osint-methodology/SKILL.md     # how to think (pipeline · rubric · anti-patterns · deliverables)
 │   ├── offensive-osint/SKILL.md       # router — dispatches to sub-skills below
@@ -54,7 +54,7 @@ claude-osint/
 ├── examples/                          # 4 end-to-end engagement walk-throughs
 ├── tests/smoke-test-prompts.md        # 32-prompt self-evaluation
 ├── CLAUDE.md.example                  # copy to CLAUDE.md and customise for your engagement
-└── assets/banner.png
+└── assets/outrider-recon-banner.svg
 ```
 
 Each skill directory is self-contained. Drop into `~/.claude/skills/` and Claude auto-triggers on relevant phrases.
@@ -206,7 +206,7 @@ Two skills, twelve capability domains. Drill into the [Skill Index](#skill-index
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#1e293b','primaryTextColor':'#f1f5f9','primaryBorderColor':'#475569','lineColor':'#94a3b8'}}}%%
 flowchart LR
-    Root(["🦅 claude-osint"])
+    Root(["🦅 outrider-recon"])
 
     Root --> M["📘 osint-methodology<br/><i>how to think</i>"]
     Root --> R["🗺️ offensive-osint<br/><i>router</i>"]
@@ -290,12 +290,12 @@ flowchart TD
 
 ```bash
 # 1. Clone and install skills
-git clone https://github.com/elementalsouls/Claude-OSINT.git
+git clone https://github.com/Ap6pack/outrider-recon.git
 mkdir -p ~/.claude/skills
-cp -r Claude-OSINT/skills/* ~/.claude/skills/
+cp -r outrider-recon/skills/* ~/.claude/skills/
 
 # 2. Set up your local Claude config
-cp Claude-OSINT/CLAUDE.md.example Claude-OSINT/CLAUDE.md
+cp outrider-recon/CLAUDE.md.example outrider-recon/CLAUDE.md
 # Edit CLAUDE.md — fill in your platform and handle for traffic tagging
 ```
 
@@ -341,7 +341,7 @@ Both skills include a soft scope-check when you ask Claude to act against an unv
 
 Operational tradecraft accumulated across external attack-surface engagements, codified into Claude skills. Engagement-platform agnostic - slot into any ASM / ticketing / asset-graph platform you already use, or none.
 
-**Author:** [ElementalSoul](https://github.com/elementalsouls)
+**Author:** [Ap6pack](https://github.com/Ap6pack)
 
 **Original framework:** [SnailSploit/offensive-checklist](https://github.com/SnailSploit/offensive-checklist) (v1.x)
 

@@ -9,8 +9,8 @@ Claude Code looks for skills in `~/.claude/skills/` by default.
 ### Method 1: Direct copy
 
 ```bash
-git clone https://github.com/elementalsouls/Claude-OSINT.git
-cd Claude-OSINT
+git clone https://github.com/Ap6pack/outrider-recon.git
+cd outrider-recon
 
 # Optional: populate full SKILL.md content from bundled full-skills (one-time after clone)
 ./scripts/sync-skill-content.sh
@@ -24,17 +24,17 @@ cp -r skills/offensive-osint   ~/.claude/skills/
 ### Method 2: Symlink (stays in sync with git pull)
 
 ```bash
-git clone https://github.com/elementalsouls/Claude-OSINT.git ~/.local/share/Claude-OSINT
+git clone https://github.com/Ap6pack/outrider-recon.git ~/.local/share/outrider-recon
 mkdir -p ~/.claude/skills
 
-ln -sf ~/.local/share/Claude-OSINT/skills/osint-methodology ~/.claude/skills/osint-methodology
-ln -sf ~/.local/share/Claude-OSINT/skills/offensive-osint   ~/.claude/skills/offensive-osint
+ln -sf ~/.local/share/outrider-recon/skills/osint-methodology ~/.claude/skills/osint-methodology
+ln -sf ~/.local/share/outrider-recon/skills/offensive-osint   ~/.claude/skills/offensive-osint
 
-cd ~/.local/share/Claude-OSINT
+cd ~/.local/share/outrider-recon
 ./scripts/sync-skill-content.sh   # one-time
 ```
 
-Then `git -C ~/.local/share/Claude-OSINT pull && ./scripts/sync-skill-content.sh` periodically.
+Then `git -C ~/.local/share/outrider-recon pull && ./scripts/sync-skill-content.sh` periodically.
 
 ### Verify install
 
@@ -114,7 +114,7 @@ Most AI IDEs allow custom system-prompt injection. Use the API method above as a
 The skill's `triggers:` list controls auto-activation. If your prompt's wording isn't in the list, Claude may not pull the skill.
 
 - Try rephrasing with a phrase from the SKILL.md `triggers:` list.
-- If your phrasing is a common practitioner term, [open an issue](https://github.com/elementalsouls/Claude-OSINT/issues) to add it.
+- If your phrasing is a common practitioner term, [open an issue](https://github.com/Ap6pack/outrider-recon/issues) to add it.
 
 ### "I get the structured-outline SKILL.md, not the full content"
 
