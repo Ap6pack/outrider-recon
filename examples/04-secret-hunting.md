@@ -13,7 +13,7 @@ End-to-end walk-through from secret discovery → validation → scope enumerati
 
 Several techniques surface credentials:
 
-**A. GitHub code search (companion `offensive-osint` §19):**
+**A. GitHub code search (companion `secrets-and-dorks` §3):**
 
 ```bash
 T="acme.example"          # full domain
@@ -31,7 +31,7 @@ for q in "filename:.env" "filename:.env.example" "filename:config" \
 done
 ```
 
-**B. JS deep scan (`osint-methodology` §13 + companion `offensive-osint` §17):**
+**B. JS deep scan (`web-surface` §6-§8 + companion `secrets-and-dorks` §1):**
 
 ```bash
 # Pull every JS from app.acme.example and scan
@@ -53,7 +53,7 @@ done
 
 If sourcemap exists, parse `sourcesContent[]` and run secret-scan over each.
 
-**D. Postman public workspace search (companion §24):**
+**D. Postman public workspace search (companion `web-surface` §14):**
 
 ```bash
 curl -sk "https://www.postman.com/_api/ws/proxy" \
@@ -73,7 +73,7 @@ You found: `AKIAIOSFODNN7EXAMPLE` paired with a 40-char secret in a public GitHu
 
 > Found AKIAIOSFODNN7EXAMPLE + secret in a public GitHub gist. What's the classification?
 
-**Claude pulls:** `offensive-osint` §17 (catalog row 1 — AWS_ACCESS_KEY) + `osint-methodology` §6.3 (validator discipline).
+**Claude pulls:** `secrets-and-dorks` §1 (catalog row 1 — AWS_ACCESS_KEY) + `osint-methodology` §6.3 (validator discipline).
 
 **Classification:**
 - Pattern: AWS Access Key → severity **CRITICAL** (per catalog).
@@ -88,7 +88,7 @@ You found: `AKIAIOSFODNN7EXAMPLE` paired with a 40-char secret in a public GitHu
 
 > Validate the AWS key read-only. ROE permits validation but not exploitation.
 
-**Claude pulls:** `offensive-osint` §23.2 (AWS validator) + `osint-methodology` §6.3 (validator discipline).
+**Claude pulls:** `secrets-and-dorks` §4.2 (AWS validator) + `osint-methodology` §6.3 (validator discipline).
 
 **Run:**
 
@@ -144,7 +144,7 @@ Account ID `123456789012` — does it belong to your target?
 
 > AWS account 123456789012 returned. Confirm it belongs to acme.example.
 
-**Claude pulls:** `osint-methodology` §11.8 + `offensive-osint` §22.7 (AWS account-ID extraction).
+**Claude pulls:** `identity-fabric` §1.7 (AWS account-ID extraction).
 
 **Cross-reference:**
 - HEAD known target S3 buckets — does `x-amz-bucket-region` correlate with this account's likely region?
@@ -162,7 +162,7 @@ If ambiguous → mark TENTATIVE and document the uncertainty in the finding.
 
 > Confirmed AWS account belongs to target. ROE permits read-only enum. Walk me through.
 
-**Claude pulls:** `offensive-osint` §23.12 (post-discovery enumeration workflows — AWS).
+**Claude pulls:** `post-discovery` §1 (post-discovery enumeration workflows — AWS).
 
 **Run:**
 
@@ -212,9 +212,9 @@ aws cloudtrail describe-trails
 
 ## Step 6: Severity assessment
 
-Score the finding using `offensive-osint` §40 + impact context:
+Score the finding using `analysis-and-reporting` §4 + impact context:
 
-- **Validated live AWS IAM-user key in public GitHub repo.** Per §40: HIGH base.
+- **Validated live AWS IAM-user key in public GitHub repo.** Per `analysis-and-reporting` §4: HIGH base.
 - **Scope: deploy-bot user with attached ManagedDevOpsPolicy** (via `iam:ListAttachedUserPolicies`) → likely write access to S3, Lambda, ECR, CodeBuild → **CRITICAL** (escalated).
 - **MFA not enforced on user** → CRITICAL holds.
 
@@ -228,7 +228,7 @@ Score the finding using `offensive-osint` §40 + impact context:
 
 > Write the per-finding report card.
 
-**Claude pulls:** `osint-methodology` §31.2 (per-finding template).
+**Claude pulls:** `osint-methodology` §14 (per-finding template) + `report-template` §2.
 
 ```
 ═══════════════════════════════════════════════════════════
@@ -301,7 +301,7 @@ might miss other leak locations).
 ## Step 8: Disclosure
 
 **Path A — bug-bounty program in scope:**
-- Submit to the program (HackerOne / Bugcrowd / etc.) using `osint-methodology` §30.2 report structure.
+- Submit to the program (HackerOne / Bugcrowd / etc.) using `osint-methodology` §13 report structure + `report-template` §1.
 - Severity: per program's CVSS-mapping (likely CRITICAL).
 
 **Path B — no program but ROE includes responsible disclosure:**
@@ -328,14 +328,15 @@ might miss other leak locations).
 
 This example follows:
 - `osint-methodology` §6.3 (validator discipline)
-- `osint-methodology` §11.8 (AWS account-ID extraction)
-- `osint-methodology` §22 (breach × identity correlation)
-- `osint-methodology` §28.3 (validation discipline)
-- `osint-methodology` §30.5 (cloud provider disclosure channels)
-- `osint-methodology` §31.2 (per-finding report card)
-- `offensive-osint` §17 row 1 (AWS_ACCESS_KEY pattern)
-- `offensive-osint` §19 (GitHub code-search dorks)
-- `offensive-osint` §23.2 (AWS validator)
-- `offensive-osint` §23.12 (post-discovery AWS enumeration)
-- `offensive-osint` §40 (severity matrix — live AWS IAM-user key)
-- `offensive-osint` §39 (attack-path hints — live AI/cloud key)
+- `identity-fabric` §1.7 (AWS account-ID extraction)
+- `osint-methodology` §12 (breach × identity correlation)
+- `osint-methodology` §13 (bug bounty submission + report structure)
+- `osint-methodology` §14 (per-finding report card)
+- `report-template` §1 (bug bounty report template)
+- `report-template` §2 (client report template)
+- `secrets-and-dorks` §1 row 1 (AWS_ACCESS_KEY pattern)
+- `secrets-and-dorks` §3 (GitHub code-search dorks)
+- `secrets-and-dorks` §4.2 (AWS validator)
+- `post-discovery` §1 (post-discovery AWS enumeration)
+- `analysis-and-reporting` §4 (severity matrix — live AWS IAM-user key)
+- `analysis-and-reporting` §3 (attack-path hints — live AI/cloud key)

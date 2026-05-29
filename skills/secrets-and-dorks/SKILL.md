@@ -1,6 +1,6 @@
 ---
 name: secrets-and-dorks
-description: "48-pattern secret regex catalog, 80+ dork corpus across 9 categories, GitHub code-search dorks, and 9 read-only credential validators for authorized secret discovery and verification."
+description: "48-pattern secret regex catalog, 70 dork corpus across 9 categories, GitHub code-search dorks, and 9 read-only credential validators for authorized secret discovery and verification."
 version: 1.0.0
 triggers:
   - secret scanning
@@ -114,7 +114,7 @@ Run against: GitHub code, Postman workspaces, JS bodies, sourcesContent blobs, m
 
 ---
 
-## 2. Dork Corpus — 80+ Templates, 9 Categories
+## 2. Dork Corpus — 70 Templates, 9 Categories
 
 Substitute `{domain}` = `example.com`, `{company}` = `Acme Corporation`. Run via Google, Bing, Brave, DDG, Yandex — engines surface different results.
 
@@ -190,20 +190,20 @@ site:{domain} intext:"Fatal error:" intext:"on line"
 site:{domain} intext:"stack trace" OR intext:"Traceback (most recent call last)"
 "Apache/2.4.49" site:{domain}
 site:{domain} inurl:wp-content OR inurl:wp-includes
+site:{domain} intext:"Directory listing for /"
+site:{domain} intitle:"Apache2 Ubuntu Default Page"
 ```
 
 ### 2.7 Internal Tool Exposure
 ```
-site:{domain} intitle:"Splunk"
-site:{domain} intitle:"Grafana"
-site:{domain} intitle:"Kibana"
 site:{domain} intitle:"Prometheus Time Series"
 site:{domain} intitle:"Argo CD"
 site:{domain} intitle:"Sonarqube"
 site:{domain} intitle:"Confluence"
 site:{domain} intitle:"Jira"
-site:{domain} intitle:"GitLab"
 site:{domain} inurl:"/jenkins/"
+site:{domain} intitle:"Portainer"
+site:{domain} intitle:"Rancher"
 ```
 
 ### 2.8 Backup / Dump File Extensions

@@ -45,23 +45,23 @@ We aim to respond within **5 business days** and resolve within **30 days** for 
 
 If you used these skills during an authorized engagement and found a vulnerability in someone else's product / service:
 
-- Use the responsible-disclosure templates in the pipeline's methodology skill (§15).
+- Use the responsible-disclosure templates in `osint-methodology` §13.
 - For bug-bounty programs: follow the program's submission process.
-- For unprogrammed targets: follow the CVD process in §30.4.
+- For unprogrammed targets: follow the CVD process in `osint-methodology` §13.
 
 ## Supported versions
 
 | Version | Support status |
 |---|---|
-| 2.2.x (current) | ✅ Active |
+| 2.3.x (current) | ✅ Active |
 | 2.1.x | ⚠️ Bug fixes only |
 | 2.0.x | ❌ End of life |
 | 1.x | ❌ End of life |
 
 ## Security best practices for users
 
-- Pin the pipeline version (`v2.2`) in any production deployment.
-- Run `scripts/sync-skill-content.sh` (or manual cp) only against this repo's bundled `docs/full-skills/` files; don't fetch from arbitrary sources.
+- Pin the pipeline version (`v2.3`) in any production deployment.
+- Verify SHA-256 of skill files after cloning to confirm integrity.
 - Verify SHA-256 of any binary helper scripts before execution.
 - Don't commit your engagement-specific notes into a fork of this repo.
 - Use sock-puppet GitHub accounts when contributing if your engagement persona shouldn't be linked to your contributor identity.

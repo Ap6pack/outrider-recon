@@ -303,7 +303,7 @@ If non-null and tenant doesn't restrict device-code: MEDIUM finding (device-code
 
 ### 1.9 GraphQL Field-Suggestion Enumeration (when introspection disabled)
 
-When the standard introspection query (§16.2) returns `"errors":[{"message":"GraphQL introspection is disabled"}]`, fall back to field-suggestion enumeration. Apollo and most GraphQL libraries enable "did you mean" suggestions by default.
+When the standard introspection query (`web-surface` §2) returns `"errors":[{"message":"GraphQL introspection is disabled"}]`, fall back to field-suggestion enumeration. Apollo and most GraphQL libraries enable "did you mean" suggestions by default.
 
 **Detection probe:**
 ```bash
@@ -418,7 +418,7 @@ For each enumerated employee, capture:
 
 ### 2.3 Email-pattern derivation from confirmed names
 
-For each captured name, derive candidate emails using §11 templates. Cross-reference against:
+For each captured name, derive candidate emails using `people-breach-intel` §2 templates. Cross-reference against:
 - Hunter.io `domain-search` to confirm pattern.
 - Breach corpus (HudsonRock + HIBP + DeHashed + IntelX) to find matches.
 

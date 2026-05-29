@@ -46,11 +46,11 @@ triggers:
 
 **Output:** Scored findings with severity, attack-path hints, and sidecar JSON where applicable. All findings use `osint-methodology` §3 schema.
 
-**Severity rules:** §1 thresholds for endpoint scores (>=90 CRITICAL, 70-89 HIGH, 50-69 MEDIUM, 25-49 LOW, <25 INFO). §4 decision matrix (80+ examples). §5 sector overrides are mandatory — never downgrade a sector-specific severity.
+**Severity rules:** §1 thresholds for endpoint scores (>=90 CRITICAL, 70-89 HIGH, 50-69 MEDIUM, 25-49 LOW, <25 INFO). §4 decision matrix (92 examples). §5 sector overrides are mandatory -- never downgrade a sector-specific severity.
 
 **Gating rules:** Mobile apps below ownership threshold 70 = `mobile_review_pending`, do not deep-analyze. ICS/SCADA targets require explicit OT team coordination before any active probing.
 
-**Chain to:** Feed severity + attack-path hints to `osint-methodology` §16 for client deliverable generation. Receive findings from all other sub-skills for classification.
+**Chain to:** Feed severity + attack-path hints to `osint-methodology` §14 for client deliverable generation. Receive findings from all other sub-skills for classification.
 
 ---
 
@@ -102,7 +102,7 @@ Apps below threshold: tag `mobile_review_pending`. Operator can lower threshold 
 
 ## 3. Attack-Path Hint Patterns — 35 Templates
 
-When emitting a HIGH/CRITICAL finding (score ≥ 70), include a one-sentence `attack_path_hint`:
+When emitting a HIGH/CRITICAL finding (score >= 70), include a one-sentence `attack_path_hint`:
 
 | Trigger | Attack-path hint |
 |---|---|
@@ -138,6 +138,9 @@ When emitting a HIGH/CRITICAL finding (score ≥ 70), include a one-sentence `at
 | F5 BIG-IP TMUI exposed | *"F5 BIG-IP TMUI on {host} reachable; CVE-2022-1388 / CVE-2023-46747 KEV applicable; advise immediate patching."* |
 | VMware vCenter accessible | *"vCenter at {host} accessible without VPN; CVE-2021-21972 RCE if unpatched; check version banner."* |
 | Telegram bot token live | *"Telegram bot token validated — `getUpdates` reveals bot recipients (admin chats); if `getMe` shows bot is in channels, full message read access."* |
+| Open Mattermost/Rocket.Chat without auth | *"Unauthenticated Mattermost/Rocket.Chat instance on {host} — browse public channels for credentials, internal URLs, and operational intel; check `/api/v4/config` for LDAP/SMTP secrets."* |
+| Public Terraform state file | *"Public Terraform state file at {url} — contains infrastructure secrets (DB passwords, API keys, private IPs, IAM role ARNs); full cloud topology disclosure."* |
+| Exposed Jupyter notebook on port 8888 | *"Jupyter notebook on {host}:8888 without token authentication — interactive Python execution; pivot to credential harvest via `os.environ`, filesystem read, and reverse shell."* |
 
 ---
 

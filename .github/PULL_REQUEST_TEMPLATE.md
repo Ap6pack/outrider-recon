@@ -17,20 +17,27 @@ Brief summary of what this PR changes.
 ## Affected skills
 
 - [ ] `osint-methodology`
-- [ ] `offensive-osint`
-- [ ] Both
-- [ ] Repo infrastructure only (READMEs, docs, CI, etc.)
+- [ ] `offensive-osint` (router)
+- [ ] `recon-asset-discovery`
+- [ ] `web-surface`
+- [ ] `identity-fabric`
+- [ ] `secrets-and-dorks`
+- [ ] `post-discovery`
+- [ ] `cloud-and-infra`
+- [ ] `people-breach-intel`
+- [ ] `analysis-and-reporting`
+- [ ] `report-template`
+- [ ] Repo infrastructure only (docs, CI, etc.)
 
 ## Affected sections (if applicable)
 
-- methodology §____
-- arsenal §____
+- skill: __________ §____
 
 ## Checklist
 
 - [ ] My change is OSINT-only (no active exploitation, post-exploit, malware tradecraft).
 - [ ] I updated `CHANGELOG.md` under `[Unreleased]`.
-- [ ] I updated the README's "What's in the box" tables (if I added a section).
+- [ ] I updated `docs/capabilities.md` (if I added a capability).
 - [ ] I added trigger phrases to the YAML frontmatter (if I added a new triggerable concept).
 - [ ] I added a self-test prompt to `tests/smoke-test-prompts.md` (if I added a new capability).
 - [ ] Severity / detectability / confidence tags are consistent with existing rubrics.

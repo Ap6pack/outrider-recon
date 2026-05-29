@@ -5,11 +5,31 @@ The "how to think" reference for external red-team OSINT and bug-bounty reconnai
 | Field | Value |
 |---|---|
 | Name | `osint-methodology` |
-| Version | 2.1 |
-| Lines | ~1,700 |
-| Top-level sections | 33 |
-| Subsections | ~125 |
+| Version | 2.2 |
+| Lines | ~420 |
+| Sections | 15 (Behavioral Contract + sections 0-14) |
 | Companion skill | [`offensive-osint`](../offensive-osint/) |
+
+## What's in it
+
+| Section | Title |
+|---|---|
+| Behavioral Contract | When/how the skill activates and chains |
+| 0 | When to Use / When NOT |
+| 1 | Authorization & Legal Posture |
+| 2 | Confidence Levels |
+| 3 | Output Format |
+| 4 | Source Hygiene & Citations |
+| 5 | Do NOT |
+| 6 | OpSec (sock puppets, detectability tagging, validator discipline, detection-aware probing) |
+| 7 | External Red-Team Recon Pipeline (5-stage pipeline, priority order, time budgeting) |
+| 8 | Asset Graph Discipline (29 typed assets, 23 typed edges, triage rules) |
+| 9 | Findings Rubric & Severity Mapping (anchors + escalation rules) |
+| 10 | Pivot Modes & Scale Tactics |
+| 11 | Implementation: Companion Skill Pointers |
+| 12 | Breach x Identity Correlation |
+| 13 | Bug Bounty Submission & Responsible Disclosure |
+| 14 | Client Deliverable Templates |
 
 ## When this skill triggers
 
@@ -28,23 +48,6 @@ Auto-triggers on prompts containing any of ~55 trigger phrases. Common ones:
 
 Full trigger list in the SKILL.md frontmatter.
 
-## What's in it
-
-See the parent [README's "What's in the box" table](../../README.md#whats-in-the-box) for the full §-by-§ breakdown.
-
-Highlights:
-
-- **§7 — 5-stage recon pipeline** + priority order + time budgeting (1h / 4h / 1d / 1w profiles)
-- **§8 — Asset graph discipline** with 29 typed asset types + 23 typed edges + per-asset-type triage
-- **§9 — Findings rubric** anchored on examples (CRITICAL → INFO + escalation rules)
-- **§11 — Identity fabric mapping** (Entra, Okta, ADFS, Google, SAML, AWS, M365 deep)
-- **§22 — Breach × identity correlation** (HudsonRock + HIBP + DeHashed + IntelX → SSO_EXPOSURE finding)
-- **§27 — WAF/CDN bypass + origin discovery** (8 techniques)
-- **§28 — Vulnerability prioritization** (CVE × EPSS × KEV × Metasploit rubric)
-- **§29 — Phishing infrastructure & pretext development**
-- **§30 — Bug bounty submission templates** (HackerOne, Bugcrowd, Intigriti, etc.)
-- **§31 — Client deliverable templates** (exec summary + risk translation matrix + reporting cadence)
-
 ## Loading
 
 ```bash
@@ -54,8 +57,6 @@ cp SKILL.md ~/.claude/skills/osint-methodology/SKILL.md
 # Or attach to a Claude.ai project / Claude API system prompt
 # (paste contents of SKILL.md as project knowledge)
 ```
-
-The full content lives in this `SKILL.md` (or in `docs/full-skills/osint-methodology.SKILL.full.md` if this file is the structured-outline variant — see repo root for sync instructions).
 
 ## Self-test
 

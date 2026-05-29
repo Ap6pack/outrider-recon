@@ -2,7 +2,7 @@
 
 # outrider-recon
 
-> Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native — scopes, enumerates, pivots, and escalates without hand-holding. **90+ capabilities** · 48 secret patterns · 80+ dorks · 9 read-only validators · 35 attack-path templates.
+> Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native -- scopes, enumerates, pivots, and escalates without hand-holding. **72 capabilities** · 48 secret patterns · 70 dorks · 9 read-only validators · 35 attack-path templates.
 
 ---
 
@@ -17,7 +17,7 @@ The pipeline is structured as a router + specialized sub-agents, each owning a s
 - **`recon-asset-discovery`** — subdomains (8-source crt.sh fallback chain), ASN/BGP, CT logs, WHOIS/RDAP, DNS catalog, wordlist sources.
 - **`web-surface`** — Swagger/GraphQL probe paths, JS guess-paths, endpoint extraction regexes, vendor fingerprints, subdomain takeover (27 providers), cloud bucket permutation, CDN bypass, Wayback CDX, Postman, endpoint scoring.
 - **`identity-fabric`** — Entra, Okta, ADFS, SAML (5 metadata paths), M365 deep enum, GraphQL field-suggestion, LinkedIn employee enum.
-- **`secrets-and-dorks`** — 48-pattern secret regex catalog, 80+ dork corpus, GitHub code-search dorks, 9 read-only validators.
+- **`secrets-and-dorks`** — 48-pattern secret regex catalog, 70 dork corpus, GitHub code-search dorks, 9 read-only validators.
 - **`post-discovery`** — JWT triage, AWS IAM enum, GitHub/Slack post-credential workflows. Gated: run validators first.
 - **`cloud-and-infra`** — cloud-native fingerprints, K8s/etcd/kubelet, CI/CD exposure, TLS deep audit.
 - **`people-breach-intel`** — HudsonRock, breach data, email-pattern inference, package registry leak hunting (7 registries), Slack/Discord/Mattermost discovery.
@@ -64,7 +64,7 @@ outrider-recon/
 │   ├── recon-asset-discovery/SKILL.md # subdomains · ASN · CT · DNS · WHOIS · wordlists
 │   ├── web-surface/SKILL.md           # probe paths · takeover · buckets · Wayback · Postman
 │   ├── identity-fabric/SKILL.md       # Entra · Okta · ADFS · SAML · M365 · LinkedIn
-│   ├── secrets-and-dorks/SKILL.md     # 48 regexes · 80+ dorks · 9 validators
+│   ├── secrets-and-dorks/SKILL.md     # 48 regexes · 70 dorks · 9 validators
 │   ├── post-discovery/SKILL.md        # JWT · AWS IAM · GitHub · Slack workflows
 │   ├── cloud-and-infra/SKILL.md       # cloud-native · K8s · CI-CD · TLS
 │   ├── people-breach-intel/SKILL.md   # breach · HudsonRock · email · pkg registries
@@ -73,8 +73,6 @@ outrider-recon/
 ├── skills/offensive-osint/scripts/
 │   ├── h1_reference.py               # HackerOne disclosed-reports reference agent (no API key)
 │   └── secret_scan.py                # stdlib-only secret scanner (JSONL output)
-├── scripts/
-│   └── sync-skill-content.sh         # restore full skill content from docs/full-skills/
 ├── docs/
 │   ├── methods/                       # techniques & procedures (probes · CDN bypass · sweeps)
 │   ├── reference/                     # tool directory · install commands · specialty domains
@@ -95,7 +93,7 @@ outrider-recon/
 
 | Doc | Contents |
 |---|---|
-| [`docs/capabilities.md`](docs/capabilities.md) | Full capability index (90+ capabilities across 12 domains) + architecture diagrams |
+| [`docs/capabilities.md`](docs/capabilities.md) | Full capability index (72 capabilities across 12 domains) + architecture diagrams |
 | [`docs/architecture.md`](docs/architecture.md) | Design philosophy · asset-graph model · confidence/severity/detectability models · sidecar coordination |
 | [`docs/coverage.md`](docs/coverage.md) | Practitioner-coverage breakdown by archetype + engagement phase |
 | [`docs/installation.md`](docs/installation.md) | Symlink installs and multi-environment install patterns |

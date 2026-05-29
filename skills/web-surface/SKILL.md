@@ -78,7 +78,7 @@ openapi.yaml           openapi/v1
 openapi/v3             docs
 redoc                  rapidoc
 api/docs               api/documentation
-.well-known/openapi
+api/swagger.yaml       .well-known/openapi
 ```
 
 Reachable Swagger/OpenAPI spec without auth → **HIGH** `LEAKY_API_SPEC`.

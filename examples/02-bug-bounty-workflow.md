@@ -15,7 +15,7 @@ End-to-end walkthrough from program selection through report submission.
 
 > I'm picking a new HackerOne program. Walk me through how to read the scope quickly to find the highest-value attack surface.
 
-**Claude pulls:** `osint-methodology` §10 (bug-bounty pivot mode) + §30.1 (HackerOne basics).
+**Claude pulls:** `osint-methodology` §10 (bug-bounty pivot mode) + `osint-methodology` §13 (HackerOne basics).
 
 **Process:**
 
@@ -36,7 +36,7 @@ End-to-end walkthrough from program selection through report submission.
 
 > Authorized H1 program: scope is `*.acme.example` excluding `legacy.acme.example` and `*.staff-only.acme.example`. Plan a 1-day standard recon with H1 reporting in mind.
 
-**Claude pulls:** `osint-methodology` §7.6 (1-day standard profile) + §7.5 (priority order) + §10.1 (medium-org tactics).
+**Claude pulls:** `osint-methodology` §7.2 (1-day standard profile) + §7.1 (priority order) + §10 (medium-org tactics).
 
 **Run:** Stage 1–3 of the standard pipeline (see [`01-quick-recon.md`](01-quick-recon.md) for the rapid version; expand scope here).
 
@@ -61,18 +61,18 @@ Asset graph:
 
 > Triage these assets for highest-ROI bug-bounty value. Show priority order.
 
-**Claude pulls:** `osint-methodology` §8.5 (asset-level triage rules) + §7.5 (priority order).
+**Claude pulls:** `osint-methodology` §8.2 (asset-level triage rules) + §7.1 (priority order).
 
 **Output:**
 
 1. Breach lookup on 100 emails (HudsonRock free).
-2. GitHub recon on the org's 30 public repos (`offensive-osint` §19 dorks + secret catalog).
+2. GitHub recon on the org's 30 public repos (`secrets-and-dorks` §3 dorks + secret catalog).
 3. Triage 80 webapps: dev/staging hosts first (lower defenses), then admin/dashboard paths.
-4. Probe 80 webapps for Swagger/OpenAPI (`offensive-osint` §16.1 28-path wordlist).
-5. Probe for GraphQL (§16.2 13-path).
-6. Run §16.5 always-on HTTP checks against every alive webapp.
+4. Probe 80 webapps for Swagger/OpenAPI (`web-surface` §1 28-path wordlist).
+5. Probe for GraphQL (`web-surface` §2 13-path).
+6. Run `web-surface` §5 always-on HTTP checks against every alive webapp.
 7. JS deep analysis on ~40 webapps (sourcemaps, secrets, endpoints).
-8. SSO mapping (Entra tenant already confirmed; deep enum via §22.8).
+8. SSO mapping (Entra tenant already confirmed; deep enum via `identity-fabric` §1.8).
 9. Mobile attack surface on 5 apps (ownership-confidence + APK static analysis).
 
 ---
@@ -85,7 +85,7 @@ Suppose you find: **Unauthenticated POST `/api/v1/users` on `api.acme.example` r
 
 > Found unauth POST /api/v1/users on api.acme.example returning 200 with new user data. How serious is this and what should I check next?
 
-**Claude pulls:** `offensive-osint` §20 (endpoint interest score), §39 (attack-path hints), §40 (severity matrix).
+**Claude pulls:** `analysis-and-reporting` §1 (endpoint interest score), `analysis-and-reporting` §3 (attack-path hints), `analysis-and-reporting` §4 (severity matrix).
 
 **Score evaluation:**
 - Unauth write → +40
@@ -94,7 +94,7 @@ Suppose you find: **Unauthenticated POST `/api/v1/users` on `api.acme.example` r
 
 If verb tampering or schema leak adds → could push to ≥70 → HIGH/CRITICAL.
 
-**Attack-path hint** (§39):
+**Attack-path hint** (`analysis-and-reporting` §3):
 > *"Unauthenticated POST `/api/v1/users` — try IDOR + privilege escalation; check whether numeric IDs are sequential or guessable."*
 
 **Next probes:**
@@ -114,7 +114,7 @@ If verb tampering or schema leak adds → could push to ≥70 → HIGH/CRITICAL.
 
 > The endpoint creates real users in production. What's the safe way to confirm impact without doing damage?
 
-**Claude pulls:** `osint-methodology` §6.3 (validator discipline) + §28.3 (validation discipline for vuln finds).
+**Claude pulls:** `osint-methodology` §6.3 (validator discipline).
 
 **Approach:**
 - Create ONE user with a sock-puppet email (e.g., `bb-test-<random>@<your-private-domain>`).
@@ -134,7 +134,7 @@ If the program forbids creating real records, document the request shape + respo
 
 > Write the H1 report for: unauth POST /api/v1/users on api.acme.example creates accounts without authorization. Reproduced 3x. Created users are visible via GET /api/v1/users. CVSS-base estimate AV:N/AC:L/PR:N/UI:N/S:U/C:H/I:H/A:N = 9.4.
 
-**Claude pulls:** `osint-methodology` §30.2 (report structure) + §30.3 (severity inference).
+**Claude pulls:** `osint-methodology` §13 (report structure + severity inference) + `report-template` §1.
 
 **Output:**
 
@@ -216,14 +216,15 @@ Affected component
 ## Citation
 
 This example follows:
-- `osint-methodology` §7.5, §7.6 (pipeline + 1-day profile)
-- `osint-methodology` §8.5 (asset triage)
+- `osint-methodology` §7.1, §7.2 (pipeline + 1-day profile)
+- `osint-methodology` §8.2 (asset triage)
 - `osint-methodology` §10 (bug-bounty pivot mode)
-- `osint-methodology` §22.8 (M365 deep — if relevant for the target)
-- `osint-methodology` §28.3 (validation discipline)
-- `osint-methodology` §30.1, §30.2, §30.3 (HackerOne report structure)
-- `offensive-osint` §16.1, §16.2, §16.5 (Swagger / GraphQL / always-on probes)
-- `offensive-osint` §19 (GitHub dorks)
-- `offensive-osint` §20 (endpoint interest score)
-- `offensive-osint` §39 (attack-path hints)
-- `offensive-osint` §40 (severity matrix)
+- `identity-fabric` §1.8 (M365 deep — if relevant for the target)
+- `osint-methodology` §6.3 (validation discipline)
+- `osint-methodology` §13 (HackerOne report structure + severity inference)
+- `report-template` §1 (bug bounty report template)
+- `web-surface` §1, §2, §5 (Swagger / GraphQL / always-on probes)
+- `secrets-and-dorks` §3 (GitHub dorks)
+- `analysis-and-reporting` §1 (endpoint interest score)
+- `analysis-and-reporting` §3 (attack-path hints)
+- `analysis-and-reporting` §4 (severity matrix)

@@ -57,7 +57,7 @@ curl -sk -A "osint-recon/1.0 (contact@example.com)" "https://bgp.tools/api/ip/8.
 
 ## Reverse DNS Sweep & IPv6 Enumeration
 
-> Extracted from `cloud-and-infra` SKILL.md §7.
+> Reverse DNS and IPv6 enumeration scripts for active sweep operations.
 
 ```bash
 # Single /24

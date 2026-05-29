@@ -74,13 +74,13 @@ Smoke-test scores are **Claude grading itself on tests Claude designed**. Useful
 
 ## What experienced practitioners would say is still missing (within OSINT scope)
 
-If a senior offensive consultant reviewed v2.1 and stayed within OSINT scope, here's what they'd flag as still missing:
+If a senior offensive consultant reviewed v2.3 and stayed within OSINT scope, here's what they'd flag as still missing:
 
 1. **Specific tool-chaining recipes** — "use spiderfoot → export CSV → maltego transforms → asset graph" workflows. We name tools; we don't compose them step-by-step.
 2. **Recon-ng / SpiderFoot / Maltego module-by-module configuration** — these are full ecosystems; we treat them as pointers.
 3. **Custom Burp Suite / OWASP ZAP setup for engagements** — the "configure your active proxy for an engagement" guide.
 4. **OPSEC infrastructure as code** — Terraform/Ansible to spin up clean engagement infrastructure (proxy stacks, redirectors).
-5. **Sector-specific deep dives** — §47 is a starting point, not a deep dive (real healthcare RT specialists know HL7 trafficking like a second language).
+5. **Sector-specific deep dives** — `docs/reference/specialty-domains.md` is a starting point, not a deep dive (real healthcare RT specialists know HL7 trafficking like a second language).
 6. **Adversary-emulation playbooks per APT** — "to simulate APT29's external recon, use these specific tools/techniques."
 7. **Continuous-monitoring orchestration** — daily diff scripts, alert pipelines, false-positive tuning.
 8. **Multi-tenant engagement workflow** — how an MSSP runs 30 concurrent ASM engagements without crossing wires.
@@ -95,7 +95,8 @@ These would push coverage to ~95% of OSINT-phase work. Each would add 200–500 
 |---|---|---|
 | v1.0 | ✅ Done | Original framework |
 | v2.0 | ✅ Done | External-red-team posture rewrite |
-| **v2.1** | ✅ Current | Comprehensive expansion (this version) |
+| v2.1 | ✅ Done | Comprehensive expansion |
+| **v2.3** | ✅ Current | Distributed sub-skill architecture (this version) |
 | v2.2 | 🔜 | Continuous-monitoring playbook + multi-tenant workflow + Burp extension recipes |
 | v3.0 | 🔜 | Plugin manifest for one-click Claude Code install + optional MCP server companion |
 

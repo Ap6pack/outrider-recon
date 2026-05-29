@@ -12,13 +12,9 @@ Claude Code looks for skills in `~/.claude/skills/` by default.
 git clone https://github.com/Ap6pack/outrider-recon.git
 cd outrider-recon
 
-# Optional: populate full SKILL.md content from bundled full-skills (one-time after clone)
-./scripts/sync-skill-content.sh
-
-# Copy both skills into your local Claude Code skills directory
+# Copy all skills into your local Claude Code skills directory
 mkdir -p ~/.claude/skills
-cp -r skills/osint-methodology ~/.claude/skills/
-cp -r skills/offensive-osint   ~/.claude/skills/
+cp -r skills/* ~/.claude/skills/
 ```
 
 ### Method 2: Symlink (stays in sync with git pull)
@@ -27,14 +23,13 @@ cp -r skills/offensive-osint   ~/.claude/skills/
 git clone https://github.com/Ap6pack/outrider-recon.git ~/.local/share/outrider-recon
 mkdir -p ~/.claude/skills
 
-ln -sf ~/.local/share/outrider-recon/skills/osint-methodology ~/.claude/skills/osint-methodology
-ln -sf ~/.local/share/outrider-recon/skills/offensive-osint   ~/.claude/skills/offensive-osint
-
-cd ~/.local/share/outrider-recon
-./scripts/sync-skill-content.sh   # one-time
+# Symlink each skill directory
+for skill in ~/.local/share/outrider-recon/skills/*/; do
+  ln -sf "$skill" ~/.claude/skills/
+done
 ```
 
-Then `git -C ~/.local/share/outrider-recon pull && ./scripts/sync-skill-content.sh` periodically.
+Then `git -C ~/.local/share/outrider-recon pull` periodically to stay current.
 
 ### Verify install
 
@@ -44,14 +39,14 @@ Start a new Claude Code session and type:
 What ports should I probe to find Swagger or OpenAPI specs on a webapp?
 ```
 
-Claude should pull the 28-path Swagger wordlist from the `offensive-osint` skill. If it doesn't, see [troubleshooting](#troubleshooting) below.
+Claude should pull the Swagger wordlist from the `web-surface` skill. If it doesn't, see [troubleshooting](#troubleshooting) below.
 
 ## Claude.ai (Pro / Team / Enterprise)
 
 1. Open https://claude.ai
 2. Create a new Project (or open an existing one).
 3. Click **Add knowledge** → **Files**.
-4. Upload both `skills/osint-methodology/SKILL.md` and `skills/offensive-osint/SKILL.md`.
+4. Upload the router skill (`skills/offensive-osint/SKILL.md`) and the methodology skill (`skills/osint-methodology/SKILL.md`) at minimum. For full coverage, upload all 11 `skills/*/SKILL.md` files.
 5. (Optional) Also upload `tests/smoke-test-prompts.md` for self-test reference.
 6. Save.
 
@@ -59,26 +54,28 @@ In any conversation within that Project, the skills are available as system know
 
 ## Claude API (Anthropic SDK)
 
-Attach the skill content as part of the system prompt:
+Attach the skill content as part of the system prompt. At minimum, include the router and methodology; for full coverage, load all 11 skills:
 
 ```python
 from anthropic import Anthropic
+from pathlib import Path
 
 client = Anthropic()
 
-with open("skills/osint-methodology/SKILL.md") as f:
-    methodology = f.read()
-with open("skills/offensive-osint/SKILL.md") as f:
-    arsenal = f.read()
+# Load all skill files (~2,997 lines total)
+skills_dir = Path("skills")
+skill_blocks = []
+for skill_path in sorted(skills_dir.glob("*/SKILL.md")):
+    skill_name = skill_path.parent.name
+    content = skill_path.read_text()
+    skill_blocks.append(f"=== SKILL: {skill_name} ===\n{content}")
+
+all_skills = "\n\n".join(skill_blocks)
 
 system_prompt = f"""You are an OSINT recon assistant for authorized red-team engagements.
-You have access to two skills that you should reference whenever relevant:
+You have access to the following skills that you should reference whenever relevant:
 
-=== SKILL: osint-methodology ===
-{methodology}
-
-=== SKILL: offensive-osint ===
-{arsenal}
+{all_skills}
 """
 
 response = client.messages.create(
@@ -116,32 +113,21 @@ The skill's `triggers:` list controls auto-activation. If your prompt's wording 
 - Try rephrasing with a phrase from the SKILL.md `triggers:` list.
 - If your phrasing is a common practitioner term, [open an issue](https://github.com/Ap6pack/outrider-recon/issues) to add it.
 
-### "I get the structured-outline SKILL.md, not the full content"
-
-By default we ship structured-outline SKILL.md files (small, fast to load). To get full inline content:
-
-```bash
-cd <repo>
-./scripts/sync-skill-content.sh
-```
-
-This populates `skills/*/SKILL.md` with the full content from `docs/full-skills/*.SKILL.full.md`.
-
 ### "Skill is too large for my model's context"
 
-Both skills together are ~5,500 lines / ~150 KB. This fits comfortably in modern Claude context windows (200K+). If you're using an older model with smaller context:
+All 11 skills together are ~2,997 lines. This fits comfortably in modern Claude context windows (200K+). If you're using an older model with smaller context:
 
-- Use the structured-outline SKILL.md files (don't run sync-skill-content.sh).
-- Or attach only one skill at a time, depending on the task.
+- Attach only the router (`offensive-osint`) + methodology (`osint-methodology`) for core functionality.
+- Or attach only the sub-skills relevant to the task.
 - Or run a model with larger context (Claude Sonnet 4.6+, Opus 4.6+).
 
 ### "I want to filter the skill content"
 
-Edit `skills/<skill-name>/SKILL.md` directly. Both files are plain Markdown. You can comment out sections you don't need or split them into multiple smaller skills.
+Edit `skills/<skill-name>/SKILL.md` directly. All files are plain Markdown. You can comment out sections you don't need or split them into multiple smaller skills.
 
 ## Verifying skill version
 
-Both SKILL.md files declare `version:` in the YAML frontmatter. Current: `2.1`. Check via:
+All SKILL.md files declare `version:` in the YAML frontmatter. Current: `2.3`. Check via:
 
 ```bash
 grep "^version:" skills/*/SKILL.md
@@ -150,7 +136,17 @@ grep "^version:" skills/*/SKILL.md
 ## Uninstalling
 
 ```bash
-rm -rf ~/.claude/skills/osint-methodology ~/.claude/skills/offensive-osint
+rm -rf ~/.claude/skills/analysis-and-reporting \
+       ~/.claude/skills/cloud-and-infra \
+       ~/.claude/skills/identity-fabric \
+       ~/.claude/skills/offensive-osint \
+       ~/.claude/skills/osint-methodology \
+       ~/.claude/skills/people-breach-intel \
+       ~/.claude/skills/post-discovery \
+       ~/.claude/skills/recon-asset-discovery \
+       ~/.claude/skills/report-template \
+       ~/.claude/skills/secrets-and-dorks \
+       ~/.claude/skills/web-surface
 ```
 
 Or remove the symlinks if you used method 2 above.

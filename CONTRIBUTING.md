@@ -10,7 +10,7 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
 | **HIGH** | Modern secret patterns | New API key formats from any service (Linear, Loops, Resend, Anthropic Workspace, Vercel deployment tokens, etc.) |
 | **HIGH** | Real-world examples for `examples/` | End-to-end engagement walk-throughs (anonymized) |
 | **HIGH** | Bug reports | Prompts that don't trigger the right skill section, or trigger the wrong one |
-| MEDIUM | Sector-specific deep dives | Healthcare practitioners, finance practitioners, ICS specialists know their domain better than the starter notes in §47 |
+| MEDIUM | Sector-specific deep dives | Healthcare practitioners, finance practitioners, ICS specialists know their domain better than the starter notes in `docs/reference/specialty-domains.md` + `analysis-and-reporting` §5 |
 | MEDIUM | Wordlist refreshes | New paths discovered in the wild |
 | MEDIUM | Tooling install one-liners | When new tools mature |
 | LOW | Translations | Non-English versions for international red-team teams |
@@ -41,7 +41,7 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
 5. **Commit with a clear message:**
    - Format: `<type>(<scope>): <subject>`
    - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-   - Examples: `feat(arsenal): add Zscaler vendor fingerprint to §16.16`, `fix(methodology): correct EPSS threshold tier in §28.2`, `docs(readme): update capability index for v2.2`
+   - Examples: `feat(web-surface): add Zscaler vendor fingerprint to §10`, `fix(people-breach-intel): correct EPSS threshold tier in §4`, `docs(readme): update capability index for v2.3`
 6. **Push and open a PR** to `Ap6pack/outrider-recon` with:
    - Clear description of what changed and why.
    - Reference any related issues.
@@ -51,8 +51,8 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
 
 ### Markdown conventions
 
-- Use `##` for top-level sections (numbered: `## 16. Pre-built Wordlists`).
-- Use `###` for subsections (numbered: `### 16.13 Copy-Paste Probes`).
+- Use `##` for top-level sections (numbered: `## 1. Cloud-Native Service Fingerprints`).
+- Use `###` for subsections (numbered: `### 1.1 crt.sh Down? Fallback Chain`).
 - Code blocks must specify language: ```` ```bash ````, ```` ```python ````, ```` ```regex ```` etc.
 - Tables for structured data; bulleted lists for unordered enumerations.
 - Bold for emphasis on first mention of a key concept; avoid otherwise.
@@ -64,7 +64,7 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
 - **Operator-facing.** Assume the reader is an experienced practitioner; don't over-explain basics.
 - **Detectability-aware.** When introducing a probe technique, tag its detectability (low/medium/high).
 - **Confidence-aware.** When introducing a finding pattern, tag its confidence level (TENTATIVE/FIRM/CONFIRMED).
-- **Severity-anchored.** New finding categories should map to the §9 / §40 severity rubric.
+- **Severity-anchored.** New finding categories should map to `osint-methodology` §9 / `analysis-and-reporting` §4 severity rubric.
 
 ### Trigger discipline
 
@@ -75,9 +75,9 @@ When you add a new capability, add at least one trigger phrase to the YAML front
 If you have OSINT experience, please review open PRs. Specifically:
 
 - **Vendor fingerprint accuracy** — confirm the path / fingerprint pattern works against a real (authorized) target.
-- **Severity assignment** — does the proposed severity match the §9 rubric and §40 worked examples?
+- **Severity assignment** — does the proposed severity match `osint-methodology` §9 rubric and `analysis-and-reporting` §4 worked examples?
 - **Detectability tag** — accurate? Conservative?
-- **Cross-skill consistency** — does a methodology change have a corresponding arsenal reference and vice versa?
+- **Cross-skill consistency** — does a methodology change have a corresponding sub-skill reference and vice versa?
 
 ## License
 

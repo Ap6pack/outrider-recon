@@ -102,7 +102,7 @@ curl -sk -A "Mozilla/5.0" "https://anubisdb.com/anubis/subdomains/${D}" | jq -r 
 
 ## 2. Common-Prefix Wordlist
 
-Passive enum misses 20–40% of high-value subdomains. Pair with active prefix probe when authorized (detectability: low — single A-record query per host).
+119 prefixes. Passive enum misses 20-40% of high-value subdomains. Pair with active prefix probe when authorized (detectability: low -- single A-record query per host).
 
 ```
 www mail webmail owa autodiscover ftp vpn sslvpn gateway api app portal
@@ -110,6 +110,12 @@ login sso idp iam identity accounts oauth auth adfs admin intranet hr
 sap erp crm support help status grafana kibana docs wiki jira jenkins
 gitlab dev test staging stg qa uat sandbox preprod preview careers jobs
 eapps old legacy beta tender suppliers procurement
+cdn static img images assets media files download upload search shop
+store pay payment billing invoice ticket board chat meet video webinar
+register signup sso-proxy proxy relay bounce mx smtp imap pop
+ns1 ns2 ns3 dns ntp ldap radius vpn2 remote rdp citrix bastion jump
+db mysql postgres redis mongo elastic kafka rabbit queue worker cron
+monitor prometheus alertmanager vault consul log syslog splunk
 ```
 
 ### 2.1 Wordlist Sources
@@ -155,23 +161,45 @@ for rtype in A AAAA MX TXT NS SOA CAA SRV CNAME PTR; do
 done
 ```
 
-**TXT verification tokens → SaaS tenancy inference (selected):**
+**TXT verification tokens → SaaS tenancy inference (35 patterns):**
 
 | TXT pattern | SaaS / service |
 |---|---|
 | `google-site-verification=<token>` | Google Workspace |
 | `MS=ms<digits>` | Microsoft 365 |
-| `atlassian-domain-verification=<token>` | Atlassian Cloud |
-| `slack-domain-verification=<token>` | Slack Enterprise Grid |
-| `zscaler-verification-<id>-<date>-<random>` | Zscaler (ZIA/ZPA/ZDX) |
-| `salesforce-domain-verification=<token>` | Salesforce |
-| `workday-domain-verification=<token>` | Workday (HR + Finance) |
-| `hubspot-domain-verification=<token>` | HubSpot CRM |
-| `zoom_verify_<id>` | Zoom |
+| `adobe-idp-site-verification=<token>` | Adobe |
+| `amazonses:<token>` | AWS SES (alternate form) |
 | `_amazonses=<token>` | AWS SES |
+| `apple-domain-verification=<token>` | Apple |
+| `atlassian-domain-verification=<token>` | Atlassian Cloud |
+| `calendly-site-verification=<token>` | Calendly |
+| `cisco-ci-domain-verification=<token>` | Cisco Webex |
+| `citrix-verification-code=<token>` | Citrix |
+| `docker-verification=<token>` | Docker |
 | `docusign=<token>` | DocuSign |
-| `intercom-verification=<token>` | Intercom |
+| `facebook-domain-verification=<token>` | Facebook / Meta |
+| `github-verification=<token>` | GitHub |
 | `gitlab-domain-verification=<token>` | GitLab |
+| `hubspot-developer-verification=<token>` | HubSpot (developer) |
+| `hubspot-domain-verification=<token>` | HubSpot CRM |
+| `intercom-verification=<token>` | Intercom |
+| `logmein-verification-code=<token>` | LogMeIn / GoTo |
+| `miro-verification=<token>` | Miro |
+| `onetrust-domain-verification=<token>` | OneTrust |
+| `pinterest-site-verification=<token>` | Pinterest |
+| `salesforce-domain-verification=<token>` | Salesforce |
+| `slack-domain-verification=<token>` | Slack Enterprise Grid |
+| `smartsheet-site-validation=<token>` | Smartsheet |
+| `sophos-domain-verification=<token>` | Sophos |
+| `status-page-domain-verification=<token>` | Statuspage / Atlassian |
+| `stripe-verification=<token>` | Stripe |
+| `teamviewer-sso-verification=<token>` | TeamViewer |
+| `twilio-domain-verification=<token>` | Twilio |
+| `workday-domain-verification=<token>` | Workday (HR + Finance) |
+| `yandex-verification:<token>` | Yandex |
+| `zoho-verification=<token>` | Zoho |
+| `zoom_verify_<id>` | Zoom |
+| `zscaler-verification-<id>-<date>-<random>` | Zscaler (ZIA/ZPA/ZDX) |
 
 Each discovered tenancy is a separate attack surface (own credentials, own MFA posture).
 

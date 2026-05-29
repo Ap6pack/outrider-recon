@@ -12,8 +12,8 @@ A single mega-skill of ~4,200 lines would have noisier triggering and worse retr
 ```mermaid
 flowchart TD
     U["USER ASKS:<br/><i>'How do I find an origin behind Cloudflare?'</i>"]
-    M["📘 methodology §27<br/>technique catalog + confidence rules"]
-    A["🛠️ arsenal §16.15<br/>actual curl commands"]
+    M["📘 osint-methodology §6.4 + docs/methods/cdn-bypass-techniques.md<br/>technique catalog + confidence rules"]
+    A["🛠️ cloud-and-infra §5 + docs/methods/cdn-bypass-techniques.md<br/>actual curl commands"]
     O["✅ Composed answer"]
     U --> M
     U --> A
@@ -160,7 +160,7 @@ flowchart LR
     style A fill:#7c3aed,color:#fff
 ```
 
-Patterns documented in `methodology` §24.2.
+Patterns documented in `analysis-and-reporting` §6.
 
 ## Validator discipline
 
@@ -202,7 +202,7 @@ Current: `2.3`.
 
 ## Renumbering policy
 
-When new top-level sections are added in a minor release, existing sections may renumber. The CHANGELOG records mappings (e.g., "v2.0 §27 Self-Test → v2.1 §32 Self-Test").
+When new top-level sections are added in a minor release, existing sections may renumber. The CHANGELOG records mappings.
 
 Subsection numbering is generally additive (§7.6 added without renumbering §7.5).
 
@@ -240,7 +240,7 @@ flowchart LR
     R --> S1["🔍 recon-asset-discovery<br/><i>subdomains · DNS · ASN · CT</i>"]
     R --> S2["🌐 web-surface<br/><i>probes · Swagger · GraphQL · Wayback</i>"]
     R --> S3["🪪 identity-fabric<br/><i>Entra · Okta · ADFS · M365 · LinkedIn</i>"]
-    R --> S4["🔑 secrets-and-dorks<br/><i>48 regexes · 80+ dorks · validators</i>"]
+    R --> S4["🔑 secrets-and-dorks<br/><i>48 regexes · 70 dorks · validators</i>"]
     R --> S5["⚡ post-discovery<br/><i>JWT · AWS IAM · GitHub · Slack enum</i>"]
     R --> S6["☁️ cloud-and-infra<br/><i>cloud-native · K8s · CI-CD</i>"]
     R --> S7["👥 people-breach-intel<br/><i>breach · HudsonRock · crypto · media</i>"]
@@ -302,6 +302,6 @@ flowchart TD
 
 ## Engagement-platform agnostic
 
-These skills are extracted from operational tradecraft accumulated across external attack-surface engagements. The 90+ capabilities generalize to any OSINT engagement and slot into any ASM / ticketing / asset-graph platform you already use — or none.
+These skills are extracted from operational tradecraft accumulated across external attack-surface engagements. The 72 capabilities generalize to any OSINT engagement and slot into any ASM / ticketing / asset-graph platform you already use -- or none.
 
 Use the skills standalone (paste a SKILL.md into a Claude Project) or wired into your own pipeline.

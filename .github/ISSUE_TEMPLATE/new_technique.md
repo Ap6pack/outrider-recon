@@ -8,15 +8,15 @@ assignees: ''
 
 ## Type of addition
 
-- [ ] Vendor product fingerprint (target arsenal §16.16)
-- [ ] Secret pattern (target arsenal §17)
-- [ ] Dork template (target arsenal §18)
-- [ ] Wordlist entry (target arsenal §16.x)
-- [ ] Cloud-native service fingerprint (target arsenal §16.17)
-- [ ] Identity-fabric endpoint (target arsenal §22 or methodology §11)
-- [ ] Validator (target arsenal §23)
-- [ ] Attack-path hint template (target arsenal §39)
-- [ ] Severity-matrix worked example (target arsenal §40)
+- [ ] Vendor product fingerprint (target: web-surface §10)
+- [ ] Secret pattern (target: secrets-and-dorks §1)
+- [ ] Dork template (target: secrets-and-dorks §2)
+- [ ] Wordlist entry (target: recon-asset-discovery §2)
+- [ ] Cloud-native service fingerprint (target: cloud-and-infra §1)
+- [ ] Identity-fabric endpoint (target: identity-fabric §1)
+- [ ] Validator (target: secrets-and-dorks §4)
+- [ ] Attack-path hint template (target: analysis-and-reporting §3)
+- [ ] Severity-matrix worked example (target: analysis-and-reporting §4)
 - [ ] Other: ___________
 
 ## Concrete addition

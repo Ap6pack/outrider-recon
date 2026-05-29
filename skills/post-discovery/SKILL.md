@@ -43,7 +43,7 @@ triggers:
 
 **Gating rules:** Prerequisites 1-2 are hard gates. This skill is NOT read-only reconnaissance — it enumerates authenticated access. No workflow runs without both gates passing.
 
-**Chain to:** Feed enumeration results back to `analysis-and-reporting` for severity scoring and attack-path hints. Feed to `osint-methodology` §16 for client deliverable generation.
+**Chain to:** Feed enumeration results back to `analysis-and-reporting` for severity scoring and attack-path hints. Feed to `osint-methodology` §14 for client deliverable generation.
 
 ---
 
@@ -244,6 +244,6 @@ curl -sk -m 10 -H "$H" https://api.openai.com/v1/fine_tuning/jobs | jq .
 
 1. Find the consuming domain (where in JS bundle did the key appear? what URL is the bundle served from?).
 2. Check the API docs of the inferred service.
-3. If the key matches a known regex (§17 of secrets-and-dorks), use vendor-specific scope check.
+3. If the key matches a known regex (`secrets-and-dorks` §1), use vendor-specific scope check.
 4. If unknown service, search GitHub: `gh search code "<prefix>" --type=code`.
 5. Identify scope before validating; some keys are write-broad on first use.

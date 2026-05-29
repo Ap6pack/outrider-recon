@@ -9,8 +9,17 @@ assignees: ''
 ## Which skill?
 
 - [ ] `osint-methodology`
-- [ ] `offensive-osint`
-- [ ] Both / cross-cutting
+- [ ] `offensive-osint` (router)
+- [ ] `recon-asset-discovery`
+- [ ] `web-surface`
+- [ ] `identity-fabric`
+- [ ] `secrets-and-dorks`
+- [ ] `post-discovery`
+- [ ] `cloud-and-infra`
+- [ ] `people-breach-intel`
+- [ ] `analysis-and-reporting`
+- [ ] `report-template`
+- [ ] Cross-cutting
 
 ## Proposed section / capability
 
@@ -22,9 +31,9 @@ Why this matters for external red-team OSINT work. Real-world example helps.
 
 ## Proposed location
 
-- New top-level section (e.g., §50)?
-- New subsection (e.g., §16.24)?
-- Expansion to existing section (which one)?
+- New section in skill: __________?
+- New subsection (e.g., §1.x) in skill: __________?
+- Expansion to existing section (which skill and section)?
 
 ## Sketch of content
 

@@ -58,7 +58,7 @@ triggers:
 | **AWS Lambda Function URL** | `*.lambda-url.<region>.on.aws` | Direct invocation; check IAM auth posture |
 | **AWS App Runner** | `*.<region>.awsapprunner.com` | Managed container |
 | **AWS API Gateway** | `*.execute-api.<region>.amazonaws.com` | REST/HTTP/WebSocket; check authorizer |
-| **AWS CloudFront** | `d{14}\.cloudfront\.net` | Distribution; find origin via §16.15 |
+| **AWS CloudFront** | `d{14}\.cloudfront\.net` | Distribution; find origin via `docs/methods/cdn-bypass-techniques.md` |
 | **AWS ALB / ELB** | `*.elb.<region>.amazonaws.com` | Behind = EC2 / ECS |
 | **AWS Amplify** | `*.amplifyapp.com` | Static + Lambda backend |
 | **Google Cloud Run** | `*.run.app` (and `*.<region>.run.app`) | Check public-vs-IAM auth |
@@ -105,6 +105,8 @@ triggers:
 | Quay (Red Hat) | `https://quay.io/search?q=<target-keyword>` |
 | GitHub Container Registry | `https://api.github.com/orgs/<org>/packages?package_type=container` |
 | Amazon ECR Public | `https://gallery.ecr.aws/?searchTerm=<keyword>` |
+| Google Container Registry (GCR) | `https://gcr.io/v2/<project-id>/tags/list` (also try `us.gcr.io`, `eu.gcr.io`, `asia.gcr.io`) |
+| Azure Container Registry (ACR) | `https://<registry>.azurecr.io/v2/_catalog` (anonymous pull if enabled) |
 
 **Per-image scan workflow:**
 ```bash

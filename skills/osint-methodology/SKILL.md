@@ -207,7 +207,7 @@ Defaults: passive by default. Active probes only when (a) explicitly authorized,
 
 ### 6.3 Validator Discipline
 
-When you find a credential in the wild, confirm liveness with **read-only validators only** (`/me`, `auth.test`, `sts:GetCallerIdentity`). Never create, modify, delete, or send. Record `checked_at` UTC + truncated response + scope/account-ID. Concrete validator endpoints for 9 providers live in `offensive-osint` §23.
+When you find a credential in the wild, confirm liveness with **read-only validators only** (`/me`, `auth.test`, `sts:GetCallerIdentity`). Never create, modify, delete, or send. Record `checked_at` UTC + truncated response + scope/account-ID. Concrete validator endpoints for 9 providers live in `secrets-and-dorks` §4.
 
 ### 6.4 Detection-Aware Probing
 
@@ -314,7 +314,7 @@ Every asset carries: `type`, `key` (typed dedup id), `value`, `sources[]`, `conf
 
 - HSTS missing on auth/login/SSO/admin path → **MED → HIGH**.
 - Wildcard CORS + credentials header → **MED → HIGH**.
-- Endpoint interest score ≥70 (companion skill §20) → at least **HIGH**.
+- Endpoint interest score ≥70 (`analysis-and-reporting` §1) → at least **HIGH**.
 - Domain breach ≥10 employees → **CRITICAL** regardless of stale-data caveats.
 - Vendor product version matches CISA KEV → **CRITICAL**.
 
@@ -341,21 +341,21 @@ Every asset carries: `type`, `key` (typed dedup id), `value`, `sources[]`, `conf
 
 The following modules have full implementation detail — probe paths, wordlists, curl one-liners, regexes, and scoring rubrics — in `offensive-osint`. This skill defines *what to do*; that skill defines *how to do it*.
 
-**Identity Fabric Mapping** (`offensive-osint` §22) — Microsoft Entra (OIDC metadata, getuserrealm.srf, GetCredentialType), Okta (slug derivation, /api/v1/authn), ADFS, Google Workspace, generic OIDC (Auth0/Keycloak/Ping/OneLogin/Duo), SAML metadata (5 paths), AWS account-ID extraction, M365 deep surface (Teams federation, SharePoint, OneDrive, OAuth client_id, device-code phishing check, Power Platform).
+**Identity Fabric Mapping** (`identity-fabric` §1) — Microsoft Entra (OIDC metadata, getuserrealm.srf, GetCredentialType), Okta (slug derivation, /api/v1/authn), ADFS, Google Workspace, generic OIDC (Auth0/Keycloak/Ping/OneLogin/Duo), SAML metadata (5 paths), AWS account-ID extraction, M365 deep surface (Teams federation, SharePoint, OneDrive, OAuth client_id, device-code phishing check, Power Platform).
 
-**API & Auth-Map** (`offensive-osint` §16.1–16.2, §20) — 28-path Swagger/OpenAPI wordlist; 13-path GraphQL wordlist; introspection POST body; field-suggestion enumeration when introspection disabled; endpoint interest score 0–100 rubric.
+**API & Auth-Map** (`web-surface` §1–§2, `analysis-and-reporting` §1) — 28-path Swagger/OpenAPI wordlist; 13-path GraphQL wordlist; introspection POST body; field-suggestion enumeration when introspection disabled; endpoint interest score 0–100 rubric.
 
-**JavaScript Deep Analysis** (`offensive-osint` §13 pattern) — sourcemap detection; secret catalog over JS bodies and `sourcesContent[]`; three-tier endpoint-extraction regex; internal-host leakage patterns; Next.js manifest parsing.
+**JavaScript Deep Analysis** (`web-surface` §6–§8) — sourcemap detection; secret catalog over JS bodies and `sourcesContent[]`; three-tier endpoint-extraction regex; internal-host leakage patterns; Next.js manifest parsing.
 
-**Mobile Attack Surface** (`offensive-osint` §21) — Android/iOS app discovery; ownership confidence 0–100 scoring; APK static analysis; manifest misconfig findings; Firebase canonical probe.
+**Mobile Attack Surface** (`analysis-and-reporting` §2) — Android/iOS app discovery; ownership confidence 0–100 scoring; APK static analysis; manifest misconfig findings; Firebase canonical probe.
 
-**Cloud Attack Surface** (`offensive-osint` §16.8) — S3/GCS/Azure bucket permutation (6 prefixes × 15 suffixes); HEAD → GET probe technique; cloud-native fingerprints (Lambda, Cloud Run, Azure Functions, Vercel, Netlify, Workers); K8s/etcd/kubelet/container registry exposure.
+**Cloud Attack Surface** (`web-surface` §12 + `cloud-and-infra` §1–§2) — S3/GCS/Azure bucket permutation (6 prefixes × 15 suffixes); HEAD → GET probe technique; cloud-native fingerprints (Lambda, Cloud Run, Azure Functions, Vercel, Netlify, Workers); K8s/etcd/kubelet/container registry exposure.
 
-**WAF / CDN Bypass & Origin Discovery** (`offensive-osint` §16.15) — DNS history pivot; cert SAN pivot; favicon mmh3 + JARM clustering; direct IP probe with Host header; mail/ftp/cpanel exception; error page leakage; email-header bounce trick; confidence rules.
+**WAF / CDN Bypass & Origin Discovery** (`docs/methods/cdn-bypass-techniques.md`) — DNS history pivot; cert SAN pivot; favicon mmh3 + JARM clustering; direct IP probe with Host header; mail/ftp/cpanel exception; error page leakage; email-header bounce trick; confidence rules.
 
-**Vulnerability Prioritization** (`offensive-osint` §29.2) — NVD, EPSS, CISA KEV, ExploitDB, Metasploit, InTheWild.io, Trickest CVE→POC; 9-signal scoring rubric → P0/P1/P2/P3 tiers.
+**Vulnerability Prioritization** (`people-breach-intel` §4 + `docs/reference/tool-directory.md`) — NVD, EPSS, CISA KEV, ExploitDB, Metasploit, InTheWild.io, Trickest CVE→POC; 9-signal scoring rubric → P0/P1/P2/P3 tiers.
 
-**Phishing Infrastructure** (`offensive-osint` §16.14 for email security) — typosquat shortlists via dnstwist; subdomain takeover for trusted-domain phishing; email spoof feasibility matrix (SPF × DMARC); pretext development from OSINT (job titles, recent events, vendor relationships, GitHub commits).
+**Phishing Infrastructure** (`web-surface` §9) — typosquat shortlists via dnstwist; subdomain takeover for trusted-domain phishing; email spoof feasibility matrix (SPF × DMARC); pretext development from OSINT (job titles, recent events, vendor relationships, GitHub commits).
 
 ---
 

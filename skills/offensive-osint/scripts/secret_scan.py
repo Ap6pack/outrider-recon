@@ -88,6 +88,7 @@ PATTERNS = [
 
     # Cloud infra
     ("CLOUDFLARE_API",       SEV_CRITICAL, "infra_api",   r"(?i)cf[_\-]?api[_\-]?key['\"\s:=]+([a-f0-9]{37})"),
+    ("CLOUDFLARE_API_TOKEN", SEV_HIGH,     "infra_api",   r"(?i)(?=.*cloudflare)\b[A-Za-z0-9_\-]{40}\b"),
     ("DIGITALOCEAN",         SEV_HIGH,     "infra_api",   r"\bdop_v1_[a-f0-9]{64}\b"),
 
     # Package registries

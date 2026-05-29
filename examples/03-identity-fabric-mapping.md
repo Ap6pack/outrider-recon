@@ -29,7 +29,7 @@ For an M365 shop, the identity fabric includes:
 
 > Confirm acme.example is on Microsoft 365 and extract the tenant GUID.
 
-**Claude pulls:** `osint-methodology` §11.2 + `offensive-osint` §22.1.
+**Claude pulls:** `osint-methodology` §11 + `identity-fabric` §1.1.
 
 **Run:**
 
@@ -75,7 +75,7 @@ Look for:
 
 > Is Teams federation enabled? What's the impact?
 
-**Claude pulls:** `osint-methodology` §11.10 + `offensive-osint` §22.8.
+**Claude pulls:** `identity-fabric` §1.8 (M365 deep enumeration).
 
 **Run:**
 
@@ -202,7 +202,7 @@ curl -sk -m 10 -I "https://make.powerapps.com/environments" -w '%{http_code}\n'
 
 > Tenant GUID confirmed (12345678-1234-1234-1234-123456789012). I have 30 employee emails from Hunter.io. Cross-reference for SSO_EXPOSURE.
 
-**Claude pulls:** `osint-methodology` §22 (breach × identity correlation).
+**Claude pulls:** `osint-methodology` §12 (breach × identity correlation).
 
 **Run:**
 
@@ -230,7 +230,7 @@ grep -c '"total":[1-9]' evidence/breach-by-email.jsonl
 
 > Compile identity-fabric findings from this engagement: tenant confirmed, Teams federation open, 8 employees in HudsonRock corpus, 2 custom OAuth client_ids found in JS bundles, device-code endpoint enabled.
 
-**Claude pulls:** `osint-methodology` §31.2 (per-finding report card).
+**Claude pulls:** `osint-methodology` §14 (per-finding report card) + `report-template` §2.
 
 **Output (per finding):**
 
@@ -244,12 +244,12 @@ grep -c '"total":[1-9]' evidence/breach-by-email.jsonl
 ## Citation
 
 This example follows:
-- `osint-methodology` §11.2 (Microsoft Entra fingerprinting)
-- `osint-methodology` §11.10 (Microsoft 365 deep surface)
-- `osint-methodology` §22 (Breach × identity correlation)
-- `osint-methodology` §31.2 (per-finding report card)
-- `offensive-osint` §22.1 (Entra concrete endpoints)
-- `offensive-osint` §22.8 (M365 deep enumeration)
-- `offensive-osint` §16.13 (curl probes)
-- `offensive-osint` §15.1 (breach severity mapping)
-- `offensive-osint` §15.2 (SSO_EXPOSURE finding)
+- `osint-methodology` §11 (companion skill pointers — Microsoft Entra fingerprinting)
+- `identity-fabric` §1.8 (Microsoft 365 deep enumeration)
+- `osint-methodology` §12 (Breach × identity correlation)
+- `osint-methodology` §14 (per-finding report card)
+- `report-template` §2 (client report template)
+- `identity-fabric` §1.1 (Entra concrete endpoints)
+- `docs/methods/copy-paste-probes.md` (curl probes)
+- `people-breach-intel` §1.2 (breach severity mapping)
+- `people-breach-intel` §1.3 (SSO_EXPOSURE finding)

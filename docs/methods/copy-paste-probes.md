@@ -118,7 +118,7 @@ Pagination via `from` (0, 100, 200...). Run secret catalog over every env var, p
 curl -sk "https://api.stackexchange.com/2.3/search/advanced?site=stackoverflow.com&q=target.example&filter=withbody&pagesize=100"
 ```
 
-Extract code blocks with `<pre><code>([\s\S]*?)</code></pre>`, run secret catalog. Also check: `serverfault.com`, `dba.stackexchange.com`, `devops.stackexchange.com`.
+Extract code blocks with `<pre><code>([\s\S]*?)</code></pre>`, run secret catalog. Also check: `serverfault.com`, `dba.stackexchange.com`, `devops.stackexchange.com`, `security.stackexchange.com`, `superuser.com`, `unix.stackexchange.com`, `networkengineering.stackexchange.com`.
 
 ---
 
