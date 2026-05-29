@@ -85,7 +85,7 @@ outrider-recon/
 │   ├── installation.md
 │   └── usage.md
 ├── examples/                          # 4 end-to-end engagement walk-throughs
-├── tests/smoke-test-prompts.md        # 40-prompt self-evaluation
+├── tests/smoke-test-prompts.md        # 43-prompt self-evaluation
 ├── CLAUDE.md.example                  # copy to CLAUDE.md and customise for your engagement
 └── assets/outrider-recon-banner.svg
 ```
@@ -104,7 +104,7 @@ outrider-recon/
 | [`docs/methods/`](docs/methods/) | Techniques & procedures: copy-paste probes, CDN bypass, active sweeps, anti-patterns, evidence preservation, continuous monitoring, multi-tenant workflow, Burp/ZAP setup |
 | [`docs/reference/`](docs/reference/) | Tool directory, install commands, specialty domain guides (healthcare, finance, ICS, IoT, government) |
 | [`examples/`](examples/) | 4 end-to-end engagement walk-throughs (quick recon · bug-bounty · M365 deep · secret hunting) |
-| [`tests/smoke-test-prompts.md`](tests/smoke-test-prompts.md) | 40-prompt self-evaluation suite |
+| [`tests/smoke-test-prompts.md`](tests/smoke-test-prompts.md) | 43-prompt self-evaluation suite |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Pull-request guidelines |
 

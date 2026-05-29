@@ -28,6 +28,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **Three-layer content separation.** Skill files (SKILL.md) now contain only agent-executable content — behavioral contracts, API endpoints, regex patterns, scoring rubrics, decision logic. Techniques and procedures moved to `docs/methods/`. Tool directories and reference material moved to `docs/reference/`.
 - **Behavioral contracts added to all 11 skills.** Every SKILL.md now starts with a standardized contract: when triggered → execute steps → output format → severity rules → gating rules → chain to next skill.
+- **Removed obsolete `scripts/sync-skill-content.sh`** — the two-tier content model (stubs + full-skills/) it supported was replaced by in-place SKILL.md files.
 
 ### Added
 
@@ -41,7 +42,27 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`docs/reference/tool-directory.md`** — 20+ tools added across categories: workspace discovery, vehicle/fleet intel, physical recon discipline, flight OSINT, cryptocurrency, threat intel, geospatial.
 - **`docs/reference/tooling-install.md`** — 15 install commands added (assetfinder, dnsx, aquatone, feroxbuster, gospider, LinkFinder, cloud_enum, CloudSploit, o365enum, CredMaster, gf, hakrawler, reconftw, axiom, and more).
 - **`docs/reference/specialty-domains.md`** — Expanded healthcare, finance, ICS/SCADA, government sections. Added IoT/consumer/SOHO and maritime/aviation/automotive.
-- **`tests/smoke-test-prompts.md`** — Expanded from 32 to 40 prompts with updated section references.
+- **`tests/smoke-test-prompts.md`** — Expanded from 32 to 43 prompts (40 functional + 3 scope-check bonus).
+- **`web-surface` §9** — BIMI, MTA-STS, TLS-RPT, DNSSEC checks; DMARC reporting-vendor inference (8 vendors); MX-to-IdP/mail-host inference (6 providers).
+- **`people-breach-intel` §4.1** — 9-signal vulnerability scoring rubric with P0–P3 priority tiers.
+- **`analysis-and-reporting` §7–§9** — AI-assisted OSINT patterns, evidence preservation & archiving, automation & tooling quick-install.
+- **`osint-methodology` §11** — Cert-SAN impersonation patterns; 5-vector phishing-readiness summary.
+- **`recon-asset-discovery` §3** — Historical WHOIS and reverse WHOIS pivot techniques.
+- **`cloud-and-infra` §3** — CircleCI added to CI/CD platform exposure table.
+- **`web-surface` §14** — Legacy-extension Wayback pivot for brochure-ware sites.
+
+### Fixed
+
+- Corrected 6 wrong skill attributions in `docs/capabilities.md` (AWS account-ID, LinkedIn, KEV/EPSS, sat imagery, public records).
+- Fixed 2 phantom capabilities (DMARC vendor inference, MX-to-IdP) by implementing the content.
+- Fixed CHANGELOG dork count (80+ → 70).
+- Fixed stale "Both skills" → "All skills" across README, smoke tests, and docs.
+- Fixed offensive-osint router overpromises (removed geospatial, crypto, media claims).
+- Added report-template (S9) to router dispatch table and architecture Mermaid diagram.
+- Fixed roadmap version ordering in `docs/coverage.md`.
+- Updated `CLAUDE.md.example` for router + sub-skill architecture.
+- Removed duplicate OneLogin row in `identity-fabric` §1.5.
+- Fixed ambiguous `scripts/` paths to `skills/offensive-osint/scripts/`.
 
 ### Changed
 
