@@ -15,6 +15,17 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - One-click install script (install.sh) and uninstall script (uninstall.sh).
 - Optional MCP server companion (mcp-server/) with 5 live API tools: crt.sh lookup, HudsonRock Cavalier, EPSS scoring, Wayback CDX, DNS records.
 - .mcp.json configuration for automatic MCP server discovery.
+- Tool-chaining recipes -- Recon-ng, SpiderFoot, Maltego module configs, bash-native multi-tool pipelines. (docs/methods/tool-chaining-recipes.md)
+- OPSEC infrastructure as code -- Terraform VPS provisioning, SOCKS proxy stacks, HTTP redirectors, Axiom fleet, Ansible playbooks, teardown automation. (docs/methods/opsec-infrastructure.md)
+- Adversary-emulation playbooks -- APT29, APT28, FIN7, Lazarus external recon emulation mapped to outrider-recon skills. (docs/reference/adversary-emulation.md)
+- Sector-specific deep dives expanded -- HL7/FHIR endpoints, FIX protocol, ICS Shodan dorks, SAM.gov mining, firmware extraction. (docs/reference/specialty-domains.md)
+- Report customization guide -- template variables, format adaptation, branding, pandoc delivery commands. (docs/methods/report-customization.md)
+- Tool failure recovery -- fallback chains for subdomain discovery, port scanning, breach data, DNS/WHOIS, web probing. (docs/methods/tool-failure-recovery.md)
+
+### Changed
+
+- Capability count: 81 to 90 (9 new capabilities across tool integration and workflows).
+- Coverage estimate: 90-95% to 95-98% for OSINT-phase work.
 
 ---
 

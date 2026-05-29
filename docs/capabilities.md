@@ -1,6 +1,6 @@
 # Capabilities
 
-81 capabilities across 13 domains. Categorized by function -- pick a domain to drill in.
+90 capabilities across 15 domains. Categorized by function -- pick a domain to drill in.
 
 ---
 
@@ -149,5 +149,19 @@
 | Burp Suite engagement config + recon extensions | docs/methods/burp-zap-setup.md |
 | OWASP ZAP automation framework YAML recipes | docs/methods/burp-zap-setup.md |
 | Proxy traffic tagging for bug bounty compliance | docs/methods/burp-zap-setup.md |
+
+## Tool Integration and Workflows
+
+| Capability | Skill |
+|---|---|
+| Recon-ng module walkthrough (7 key modules) | docs/methods/tool-chaining-recipes.md |
+| SpiderFoot scan profiles and CLI recipes | docs/methods/tool-chaining-recipes.md |
+| Maltego transforms for external recon | docs/methods/tool-chaining-recipes.md |
+| Bash-native multi-tool pipelines (subfinder/httpx/nuclei/jq) | docs/methods/tool-chaining-recipes.md |
+| OPSEC infrastructure provisioning (Terraform/Ansible) | docs/methods/opsec-infrastructure.md |
+| IP rotation and proxy chaining patterns | docs/methods/opsec-infrastructure.md |
+| Adversary-emulation playbooks (APT29/APT28/FIN7/Lazarus) | docs/reference/adversary-emulation.md |
+| Report customization and delivery formats | docs/methods/report-customization.md |
+| Tool failure recovery and fallback chains | docs/methods/tool-failure-recovery.md |
 
 > Diagrams: see [`architecture.md`](architecture.md) for the Capability Map, Engagement Flow, and 7 other Mermaid diagrams.

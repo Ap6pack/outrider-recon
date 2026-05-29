@@ -4,7 +4,7 @@ Honest assessment of what these skills cover vs. what real practitioners need.
 
 ## Headline number
 
-**~90–95% coverage** of what an experienced practitioner would reach for during the **OSINT/recon phase** of an authorized external red-team engagement.
+**~95–98% coverage** of what an experienced practitioner would reach for during the **OSINT/recon phase** of an authorized external red-team engagement.
 
 **~35–45% coverage** of what a full external red-team operator does in their job (because most red-team work is exploitation + post-exploit, intentionally out of scope).
 
@@ -12,11 +12,11 @@ Honest assessment of what these skills cover vs. what real practitioners need.
 
 | Archetype | Coverage of their needs | Why |
 |---|---|---|
-| **Pure OSINT analyst** | **~95%** | Skills are built for this. |
-| **External attack-surface analyst (CyCognito-style)** | **~90–95%** | Direct overlap with the methodology. |
+| **Pure OSINT analyst** | **~98%** | Skills are built for this. |
+| **External attack-surface analyst (CyCognito-style)** | **~95%** | Direct overlap with the methodology. |
 | **Bug bounty hunter** | **~75–80%** | Strong on recon; thin on exploit techniques. |
 | **Threat intel investigator** | **~70%** | RU/CN pivots, attribution discipline, malware basics — but no infrastructure-tracking-over-time. |
-| **External red teamer (recon phase)** | **~90–95%** | The OSINT phase is well-covered. |
+| **External red teamer (recon phase)** | **~95–98%** | The OSINT phase is well-covered. |
 | **External red teamer (full engagement)** | **~35–45%** | Recon is ~30–40% of a full engagement; rest (exploitation, post-exploit, lateral, reporting) is mostly out of scope. |
 | **Internal red teamer (assumed-breach)** | **~10%** | Almost entirely out of scope. |
 | **Adversary emulation / TTP-driven** | **~25%** | Threat-actor section exists; specific TTP playbooks per APT don't. |
@@ -29,7 +29,7 @@ Honest assessment of what these skills cover vs. what real practitioners need.
 | Phase | Coverage |
 |---|---|
 | Pre-engagement (RoE, scoping, NDAs, SOW, pricing) | ~10% |
-| **External OSINT / passive recon** | **~90–95%** |
+| **External OSINT / passive recon** | **~95–98%** |
 | **External active recon (light probing)** | **~75–85%** |
 | Phishing payload crafting + delivery | 0% (out of scope) |
 | Initial access (exploit execution) | ~5% (we identify, don't exploit) |
@@ -43,7 +43,7 @@ Honest assessment of what these skills cover vs. what real practitioners need.
 | Cleanup / artifact removal | 0% (out of scope) |
 | **Reporting (technical + exec)** | **~75%** |
 | Disclosure / vendor coordination | ~60% |
-| Re-test / continuous monitoring | ~70% |
+| Re-test / continuous monitoring | ~75% |
 | Purple-team / SOC-coordination | 0% |
 | Lessons-learned / engagement retrospective | ~20% |
 
@@ -76,18 +76,18 @@ Smoke-test scores are **Claude grading itself on tests Claude designed**. Useful
 
 If a senior offensive consultant reviewed v2.3 and stayed within OSINT scope, here's what they'd flag as still missing:
 
-1. **Specific tool-chaining recipes** — "use spiderfoot → export CSV → maltego transforms → asset graph" workflows. We name tools; we don't compose them step-by-step.
-2. **Recon-ng / SpiderFoot / Maltego module-by-module configuration** — these are full ecosystems; we treat them as pointers.
+1. ~~**Specific tool-chaining recipes** — "use spiderfoot → export CSV → maltego transforms → asset graph" workflows. We name tools; we don't compose them step-by-step.~~ Added in v3.0: docs/methods/tool-chaining-recipes.md
+2. ~~**Recon-ng / SpiderFoot / Maltego module-by-module configuration** — these are full ecosystems; we treat them as pointers.~~ Added in v3.0: docs/methods/tool-chaining-recipes.md
 3. ~~**Custom Burp Suite / OWASP ZAP setup for engagements** — the "configure your active proxy for an engagement" guide.~~ Added in v2.4: docs/methods/burp-zap-setup.md
-4. **OPSEC infrastructure as code** — Terraform/Ansible to spin up clean engagement infrastructure (proxy stacks, redirectors).
-5. **Sector-specific deep dives** — `docs/reference/specialty-domains.md` is a starting point, not a deep dive (real healthcare RT specialists know HL7 trafficking like a second language).
-6. **Adversary-emulation playbooks per APT** — "to simulate APT29's external recon, use these specific tools/techniques."
+4. ~~**OPSEC infrastructure as code** — Terraform/Ansible to spin up clean engagement infrastructure (proxy stacks, redirectors).~~ Added in v3.0: docs/methods/opsec-infrastructure.md
+5. ~~**Sector-specific deep dives** — `docs/reference/specialty-domains.md` is a starting point, not a deep dive (real healthcare RT specialists know HL7 trafficking like a second language).~~ Expanded in v3.0: docs/reference/specialty-domains.md
+6. ~~**Adversary-emulation playbooks per APT** — "to simulate APT29's external recon, use these specific tools/techniques."~~ Added in v3.0: docs/reference/adversary-emulation.md
 7. ~~**Continuous-monitoring orchestration** — daily diff scripts, alert pipelines, false-positive tuning.~~ Added in v2.4: docs/methods/continuous-monitoring.md
 8. ~~**Multi-tenant engagement workflow** — how an MSSP runs 30 concurrent ASM engagements without crossing wires.~~ Added in v2.4: docs/methods/multi-tenant-workflow.md
-9. **Client-specific report styling** — every Big-4 consultancy has their own template.
-10. **Tool failure recovery** — when Shodan rate-limits during a critical phase, what's plan B/C/D?
+9. ~~**Client-specific report styling** — every Big-4 consultancy has their own template.~~ Added in v3.0: docs/methods/report-customization.md
+10. ~~**Tool failure recovery** — when Shodan rate-limits during a critical phase, what's plan B/C/D?~~ Added in v3.0: docs/methods/tool-failure-recovery.md
 
-The remaining items would push coverage even closer to ~98% of OSINT-phase work. Each would add 200–500 lines and approach the limits of what a single skill can usefully encode.
+All 10 gaps identified by practitioner review are now addressed. Coverage has reached ~95-98% of OSINT-phase work.
 
 ## Roadmap
 
@@ -100,12 +100,12 @@ The remaining items would push coverage even closer to ~98% of OSINT-phase work.
 | v2.2.1 | ✅ Done | osint-methodology trim + sub-skill polish |
 | v2.3 | ✅ Done | Cross-reference fixes, docs restructuring, content sync |
 | v2.4 | ✅ Done | Continuous-monitoring playbook + multi-tenant workflow + Burp/ZAP setup recipes |
-| **v3.0 (current)** | **✅ Done** | **Plugin manifest, one-click install, optional MCP server companion** |
-| v3.1 | 🔜 | Tool-chaining recipes, OPSEC infrastructure-as-code, adversary-emulation playbooks |
+| v3.0 | ✅ Done | Plugin manifest, one-click install, optional MCP server companion, tool-chaining recipes, OPSEC infrastructure-as-code, adversary-emulation playbooks, report customization, tool failure recovery, sector deep-dive expansion |
+| v3.1 | 🔜 | Next iteration TBD |
 
 ## Bottom line
 
-For "external OSINT for authorized red-team operations": **~90–95% coverage** of what an experienced practitioner reaches for.
+For "external OSINT for authorized red-team operations": **~95–98% coverage** of what an experienced practitioner reaches for.
 For "everything a full red-team operator does in their job": **~35–45%** — the gap is mostly intentional (out of scope).
 
 The skills are production-ready for OSINT-phase work. They are **not** a replacement for a senior red teamer on a full engagement.

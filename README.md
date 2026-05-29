@@ -2,7 +2,7 @@
 
 # outrider-recon
 
-> Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native -- scopes, enumerates, pivots, and escalates without hand-holding. **81 capabilities** · 48 secret patterns · 70 dorks · 9 read-only validators · 35 attack-path templates.
+> Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native -- scopes, enumerates, pivots, and escalates without hand-holding. **90 capabilities** · 48 secret patterns · 70 dorks · 9 read-only validators · 35 attack-path templates.
 
 ---
 
@@ -114,7 +114,7 @@ outrider-recon/
 
 | Doc | Contents |
 |---|---|
-| [`docs/capabilities.md`](docs/capabilities.md) | Full capability index (81 capabilities across 13 domains) + architecture diagrams |
+| [`docs/capabilities.md`](docs/capabilities.md) | Full capability index (90 capabilities across 15 domains) + architecture diagrams |
 | [`docs/architecture.md`](docs/architecture.md) | Design philosophy · asset-graph model · confidence/severity/detectability models · sidecar coordination |
 | [`docs/coverage.md`](docs/coverage.md) | Practitioner-coverage breakdown by archetype + engagement phase |
 | [`docs/installation.md`](docs/installation.md) | Symlink installs and multi-environment install patterns |
