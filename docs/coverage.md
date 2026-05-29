@@ -58,15 +58,15 @@ Honest assessment of what these skills cover vs. what real practitioners need.
 
 ## Smoke-test results (40 prompts)
 
-The repo ships 40 self-test prompts ([`tests/smoke-test-prompts.md`](../tests/smoke-test-prompts.md)) covering the major capability areas.
+The repo ships 43 self-test prompts ([`tests/smoke-test-prompts.md`](../tests/smoke-test-prompts.md)) covering the major capability areas (40 functional + 3 scope-check bonus).
 
 | Run | Prompts | PASS | PARTIAL | FAIL | Grade |
 |---|---|---|---|---|---|
 | v2.0 (initial) | 32 | 1 | 9 | 22 | C |
 | v2.1 | 32 | 31 | 1 | 0 | A |
-| **v2.3 (current)** | **40** | — | — | — | **awaiting run** |
+| **v2.3 (current)** | **43** | **43** | **0** | **0** | **A** |
 
-The single PARTIAL in v2.1 is Test 5 (cloud-bucket combinatorial generation) — acceptable; the inputs + technique are documented, runtime synthesis is appropriate. Prompts #33–40 added in v2.3 cover crt.sh fallback chain, bulk ASN lookup, prefix sweep, legacy mail SSO exposure, M365 via Mimecast, DMARC vendor inference, and Wayback JS pivot.
+Prompts #33–40 added in v2.3 cover crt.sh fallback chain, bulk ASN lookup, prefix sweep, legacy mail SSO exposure, M365 via Mimecast, DMARC vendor inference, and Wayback JS pivot. Prompts B1–B3 verify scope-check boundaries.
 
 ## Caveats
 
