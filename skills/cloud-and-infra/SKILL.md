@@ -129,6 +129,7 @@ docker history <image>   # inspect build args + COPY of secrets
 | **Bamboo** | `/rest/api/latest/info` | `curl -sk -m 10 "${T}/rest/api/latest/info"` |
 | **Drone CI** | `/api/info` | `curl -sk -m 10 "${T}/api/info"` |
 | **Spinnaker** | `/gate/info`, `/applications` | `curl -sk -m 10 "${T}/gate/info"` |
+| **CircleCI** | `/api/v2/me` (token leak → project enum), public build logs | `curl -sk -m 10 "${T}/api/v2/me" -H "Circle-Token: ${TOKEN}"` |
 
 **GitHub Actions secret-leak anti-patterns:**
 ```yaml

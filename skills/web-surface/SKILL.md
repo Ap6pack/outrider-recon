@@ -485,5 +485,13 @@ site:atlassian.net "{target}"
 | Service | Endpoint | Method |
 |---|---|---|
 | Wayback CDX | `https://web.archive.org/cdx/search/cdx?url={domain}/*&output=json&fl=timestamp,original` | GET |
+
+**Wayback pivot when JS returns empty:** If `*.js` CDX queries return no results (common on brochure-ware or legacy sites), pivot to legacy server-side extensions:
+```bash
+for ext in asp php jsp cfm aspx cgi pl; do
+  curl -s "https://web.archive.org/cdx/search/cdx?url=${D}/*.${ext}&output=json&fl=timestamp,original&limit=50" | jq -r '.[][1]' 2>/dev/null
+done | sort -u
+```
+Legacy endpoints often reveal admin panels, forgotten upload forms, and deprecated APIs that still resolve. Cross-reference discovered paths with `§5` always-on HTTP checks.
 | Postman search | `https://www.postman.com/_api/ws/proxy` | POST (body: `{"service":"search","method":"POST","path":"/search-all","body":{"queryIndices":["collaboration.workspace"],"queryText":"{domain}","size":100}}`) |
 | StackExchange | `https://api.stackexchange.com/2.3/search/advanced?site=stackoverflow.com&q={domain}&filter=withbody` | GET |

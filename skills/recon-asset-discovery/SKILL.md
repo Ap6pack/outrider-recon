@@ -150,6 +150,20 @@ curl -sk "https://rdap.org/domain/${D}" | jq .
 
 What to extract: registrant org/email, registrar (pivot for related domains), created/updated dates (bulk registration patterns), nameservers (NS reuse pivot), status flags.
 
+**Historical WHOIS:** Services like WhoisXMLAPI, SecurityTrails, and DomainTools archive past WHOIS snapshots. Historical records reveal previous registrant info hidden by current privacy services, ownership transfers, and infrastructure changes.
+
+```bash
+# SecurityTrails historical WHOIS (API key required)
+curl -sk "https://api.securitytrails.com/v1/history/${D}/whois" -H "APIKEY: ${ST_KEY}" | jq '.result[] | {date: .first_seen, registrant: .registrant}'
+```
+
+**Reverse WHOIS:** Pivot from a known registrant name, email, or org to discover all domains they own:
+- WhoisXMLAPI reverse WHOIS: search by registrant email or org name
+- DomainTools reverse WHOIS: same capability, different corpus
+- SecurityTrails: `GET /v1/domain/search?filter[whois_email]={email}`
+
+This is a high-value pivot — a single registrant email can reveal dozens of related domains not discoverable through DNS or CT alone.
+
 ---
 
 ## 4. DNS Record Catalog

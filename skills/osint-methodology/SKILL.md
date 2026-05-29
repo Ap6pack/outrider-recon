@@ -360,7 +360,8 @@ The following modules have full implementation detail — probe paths, wordlists
 - *Subdomain takeover for trusted-domain phishing:* `web-surface` §11 (27 provider fingerprints, CNAME dangling checks).
 - *Email spoof feasibility matrix (SPF × DMARC):* `web-surface` §9 (SPF strictness, DMARC policy, DKIM selector enumeration).
 - *Pretext development from OSINT:* leverage job titles, recent events, vendor relationships, and GitHub commit patterns gathered during earlier pipeline stages.
-- Combine all four vectors into a single phishing-readiness summary per target domain.
+- *Cert-SAN impersonation patterns:* query crt.sh for `%.target.com` certificates; extract SAN entries that could be mimicked on attacker-controlled infrastructure (e.g., `sso.target.com`, `vpn.target.com`, `mail.target.com`). Cross-reference with `recon-asset-discovery` §1 results — SANs that resolve to NXDOMAIN are prime candidates for registration + phishing.
+- Combine all five vectors into a single phishing-readiness summary per target domain: (1) registered typosquats, (2) available typosquat candidates, (3) cert-SAN impersonation patterns, (4) dangling CNAME takeover targets, (5) spoof feasibility matrix.
 
 ---
 
