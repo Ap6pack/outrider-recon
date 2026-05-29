@@ -7,6 +7,17 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [3.0] -- 2026-05-29
+
+### Added
+
+- Claude Code plugin manifest (.claude-plugin/plugin.json) for marketplace discovery.
+- One-click install script (install.sh) and uninstall script (uninstall.sh).
+- Optional MCP server companion (mcp-server/) with 5 live API tools: crt.sh lookup, HudsonRock Cavalier, EPSS scoring, Wayback CDX, DNS records.
+- .mcp.json configuration for automatic MCP server discovery.
+
+---
+
 ## [2.4] -- 2026-05-29
 
 ### Added

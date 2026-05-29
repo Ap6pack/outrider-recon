@@ -198,7 +198,7 @@ Semantic versioning. The `version:` field in YAML frontmatter is authoritative.
 - **MINOR** — new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-Current project release: v2.4. Individual skill versions in YAML frontmatter.
+Current project release: v3.0. Individual skill versions in YAML frontmatter.
 
 ## Renumbering policy
 

@@ -27,7 +27,25 @@ The pipeline is structured as a router + specialized sub-agents, each owning a s
 
 ## Quick Start
 
-### Claude Code
+### One-Click Install (Recommended)
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Ap6pack/outrider-recon/main/install.sh | bash
+```
+
+This clones the repo, symlinks all 11 skills into `~/.claude/skills/`, and you're ready to go. Re-run the same command to update.
+
+### MCP Server (optional)
+
+The project includes an optional MCP server that adds live API tools (crt.sh lookup, HudsonRock query, EPSS scoring, Wayback CDX, DNS records):
+
+```bash
+pip install -r ~/.local/share/outrider-recon/mcp-server/requirements.txt
+```
+
+The `.mcp.json` config is already included in the repo. All skills work without the MCP server -- it just adds live data enrichment.
+
+### Claude Code (manual)
 
 ```bash
 # 1. Clone and install skills

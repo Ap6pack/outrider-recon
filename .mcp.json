@@ -1,0 +1,7 @@
+{
+  "outrider-recon": {
+    "type": "stdio",
+    "command": "python3",
+    "args": ["mcp-server/server.py"]
+  }
+}

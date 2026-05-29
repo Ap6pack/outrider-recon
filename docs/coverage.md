@@ -64,7 +64,7 @@ The repo ships 43 self-test prompts ([`tests/smoke-test-prompts.md`](../tests/sm
 |---|---|---|---|---|---|
 | v2.0 (initial) | 32 | 1 | 9 | 22 | C |
 | v2.1 | 32 | 31 | 1 | 0 | A |
-| **v2.3 (current)** | **43** | **43** | **0** | **0** | **A** |
+| v2.3 | 43 | 43 | 0 | 0 | A |
 
 Prompts #33–40 added in v2.3 cover crt.sh fallback chain, bulk ASN lookup, prefix sweep, legacy mail SSO exposure, M365 via Mimecast, DMARC vendor inference, and Wayback JS pivot. Prompts B1–B3 verify scope-check boundaries.
 
@@ -99,9 +99,9 @@ The remaining items would push coverage even closer to ~98% of OSINT-phase work.
 | v2.2 | ✅ Done | Router + sub-skill refactor (offensive-osint split into 9 sub-skills) |
 | v2.2.1 | ✅ Done | osint-methodology trim + sub-skill polish |
 | v2.3 | ✅ Done | Cross-reference fixes, docs restructuring, content sync |
-| **v2.4** | ✅ Done | Continuous-monitoring playbook + multi-tenant workflow + Burp/ZAP setup recipes |
-| v2.5 | 🔜 | Tool-chaining recipes, OPSEC infrastructure-as-code, adversary-emulation playbooks |
-| v3.0 | 🔜 | Plugin manifest for one-click Claude Code install + optional MCP server companion |
+| v2.4 | ✅ Done | Continuous-monitoring playbook + multi-tenant workflow + Burp/ZAP setup recipes |
+| **v3.0 (current)** | **✅ Done** | **Plugin manifest, one-click install, optional MCP server companion** |
+| v3.1 | 🔜 | Tool-chaining recipes, OPSEC infrastructure-as-code, adversary-emulation playbooks |
 
 ## Bottom line
 

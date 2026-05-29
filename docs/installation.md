@@ -2,6 +2,25 @@
 
 These skills are plain Markdown files. Installing them depends on which Claude surface you're using.
 
+## One-Click Install (Recommended)
+
+Run the install script:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/Ap6pack/outrider-recon/main/install.sh | bash
+```
+
+This clones the repo to `~/.local/share/outrider-recon` and symlinks all 11 skills into `~/.claude/skills/`. To update later, just re-run the same command.
+
+### Optional: MCP Server
+
+The project includes an optional MCP server that adds live API tools (crt.sh lookup, HudsonRock query, EPSS scoring, Wayback CDX, DNS records). To enable it:
+
+1. Install dependencies: `pip install -r mcp-server/requirements.txt`
+2. The `.mcp.json` config is already included in the repo
+
+The MCP server is optional -- all skills work without it.
+
 ## Claude Code (CLI)
 
 Claude Code looks for skills in `~/.claude/skills/` by default.
