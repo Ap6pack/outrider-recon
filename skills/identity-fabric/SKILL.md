@@ -181,7 +181,6 @@ Google-Workspace-hosted-domain customers expose discovery endpoints with charact
 | Ping | `https://*.pingone.com`, `https://*.pingidentity.com` |
 | Duo | `https://*.duosecurity.com` |
 | Keycloak | URL contains `/realms/<realm>` |
-| OneLogin | `https://*.onelogin.com` |
 
 ### 1.6 SAML metadata
 

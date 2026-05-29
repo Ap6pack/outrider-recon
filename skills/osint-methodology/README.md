@@ -23,7 +23,7 @@ The "how to think" reference for external red-team OSINT and bug-bounty reconnai
 | 5 | Do NOT |
 | 6 | OpSec (sock puppets, detectability tagging, validator discipline, detection-aware probing) |
 | 7 | External Red-Team Recon Pipeline (5-stage pipeline, priority order, time budgeting) |
-| 8 | Asset Graph Discipline (29 typed assets, 23 typed edges, triage rules) |
+| 8 | Asset Graph Discipline (29 typed assets in 9 categories, triage rules — see docs/architecture.md for the typed-edge graph) |
 | 9 | Findings Rubric & Severity Mapping (anchors + escalation rules) |
 | 10 | Pivot Modes & Scale Tactics |
 | 11 | Implementation: Companion Skill Pointers |

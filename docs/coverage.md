@@ -96,8 +96,10 @@ These would push coverage to ~95% of OSINT-phase work. Each would add 200–500 
 | v1.0 | ✅ Done | Original framework |
 | v2.0 | ✅ Done | External-red-team posture rewrite |
 | v2.1 | ✅ Done | Comprehensive expansion |
-| **v2.3** | ✅ Current | Distributed sub-skill architecture (this version) |
-| v2.2 | 🔜 | Continuous-monitoring playbook + multi-tenant workflow + Burp extension recipes |
+| v2.2 | ✅ Done | Router + sub-skill refactor (offensive-osint split into 9 sub-skills) |
+| v2.2.1 | ✅ Done | osint-methodology trim + sub-skill polish |
+| **v2.3** | ✅ Current | Cross-reference fixes, docs restructuring, content sync |
+| v2.4 | 🔜 | Continuous-monitoring playbook + multi-tenant workflow + Burp extension recipes |
 | v3.0 | 🔜 | Plugin manifest for one-click Claude Code install + optional MCP server companion |
 
 ## Bottom line

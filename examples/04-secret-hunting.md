@@ -36,7 +36,7 @@ done
 ```bash
 # Pull every JS from app.acme.example and scan
 for js in $(curl -sk https://app.acme.example/ | grep -oE 'src="[^"]*\.js"' | tr -d '"' | sed 's/src=//'); do
-  curl -sk "https://app.acme.example/${js}" | python3 scripts/secret_scan.py | head -50
+  curl -sk "https://app.acme.example/${js}" | python3 skills/offensive-osint/scripts/secret_scan.py | head -50
 done
 ```
 

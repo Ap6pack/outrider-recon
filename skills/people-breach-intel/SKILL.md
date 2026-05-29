@@ -33,10 +33,11 @@ triggers:
 2. Cross-reference with HIBP and DeHashed for domain-level breach scope.
 3. Apply domain-level breach severity mapping (§1): >=10 employees = CRITICAL, 1-9 = HIGH, >=1 end-user = MEDIUM, 0 named = INFO.
 4. If SSO tenants discovered (from `identity-fabric`), intersect with breach corpus for SSO_EXPOSURE findings (§1).
-5. For known employee names: derive candidate emails using the 8-pattern template (§2), then harvest from 6 parallel sources (§3).
-6. Run Slack/Discord workspace discovery dorks (§6).
-7. For package registry targets: run historical-version secret scan workflow (§7).
-8. For each finding, emit per `osint-methodology` §3 schema.
+5. For each CVE surfaced, apply the 9-Signal Scoring Rubric (§4.1) to assign a priority tier (P0-P3).
+6. For known employee names: derive candidate emails using the 8-pattern template (§2), then harvest from 6 parallel sources (§3).
+7. Run Slack/Discord workspace discovery dorks (§6).
+8. For package registry targets: run historical-version secret scan workflow (§7).
+9. For each finding, emit per `osint-methodology` §3 schema.
 
 **Output:** Breach findings, SSO_EXPOSURE findings, person assets with derived emails, email-harvest results — all per `osint-methodology` §3 finding schema.
 
@@ -151,7 +152,42 @@ curl -sk "https://api.first.org/data/v1/epss?cve=CVE-2024-3400" | jq '.data[0]'
 # Check if in CISA KEV
 curl -sk https://www.cisa.gov/sites/default/files/feeds/known_exploited_vulnerabilities.json | \
   jq '.vulnerabilities[] | select(.cveID == "CVE-2024-3400")'
+
+# InTheWild confirmed-exploitation check
+curl -sk "https://inthewild.io/api/vulnerability?cve=CVE-2024-3400"
+
+# Trickest CVE-to-PoC lookup (GitHub repo)
+# https://github.com/trickest/cve — browse: /YYYY/CVE-YYYY-NNNNN.md
 ```
+
+### 4.1 9-Signal Scoring Rubric
+
+Score each CVE additively across nine signals, then map to a priority tier.
+
+**Scoring signals (additive):**
+
+| Signal | Points | Source |
+|---|---|---|
+| In CISA KEV | +50 | KEV JSON feed |
+| EPSS >= 0.7 (top 30%) | +30 | FIRST EPSS API |
+| EPSS >= 0.4 (top 50%) | +15 | FIRST EPSS API |
+| Metasploit module exists | +20 | rapid7/metasploit-framework GitHub |
+| Public PoC on GitHub | +15 | nomi-sec/PoC-in-GitHub or Trickest CVE |
+| InTheWild.io confirmed | +20 | inthewild.io/api |
+| ExploitDB entry | +10 | exploit-db.com |
+| CVSS >= 9.0 | +10 | NVD |
+| Vendor advisory confirms active exploitation | +15 | vendor page |
+
+EPSS tiers are mutually exclusive — apply the higher bracket only.
+
+**Priority tiers:**
+
+| Score | Tier | Action |
+|---|---|---|
+| >= 80 | P0 — Immediate | Flag in exec summary; recommend emergency patch |
+| 50-79 | P1 — High | Include in findings; recommend urgent patch |
+| 25-49 | P2 — Moderate | Include in findings; recommend scheduled patch |
+| < 25 | P3 — Low | Note in appendix; monitor |
 
 ---
 

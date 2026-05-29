@@ -9,6 +9,12 @@ triggers:
   - endpoint enumeration
   - email security analysis
   - SPF DMARC DKIM
+  - BIMI
+  - MTA-STS
+  - TLS-RPT
+  - DNSSEC
+  - MX inference
+  - DMARC vendor
   - vendor product fingerprints
   - Citrix Netscaler
   - F5 BIG-IP
@@ -42,7 +48,7 @@ triggers:
 4. Run always-on HTTP checks (§5) with listed match logic.
 5. Probe JS guess-paths (§6) and extract endpoints via regex tiers (§7).
 6. Check for internal-host leakage (§8) in JS bodies, sourcesContent, APK strings.
-7. Audit email security posture (§9): parse SPF/DMARC/DKIM, map severity, infer SaaS tenants from TXT records.
+7. Audit email security posture (§9): parse SPF/DMARC/DKIM/BIMI/MTA-STS/TLS-RPT/DNSSEC, map severity, infer SaaS tenants from TXT records, extract DMARC vendor and MX-based IdP.
 8. Fingerprint vendor products (§10) — cross-reference with CISA KEV for severity escalation.
 9. Assess subdomain takeover risk (§11) using provider fingerprints.
 10. Enumerate cloud buckets (§12) using permutation arsenal.
@@ -244,12 +250,61 @@ SPF `include:` reveals SaaS tenants: `_spf.google.com` → Google Workspace; `sp
 
 **DMARC severity:** `p=none` → MEDIUM; `p=quarantine pct<100` → LOW; `p=reject` + strict alignment → no finding.
 
+**DMARC reporting-vendor inference:** When the DMARC record contains `rua=` or `ruf=` mailto addresses, the reporting vendor can be inferred from the domain:
+
+| Vendor domain | Vendor |
+|---|---|
+| `kratikal.com` | Kratikal |
+| `dmarcian.com` | dmarcian |
+| `valimail.com` | Valimail |
+| `agari.com` | Agari (now HelpSystems) |
+| `easydmarc.com` | EasyDMARC |
+| `proofpoint.com` | Proofpoint |
+| `mimecast.com` | Mimecast |
+| `barracuda.com` | Barracuda |
+
+```bash
+dig +short TXT "_dmarc.${D}" | grep -oP 'rua=mailto:\K[^;]+'
+```
+
+This is INFO-level intel, not a finding — it reveals the target's email security vendor stack.
+
 **DKIM common selectors:**
 ```bash
 for selector in default google selector1 selector2 mail email k1 dkim s1 s2 amazonses 20240101 mailchimp sendgrid mxvault; do
   dig +short TXT "${selector}._domainkey.${D}"
 done
 ```
+
+**BIMI check:** BIMI presence signals mature email auth (SPF + DMARC + DKIM all enforced).
+```bash
+dig +short TXT "default._bimi.${D}"
+# Expect: v=BIMI1; l=<logo-URL>; a=<VMC-URL>
+```
+Present → no finding. Absent → INFO only.
+
+**MTA-STS check:** Controls whether sending MTAs must use TLS for delivery.
+```bash
+dig +short TXT "_mta-sts.${D}"
+curl -sS "https://mta-sts.${D}/.well-known/mta-sts.txt"
+# Look for mode: enforce | testing | none
+```
+`mode: enforce` → no finding. `mode: testing` → INFO. Absent with MX records present → LOW.
+
+**TLS-RPT check:** Complements MTA-STS with TLS failure reporting.
+```bash
+dig +short TXT "_smtp._tls.${D}"
+# Expect: v=TLSRPTv1; rua=mailto:<reporting-addr>
+```
+Absent → INFO (complementary to MTA-STS).
+
+**DNSSEC check:** Validates DNS responses are signed.
+```bash
+dig +dnssec "${D}" SOA +short
+# Look for RRSIG record in response
+dig "${D}" SOA +dnssec | grep -c 'RRSIG'
+```
+DNSSEC signed (RRSIG present) → no finding. Not signed → INFO.
 
 **PowerShell parallel:**
 ```powershell
@@ -258,6 +313,23 @@ $D = "target.example"
 "=== DMARC ==="; (Resolve-DnsName "_dmarc.$D" -Type TXT -EA SilentlyContinue).Strings
 "=== MX ==="; Resolve-DnsName $D -Type MX -EA SilentlyContinue | Select NameExchange,Preference
 ```
+
+**MX-to-IdP / mail-host inference:** MX records reveal the email hosting provider, which often implies the identity provider.
+
+```bash
+dig +short MX "${D}" | sort -n
+```
+
+| MX pattern | Provider |
+|---|---|
+| `aspmx.l.google.com` | Google Workspace |
+| `*.mail.protection.outlook.com` | Microsoft 365 |
+| `*.pphosted.com` | Proofpoint (often fronting M365/GWS) |
+| `*.mimecast.com` | Mimecast |
+| `mx*.zoho.com` | Zoho Mail |
+| `*.messagelabs.com` | Broadcom/Symantec |
+
+Cross-reference: if MX → M365, load `identity-fabric` for Entra enum. If MX → Google, check Google Workspace OIDC. Severity: INFO (infrastructure intel, not a finding).
 
 ---
 

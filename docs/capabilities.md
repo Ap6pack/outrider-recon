@@ -13,7 +13,7 @@
 | Common-prefix subdomain sweep (119 ordered prefixes, PowerShell + bash) | recon-asset-discovery |
 | Wayback CDX deep mining + legacy-app pivot (.asp/.php/.jsp/.cfm) | web-surface |
 | WHOIS / RDAP / historical-WHOIS + reverse-WHOIS pivots | recon-asset-discovery |
-| Public records (OpenCorporates · SEC EDGAR · GSXT · Rusprofile · Companies House) | people-breach-intel |
+| Public records (OpenCorporates · SEC EDGAR · GSXT · Rusprofile · Companies House) | docs/reference/tool-directory.md, docs/reference/specialty-domains.md |
 | Bulk IP → ASN (Cymru / RIPEstat / bgp.tools) | recon-asset-discovery |
 
 ## Identity & SSO Mapping
@@ -28,7 +28,7 @@
 | Google Workspace OIDC discovery | identity-fabric |
 | Generic OIDC (Auth0 · Keycloak · Ping · OneLogin · Duo) | identity-fabric |
 | SAML metadata (5 paths) | identity-fabric |
-| AWS account-ID extraction from headers + ARN regex | cloud-and-infra |
+| AWS account-ID extraction from headers + ARN regex | identity-fabric |
 
 ## Web Application Attack Surface
 
@@ -64,8 +64,8 @@
 | GitHub code-search dorks (13 templates) | secrets-and-dorks |
 | 9 read-only credential validators (Postman / AWS / GitHub / Slack / Anthropic / OpenAI / npm / Atlassian / DataDog) | secrets-and-dorks |
 | Post-discovery enumeration workflows (IAM enum · repo enum · workspace enum · JWT triage) | post-discovery |
-| `secret_scan.py` -- stdlib-only secret scanner (JSONL output) | scripts |
-| `h1_reference.py` -- HackerOne disclosed-reports reference (top-voted / keyword / program filter) | scripts |
+| `secret_scan.py` -- stdlib-only secret scanner (JSONL output) | skills/offensive-osint/scripts |
+| `h1_reference.py` -- HackerOne disclosed-reports reference (top-voted / keyword / program filter) | skills/offensive-osint/scripts |
 | 70 dork corpus across 9 categories | secrets-and-dorks |
 
 ## Breach Intelligence
@@ -84,7 +84,7 @@
 | Citrix Netscaler · F5 BIG-IP · Pulse Secure / Ivanti · FortiGate | web-surface |
 | PaloAlto GlobalProtect · Cisco AnyConnect · VMware vCenter / ESXi / Horizon | web-surface |
 | Microsoft Exchange OWA (ProxyShell / ProxyLogon / ProxyNotShell) | web-surface |
-| KEV CVE enrichment + EPSS scoring + Metasploit availability | analysis-and-reporting |
+| KEV CVE enrichment + EPSS scoring + Metasploit availability | people-breach-intel |
 | WAF / CDN bypass + origin discovery (8 techniques) | docs/methods/cdn-bypass-techniques.md |
 
 ## Email Security
@@ -100,10 +100,10 @@
 
 | Capability | Skill |
 |---|---|
-| LinkedIn employee enumeration (P0-P5 role tiers · sock-puppet hygiene) | people-breach-intel |
-| Job posting tech-stack analysis (Lever · Greenhouse · AshbyHQ · Workable) | people-breach-intel |
+| LinkedIn employee enumeration (P0-P5 role tiers · sock-puppet hygiene) | identity-fabric |
+| Job posting tech-stack analysis (Lever · Greenhouse · AshbyHQ) | people-breach-intel |
 | Slack / Discord / Telegram / Mattermost workspace discovery | people-breach-intel |
-| Sat imagery for physical recon (Google Earth · NearMap · Sentinel Hub) | people-breach-intel |
+| Sat imagery for physical recon (Google Earth · NearMap · Sentinel Hub) | docs/reference/tool-directory.md |
 | Email-pattern inference (8 templates) | people-breach-intel |
 
 ## Supply Chain

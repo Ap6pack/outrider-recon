@@ -7,7 +7,7 @@ The "what to reach for" operational arsenal for external red-team OSINT and bug-
 | Name | `offensive-osint` |
 | Version | 2.1.1 |
 | Lines | ~80 |
-| Headings | 5 (Behavioral Contract, Sub-skill map, Session start checklist, Hard rules, plus frontmatter) |
+| Headings | 4 (Behavioral Contract, Sub-skill map, Session start checklist, Hard rules) |
 | Role | Router — dispatches to 9 sub-skills by task type |
 | Companion skill | [`osint-methodology`](../osint-methodology/) |
 
@@ -19,13 +19,13 @@ The "what to reach for" operational arsenal for external red-team OSINT and bug-
 
 | Sub-skill | Covers |
 |---|---|
-| `recon-asset-discovery` | Subdomains, ASN/BGP, DNS, CT, WHOIS/RDAP, geospatial, regional engines |
+| `recon-asset-discovery` | Subdomains, ASN/BGP, DNS, CT, WHOIS/RDAP, wordlists |
 | `web-surface` | Swagger/GraphQL paths, curl probes, Wayback, Postman, endpoint scoring |
 | `identity-fabric` | IdP fingerprinting, Entra/Okta/ADFS/SAML, M365 deep enum, LinkedIn |
 | `secrets-and-dorks` | Secret regexes, dork corpus, GitHub code-search dorks, read-only validators |
 | `post-discovery` | JWT triage, AWS IAM enum, GitHub/Slack post-credential workflows |
 | `cloud-and-infra` | Cloud-native fingerprints, K8s/container, CI/CD exposure, infra OSINT |
-| `people-breach-intel` | Username/email/phone, breach data, HudsonRock, crypto, media, Telegram |
+| `people-breach-intel` | Username/email/phone, breach data, HudsonRock, Slack/Discord/Telegram, package registries |
 | `analysis-and-reporting` | Scoring rubrics, attack-path hints, severity matrix, AI-assisted OSINT |
 | `report-template` | Bug-bounty report scaffold |
 
@@ -48,6 +48,8 @@ cp scripts/secret_scan.py ~/.claude/skills/offensive-osint/scripts/secret_scan.p
 ## Helper script
 
 [`scripts/secret_scan.py`](scripts/secret_scan.py) — stdlib-only Python scanner mirroring the secret-pattern catalog. Run standalone:
+
+[`scripts/h1_reference.py`](scripts/h1_reference.py) — HackerOne disclosed-reports reference agent. Query top-voted reports, filter by keyword or program.
 
 ```bash
 python3 scripts/secret_scan.py path/to/repo/        # scan a directory tree

@@ -339,7 +339,7 @@ Every asset carries: `type`, `key` (typed dedup id), `value`, `sources[]`, `conf
 
 ## 11. Implementation: Companion Skill Pointers
 
-The following modules have full implementation detail — probe paths, wordlists, curl one-liners, regexes, and scoring rubrics — in `offensive-osint`. This skill defines *what to do*; that skill defines *how to do it*.
+The following modules have full implementation detail — probe paths, wordlists, curl one-liners, regexes, and scoring rubrics — in the specialized sub-skills. This skill defines *what to do*; those skills define *how to do it*.
 
 **Identity Fabric Mapping** (`identity-fabric` §1) — Microsoft Entra (OIDC metadata, getuserrealm.srf, GetCredentialType), Okta (slug derivation, /api/v1/authn), ADFS, Google Workspace, generic OIDC (Auth0/Keycloak/Ping/OneLogin/Duo), SAML metadata (5 paths), AWS account-ID extraction, M365 deep surface (Teams federation, SharePoint, OneDrive, OAuth client_id, device-code phishing check, Power Platform).
 
@@ -355,7 +355,12 @@ The following modules have full implementation detail — probe paths, wordlists
 
 **Vulnerability Prioritization** (`people-breach-intel` §4 + `docs/reference/tool-directory.md`) — NVD, EPSS, CISA KEV, ExploitDB, Metasploit, InTheWild.io, Trickest CVE→POC; 9-signal scoring rubric → P0/P1/P2/P3 tiers.
 
-**Phishing Infrastructure** (`web-surface` §9) — typosquat shortlists via dnstwist; subdomain takeover for trusted-domain phishing; email spoof feasibility matrix (SPF × DMARC); pretext development from OSINT (job titles, recent events, vendor relationships, GitHub commits).
+**Phishing Infrastructure** — multi-source; pointers below.
+- *Typosquat shortlists:* Generate candidates with dnstwist: `dnstwist --registered domain.com` — cross-reference live domains with `web-surface` §11 takeover fingerprints.
+- *Subdomain takeover for trusted-domain phishing:* `web-surface` §11 (27 provider fingerprints, CNAME dangling checks).
+- *Email spoof feasibility matrix (SPF × DMARC):* `web-surface` §9 (SPF strictness, DMARC policy, DKIM selector enumeration).
+- *Pretext development from OSINT:* leverage job titles, recent events, vendor relationships, and GitHub commit patterns gathered during earlier pipeline stages.
+- Combine all four vectors into a single phishing-readiness summary per target domain.
 
 ---
 

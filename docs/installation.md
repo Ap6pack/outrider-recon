@@ -62,7 +62,7 @@ from pathlib import Path
 
 client = Anthropic()
 
-# Load all skill files (~2,997 lines total)
+# Load all skill files (~3,000 lines total)
 skills_dir = Path("skills")
 skill_blocks = []
 for skill_path in sorted(skills_dir.glob("*/SKILL.md")):
@@ -115,7 +115,7 @@ The skill's `triggers:` list controls auto-activation. If your prompt's wording 
 
 ### "Skill is too large for my model's context"
 
-All 11 skills together are ~2,997 lines. This fits comfortably in modern Claude context windows (200K+). If you're using an older model with smaller context:
+All 11 skills together are ~3,000 lines. This fits comfortably in modern Claude context windows (200K+). If you're using an older model with smaller context:
 
 - Attach only the router (`offensive-osint`) + methodology (`osint-methodology`) for core functionality.
 - Or attach only the sub-skills relevant to the task.
@@ -127,7 +127,7 @@ Edit `skills/<skill-name>/SKILL.md` directly. All files are plain Markdown. You 
 
 ## Verifying skill version
 
-All SKILL.md files declare `version:` in the YAML frontmatter. Current: `2.3`. Check via:
+All SKILL.md files declare `version:` in the YAML frontmatter. Current project release: v2.3. Individual skill versions in YAML frontmatter. Check via:
 
 ```bash
 grep "^version:" skills/*/SKILL.md

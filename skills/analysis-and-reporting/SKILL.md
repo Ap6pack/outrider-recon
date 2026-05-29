@@ -34,7 +34,7 @@ triggers:
 
 ## BEHAVIORAL CONTRACT
 
-**When triggered:** Endpoint scoring, finding severity classification, attack-path hint generation, mobile app ownership assessment, vulnerability prioritization, or sector-specific recon analysis is needed.
+**When triggered:** Endpoint scoring, finding severity classification, attack-path hint generation, mobile app ownership assessment, vulnerability prioritization, sector-specific recon analysis, AI-assisted OSINT analysis, evidence preservation, or tooling/automation setup is needed.
 
 **Execute:**
 1. For every classified API endpoint, compute the endpoint interest score (§1). If score >= 70, attach an attack-path hint from §3 templates.
@@ -42,7 +42,9 @@ triggers:
 3. For every finding, classify severity using the decision matrix (§4). Apply sector severity overrides (§5) when target is in a regulated sector.
 4. For HIGH/CRITICAL findings, emit the matching attack-path hint from §3 templates.
 5. Write sidecar JSON files (§6) for cross-module coordination when this module produces outputs that feed other modules.
-6. Evidence handling: URL + UTC timestamp + SHA-256 for all downloads.
+6. Evidence handling: preserve all artifacts per §8 — URL + UTC timestamp + SHA-256 + operator ID for all downloads; store on encrypted volume.
+7. For bulk JS/response analysis, apply AI-assisted OSINT patterns (§7) using local models for sensitive content.
+8. For tooling setup and automation pipelines, follow §9 patterns and reference `docs/reference/tool-directory.md`.
 
 **Output:** Scored findings with severity, attack-path hints, and sidecar JSON where applicable. All findings use `osint-methodology` §3 schema.
 
@@ -279,4 +281,87 @@ Downstream modules check for sidecars on start; if present, ingest.
   "firebase_project_ids": ["acme-prod-12345"]
 }
 ```
+
+---
+
+## 7. AI-Assisted OSINT Patterns
+
+LLMs accelerate offline analysis of large, unstructured recon artifacts. All analysis below happens on already-collected data — no network interaction, zero detectability.
+
+**JS bundle summarization.** Feed minified/webpack bundles to an LLM and ask it to extract API endpoints, internal hostnames, hardcoded tokens, and Firebase project IDs. This replaces hours of manual grep with a single structured pass.
+
+**Prompt template for bulk analysis:**
+```
+Analyze this JS bundle and extract:
+1. API endpoints (full URL or path pattern)
+2. Internal hostnames and IP addresses
+3. Hardcoded tokens, API keys, or secrets
+4. Firebase project IDs or GCP resource identifiers
+5. WebSocket URLs
+6. Third-party service integrations (Stripe, Twilio, Sentry, etc.)
+
+Output as JSON with keys: endpoints, hostnames, secrets, firebase_ids, websockets, third_party.
+```
+
+**LLM-assisted pattern matching.** Feed HTTP response bodies to identify non-standard API patterns that regex misses — custom RPC formats, protobuf-over-HTTP, GraphQL aliases, envelope patterns wrapping REST, and vendor-specific error schemas that leak framework internals.
+
+**Sensitive-content caveat.** Never paste target PII, credentials, session tokens, or customer data into cloud-hosted LLMs (ChatGPT, Claude API, etc.). For engagement artifacts containing sensitive content, use local models (ollama, llama.cpp, vLLM) running on the operator's machine. This is a hard rule, not a preference.
+
+**Detectability:** NONE. All analysis is offline against already-downloaded artifacts.
+
+---
+
+## 8. Evidence Preservation & Archiving
+
+Every artifact collected during an engagement must be preserved with integrity metadata. This is non-negotiable for client deliverables and legal defensibility.
+
+**URL archiving.** Before analyzing a page, archive it:
+- **archive.org:** `curl -s -d "url=https://target.com/page" https://web.archive.org/save` — returns archived URL.
+- **archive.today:** Submit via their form endpoint as a backup when archive.org is slow or blocked.
+- **Local mirror:** `wget --mirror --convert-links --adjust-extension --page-requisites --no-parent -P ./evidence/ https://target.com/path` for a full offline copy.
+
+**Screenshot evidence.** Capture visual state of findings:
+- `gowitness scan single --url https://target.com/admin --screenshot-path ./evidence/screenshots/`
+- `playwright screenshot --url https://target.com/admin --output ./evidence/screenshots/admin.png`
+- EyeWitness for bulk URL screenshot runs from a target list.
+
+**Hashing discipline.** SHA-256 every downloaded artifact immediately upon collection:
+```bash
+sha256sum ./evidence/artifact.html >> ./evidence/checksums.sha256
+```
+Never modify an artifact after hashing. If transformation is needed (e.g., deobfuscation), work on a copy and hash both the original and the copy.
+
+**Chain of custody.** Every artifact record must include:
+- UTC timestamp (ISO 8601): `2026-05-29T14:32:00Z`
+- Source URL or retrieval command
+- SHA-256 hash of the file as retrieved
+- Operator ID (engagement handle, not personal name)
+
+**Storage.** All engagement data lives on an encrypted volume:
+- Linux: LUKS-encrypted partition or loopback device.
+- Cross-platform: VeraCrypt container.
+- Air-gapped storage for sensitive engagements (government, healthcare, finance).
+
+**Retention.** Follow the client contract retention clause. Default: 90 days post-delivery. Cryptographic destruction (wipe + key deletion) on engagement close. Document the destruction date and method.
+
+---
+
+## 9. Automation & Tooling Quick-Install
+
+> Full tool catalog, version pins, and installation details: `docs/reference/tool-directory.md`. This section covers integration patterns only.
+
+**One-liner install patterns** for the most common tool ecosystems:
+- **Go tools:** `go install github.com/projectdiscovery/subfinder/v2/cmd/subfinder@latest`
+- **Python tools:** `pip install trufflehog semgrep` (use the shared venv)
+- **Cargo tools:** `cargo install rustscan`
+- **System packages:** `sudo apt install nmap masscan jq` or `brew install nmap masscan jq`
+
+**Workflow automation.** Chain tools with bash pipelines and `jq` for structured output:
+```bash
+subfinder -d target.com -silent | httpx -silent -json | jq -r '.url' | nuclei -silent -json | jq '.'
+```
+
+**Structured output preference.** Always use `-json` or `-o json` flags when available. Structured output enables programmatic severity classification (§4), sidecar generation (§6), and evidence hashing (§8) without fragile text parsing.
+
+**Sidecar integration.** Automation pipelines should write their outputs in sidecar-compatible JSON (§6 shape) so downstream modules can ingest results automatically.
 

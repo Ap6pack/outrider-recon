@@ -43,7 +43,7 @@ flowchart LR
     style C fill:#16a34a,color:#fff
 ```
 
-Per-asset-type upgrade workflows in `methodology` §2.1 specify exactly what evidence moves an asset between levels.
+Per-asset-type upgrade workflows in `osint-methodology` §2.1 specify exactly what evidence moves an asset between levels.
 
 ## Severity model
 
@@ -81,7 +81,7 @@ flowchart LR
     style H fill:#7f1d1d,color:#fff
 ```
 
-The detection-aware probing section (`methodology` §6.4) provides the back-off ladder for when you start hitting active defenses.
+The detection-aware probing section (`osint-methodology` §6.4) provides the back-off ladder for when you start hitting active defenses.
 
 ## Asset graph model
 
@@ -198,7 +198,7 @@ Semantic versioning. The `version:` field in YAML frontmatter is authoritative.
 - **MINOR** — new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-Current: `2.3`.
+Current project release: v2.3. Individual skill versions in YAML frontmatter.
 
 ## Renumbering policy
 
@@ -243,8 +243,9 @@ flowchart LR
     R --> S4["🔑 secrets-and-dorks<br/><i>48 regexes · 70 dorks · validators</i>"]
     R --> S5["⚡ post-discovery<br/><i>JWT · AWS IAM · GitHub · Slack enum</i>"]
     R --> S6["☁️ cloud-and-infra<br/><i>cloud-native · K8s · CI-CD</i>"]
-    R --> S7["👥 people-breach-intel<br/><i>breach · HudsonRock · crypto · media</i>"]
+    R --> S7["👥 people-breach-intel<br/><i>breach · HudsonRock · Slack/Discord/Telegram</i>"]
     R --> S8["📊 analysis-and-reporting<br/><i>scoring · severity matrix · archiving</i>"]
+    R --> S9["📝 report-template<br/><i>BB submission · client deliverable</i>"]
 
     style Root fill:#dc2626,stroke:#7f1d1d,color:#fff
     style M fill:#1e293b,stroke:#475569,color:#f1f5f9
@@ -262,6 +263,7 @@ flowchart LR
     style S6 fill:#1c1917,stroke:#44403c,color:#fed7aa
     style S7 fill:#1c1917,stroke:#44403c,color:#fed7aa
     style S8 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S9 fill:#1c1917,stroke:#44403c,color:#fed7aa
 ```
 
 ## Engagement Flow

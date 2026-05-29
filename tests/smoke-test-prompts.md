@@ -4,7 +4,7 @@
 
 ## How to use
 
-1. Install both skills (see [`docs/installation.md`](../docs/installation.md)).
+1. Install all skills (see [`docs/installation.md`](../docs/installation.md)).
 2. Start a fresh session.
 3. Paste each prompt.
 4. Check Claude's response against "Expected behavior".
@@ -45,7 +45,7 @@
 |---|---|---|
 | 13 | "Run a comprehensive WHOIS investigation on acme.com — what data + how to pivot?" | Pulls `recon-asset-discovery` §3 (WHOIS / RDAP / historical / reverse-WHOIS). |
 | 14 | "What DNS records should I check + what does each tell me?" | Pulls `recon-asset-discovery` §4 (DNS record catalog with TXT verification token table → SaaS tenant inference). |
-| 15 | "Audit acme.com's email security posture for spoof feasibility and SaaS tenant inference." | Pulls `web-surface` §9 (SPF/DMARC/DKIM/BIMI/MTA-STS/DNSSEC parsing + SaaS tenant inference). |
+| 15 | "Audit acme.com's email security posture for spoof feasibility and SaaS tenant inference." | Pulls `web-surface` §9 (SPF/DMARC/DKIM/BIMI/MTA-STS/DNSSEC parsing + SaaS tenant inference; BIMI and MTA-STS coverage in web-surface §9). |
 | 16 | "What wordlist for subdomain bruteforce + where do I get it?" | Pulls `recon-asset-discovery` §2.1 (Assetnote, SecLists, jhaddix, etc. + size guidance). |
 | 17 | "Jenkins / GitLab / GitHub Actions / CircleCI misconfigurations — how do I check?" | Pulls `cloud-and-infra` §3 with per-platform recipes. |
 | 18 | "Container/K8s exposure — what ports + endpoints?" | Pulls `cloud-and-infra` §2 (kubelet 10250, etcd 2379, K8s API 6443, dashboard, Helm Tiller, container registries). |
@@ -64,19 +64,19 @@
 | 24 | "Find public Slack invite links or Discord servers for a target." | Pulls `people-breach-intel` §6 (Slack invite enum + Discord discovery). |
 | 25 | "Check if target has leaked credentials in npm / PyPI / Docker Hub packages." | Pulls `people-breach-intel` §7 (per-registry workflow). |
 | 26 | "What's the actual Wayback CDX query for endpoint discovery?" | Pulls `web-surface` §14 (CDX API + filter parameters + diff workflow). |
-| 27 | "100 CVEs from a Nuclei scan. Prioritize them." | Pulls `people-breach-intel` §4 (rubric: KEV +50, EPSS≥0.7 +30, etc.) + `docs/reference/tool-directory.md` (data sources). |
+| 27 | "100 CVEs from a Nuclei scan. Prioritize them." | Pulls `people-breach-intel` §4.1 scoring rubric + `docs/reference/tool-directory.md` (data sources). |
 | 28 | "Found unauth POST endpoint on a HackerOne target. Write the report." | Pulls `osint-methodology` §13 (bug bounty submission + report structure + severity inference) + `report-template` §1. |
 | 29 | "Cloudflare-fronted target, unique favicon. Use favicon hashing to find origin." | Pulls `cloud-and-infra` §5 (favicon mmh3 + Shodan `http.favicon.hash:` query + non-CDN-IP cross-reference). |
 | 30 | "Target owns a /22 IPv4 prefix in their ASN. Enumerate it." | Pulls `docs/methods/active-sweep-scripts.md` (reverse DNS sweep + IPv6 + BGP route observation). |
 | 31 | "Probes getting 429s + Cloudflare interstitial. What now?" | Pulls `osint-methodology` §6.4 (signs of detection + back-off ladder + persona/IP rotation). |
 | 32 | "Found `sk-ant-api03-...` in a JS bundle. What is it + how serious?" | Pulls `secrets-and-dorks` §1 row 30 (Anthropic API key, CRITICAL) + `secrets-and-dorks` §4.5 (read-only validator) + `post-discovery` §6 (post-validation enum). |
-| 33 | "Before I start probing this target, pull community-validated HackerOne disclosures for SSRF and OAuth bypass techniques." | Pulls `scripts/h1_reference.py`; provides `h1_reference.py` command with `--top-voted --query "SSRF\|OAuth" --pages 10`; does NOT invent report URLs or fabricate findings. |
+| 33 | "Before I start probing this target, pull community-validated HackerOne disclosures for SSRF and OAuth bypass techniques." | Pulls `skills/offensive-osint/scripts/h1_reference.py`; provides `h1_reference.py` command with `--top-voted --query "SSRF\|OAuth" --pages 10`; does NOT invent report URLs or fabricate findings. |
 | 34 | "crt.sh just 502'd. What's the fallback chain?" | Pulls `recon-asset-discovery` §1 (crt.sh fallback chain: CertSpotter, Censys, Subfinder). |
 | 35 | "Bulk IP → ASN lookup for 200 IPs without burning bgpview rate limit." | Pulls `docs/methods/active-sweep-scripts.md` (Cymru bulk WHOIS, RIPEstat). |
 | 36 | "Common-prefix subdomain sweep for `target.example` covering vpn / api / staging / portal / intranet." | Pulls `recon-asset-discovery` §2 (119 ordered prefix list). |
 | 37 | "Legacy mail (`mail.<domain>`) is NXDOMAIN today but breach corpus has employee URLs against it. What's the finding?" | Pulls `people-breach-intel` §1.3 (SSO_EXPOSURE legacy-mail-decommissioned pattern → CRITICAL). |
 | 38 | "Confirm M365 tenancy when MX is wrapped by Mimecast (so MX doesn't reveal underlying mail platform)." | Pulls `identity-fabric` §1.1 (Entra autodiscover IP correlation) + `recon-asset-discovery` §4 (DNS TXT autodiscover confirmation). |
-| 39 | "DMARC RUA points to `kdmarc.com` — what does that tell me?" | Pulls `web-surface` §9 (DMARC reporting-vendor table; INFO finding — tenant signal only). |
+| 39 | "DMARC RUA points to `kdmarc.com` — what does that tell me?" | Pulls `web-surface` §9 (DMARC reporting-vendor content; INFO finding — tenant signal only). |
 | 40 | "Wayback `*.js` query returned empty for a brochure-ware site. Pivot?" | Pulls `web-surface` §14 API Endpoints (Wayback CDX) — pivot to legacy extensions (.asp/.php/.jsp/.cfm/.aspx). |
 
 ---
@@ -95,7 +95,7 @@
 
 ```
 Run date: ____________
-Skill versions: methodology v____ + offensive-osint v____
+Skill versions: osint-methodology v____ + offensive-osint v____ + all sub-skills
 Tester: ____________
 
 | # | Prompt | PASS / PARTIAL / FAIL | Notes |
@@ -161,4 +161,4 @@ Grade: ___
 
 Re-run this suite after every skill edit. Add new prompts when you discover new behavior gaps. Open issues for failures.
 
-Last updated: 2026-05-19. Skill versions: 2.1 + 2.2-dev.
+Last updated: 2026-05-29. Skill versions: see YAML frontmatter in each skill.

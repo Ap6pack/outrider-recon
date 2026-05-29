@@ -53,14 +53,15 @@ Load the sub-skill that matches the current task. Each is self-contained and und
 
 | Task | Sub-skill to load |
 |---|---|
-| Subdomains, ASN/BGP, DNS, CT, WHOIS/RDAP, geospatial, regional engines | `recon-asset-discovery` |
+| Subdomains, ASN/BGP, DNS, CT, WHOIS/RDAP, wordlists | `recon-asset-discovery` |
 | Web surface: Swagger/GraphQL paths, curl probes, Wayback, Postman, endpoint scoring | `web-surface` |
 | IdP fingerprinting, Entra/Okta/ADFS/SAML, M365 deep enum, LinkedIn employee enum | `identity-fabric` |
 | Secret regexes, dork corpus, GitHub code-search dorks, read-only validators | `secrets-and-dorks` |
 | Post-credential: JWT triage, AWS IAM enum, GitHub scope enum, Slack workspace enum | `post-discovery` |
 | Cloud-native fingerprints, K8s/container, CI/CD exposure, infra OSINT | `cloud-and-infra` |
-| Username/email/phone, people search, breach data, HudsonRock, crypto, media, Telegram | `people-breach-intel` |
+| Username/email/phone, breach data, HudsonRock, Slack/Discord/Telegram, package registries | `people-breach-intel` |
 | Scoring rubrics, attack-path hints, severity matrix, AI-assisted OSINT, archiving | `analysis-and-reporting` |
+| Report generation: bug-bounty submission, client deliverable, vulnerability report | `report-template` |
 
 ---
 

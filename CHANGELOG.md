@@ -58,7 +58,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **7 remaining offensive-osint sub-skills** (all under 500 lines):
   - `recon-asset-discovery` (286 lines) — subdomains, ASN/BGP, CT logs, WHOIS/RDAP, DNS catalog, geospatial, regional search engines.
   - `web-surface` (364 lines) — Swagger/GraphQL probe paths, curl one-liners, vendor fingerprints, CDN bypass, Wayback CDX, Postman, endpoint scoring.
-  - `secrets-and-dorks` (312 lines) — 48-pattern secret regex catalog, 80+ dork corpus, GitHub code-search dorks, 9 read-only validators.
+  - `secrets-and-dorks` (312 lines) — 48-pattern secret regex catalog, 70 dork corpus, GitHub code-search dorks, 9 read-only validators.
   - `post-discovery` (240 lines) — JWT triage, AWS IAM enum, GitHub/Slack post-credential workflows. Gated: requires validator confirmation first.
   - `cloud-and-infra` (236 lines) — cloud-native fingerprints, K8s/etcd/kubelet, CI/CD exposure, TLS deep audit.
   - `people-breach-intel` (313 lines) — HudsonRock, breach data, username/email/phone, people search, social media, crypto, media.
@@ -128,7 +128,7 @@ Comprehensive expansion based on a 32-prompt smoke-test gap analysis. PASS rate 
 #### Catalog & corpus expansions
 
 - **§17 Secret-Pattern Catalog** expanded from 29 to **48 patterns**. Added: Anthropic API key (`sk-ant-`), OpenAI legacy + project keys, OpenAI session, HuggingFace (`hf_`), Cloudflare API key (typed + global), DigitalOcean (`dop_v1_`), npm (`npm_`), PyPI (`pypi-`), Docker Hub (`dckr_pat_`), Atlassian (`ATATT3xFfGF0_`), New Relic, DataDog (typed), Sentry DSN, ngrok, Linear, Discord bot token, Telegram bot token.
-- **§18 Dork Corpus** expanded from 50+ to **80+ templates** across **9 categories** (added: internal tool exposure, backup/dump file extensions, sector-specific for healthcare/finance/gov).
+- **§18 Dork Corpus** expanded from 50+ to **70 templates** across **9 categories** (added: internal tool exposure, backup/dump file extensions, sector-specific for healthcare/finance/gov).
 
 #### Identity & validators
 
