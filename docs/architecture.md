@@ -1,13 +1,13 @@
 # Architecture & Design Philosophy
 
-## The two-skill split
+## The router + sub-skill split
 
-The skills are deliberately split into **methodology** ("how to think") and **arsenal** ("what to reach for"). This reflects two different mental modes practitioners use:
+The skills are split into **methodology** ("how to think"), a **router** ("which sub-skill handles this"), and **9 focused sub-skills** ("what to reach for"). This reflects how practitioners actually work:
 
 - **Methodology mode** — "I have a target. How do I approach this?" → strategic + procedural.
 - **Arsenal mode** — "I need a Swagger probe path / secret regex / curl one-liner." → tactical + reference.
 
-A single mega-skill of ~5,500 lines would have noisier triggering and worse retrieval. The split lets each skill have a tight, distinct trigger vocabulary.
+A single mega-skill of ~4,200 lines would have noisier triggering and worse retrieval. The split lets each skill have a tight, distinct trigger vocabulary and a behavioral contract that drives autonomous execution.
 
 ```mermaid
 flowchart TD
@@ -64,7 +64,7 @@ flowchart TD
     style INFO fill:#475569,color:#fff
 ```
 
-The arsenal severity matrix (§40) provides 80+ worked examples for triage. Escalation rules cover special cases (HSTS missing on `/login` → MED→HIGH, etc.).
+The severity matrix in `analysis-and-reporting` provides 92 worked examples for triage. Escalation rules cover special cases (HSTS missing on `/login` → MED→HIGH, etc.).
 
 ## Detectability model
 
@@ -198,7 +198,7 @@ Semantic versioning. The `version:` field in YAML frontmatter is authoritative.
 - **MINOR** — new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-Current: `2.1`.
+Current: `2.3`.
 
 ## Renumbering policy
 
@@ -221,8 +221,87 @@ By design, the skills do NOT cover:
 
 These exclusions are intentional. A "comprehensive offensive security" skill would be a textbook, not a focused tool. We'd rather do one thing well than many things adequately.
 
+## Capability Map
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#1e293b','primaryTextColor':'#f1f5f9','primaryBorderColor':'#475569','lineColor':'#94a3b8'}}}%%
+flowchart LR
+    Root(["🦅 outrider-recon"])
+
+    Root --> M["📘 osint-methodology<br/><i>how to think</i>"]
+    Root --> R["🗺️ offensive-osint<br/><i>router</i>"]
+
+    M --> M1[Recon Pipeline]
+    M --> M2[Asset Graph]
+    M --> M3[Findings Rubric]
+    M --> M4[Reporting Templates]
+    M --> M5[OpSec & Detectability]
+
+    R --> S1["🔍 recon-asset-discovery<br/><i>subdomains · DNS · ASN · CT</i>"]
+    R --> S2["🌐 web-surface<br/><i>probes · Swagger · GraphQL · Wayback</i>"]
+    R --> S3["🪪 identity-fabric<br/><i>Entra · Okta · ADFS · M365 · LinkedIn</i>"]
+    R --> S4["🔑 secrets-and-dorks<br/><i>48 regexes · 80+ dorks · validators</i>"]
+    R --> S5["⚡ post-discovery<br/><i>JWT · AWS IAM · GitHub · Slack enum</i>"]
+    R --> S6["☁️ cloud-and-infra<br/><i>cloud-native · K8s · CI-CD</i>"]
+    R --> S7["👥 people-breach-intel<br/><i>breach · HudsonRock · crypto · media</i>"]
+    R --> S8["📊 analysis-and-reporting<br/><i>scoring · severity matrix · archiving</i>"]
+
+    style Root fill:#dc2626,stroke:#7f1d1d,color:#fff
+    style M fill:#1e293b,stroke:#475569,color:#f1f5f9
+    style R fill:#7c2d12,stroke:#9a3412,color:#fef3c7
+    style M1 fill:#0f172a,stroke:#334155,color:#cbd5e1
+    style M2 fill:#0f172a,stroke:#334155,color:#cbd5e1
+    style M3 fill:#0f172a,stroke:#334155,color:#cbd5e1
+    style M4 fill:#0f172a,stroke:#334155,color:#cbd5e1
+    style M5 fill:#0f172a,stroke:#334155,color:#cbd5e1
+    style S1 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S2 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S3 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S4 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S5 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S6 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S7 fill:#1c1917,stroke:#44403c,color:#fed7aa
+    style S8 fill:#1c1917,stroke:#44403c,color:#fed7aa
+```
+
+## Engagement Flow
+
+```mermaid
+%%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#1e293b','primaryTextColor':'#f1f5f9','primaryBorderColor':'#475569','lineColor':'#94a3b8'}}}%%
+flowchart TD
+    A["🎯 Target authorized<br/><i>RoE / BB scope / ASM contract</i>"] --> B[methodology<br/>scope check]
+    B --> C[methodology<br/>5-stage pipeline]
+
+    C --> D1["🔍 Stage 1<br/>Seed Discovery"]
+    C --> D2["🌐 Stage 2<br/>Asset Expansion"]
+    C --> D3["📊 Stage 3<br/>Enrichment"]
+    C --> D4["⚠️ Stage 4<br/>Exposure Analysis"]
+    C --> D5["📋 Stage 5<br/>Reporting"]
+
+    D1 --> E1[DNS catalog<br/>WHOIS / RDAP<br/>public records]
+    D2 --> E2[subdomain stack<br/>prefix sweep<br/>Wayback CDX]
+    D3 --> E3[vendor fingerprint<br/>identity fabric<br/>infrastructure OSINT]
+    D4 --> E4[secret catalog<br/>always-on HTTP checks<br/>K8s exposure<br/>read-only validators<br/>breach × identity]
+    D5 --> E5[severity rubric<br/>BB submission<br/>client deliverable]
+
+    E1 --> F[methodology<br/>asset graph]
+    E2 --> F
+    E3 --> F
+    E4 --> G["📋 Findings<br/>severity + confidence + evidence"]
+    E5 --> H["📦 Deliverable<br/>exec summary + repro package"]
+
+    F --> G
+
+    style A fill:#3b82f6,color:#fff
+    style B fill:#7c2d12,color:#fef3c7
+    style C fill:#1e293b,color:#f1f5f9
+    style F fill:#7c3aed,color:#fff
+    style G fill:#dc2626,color:#fff
+    style H fill:#14532d,color:#dcfce7
+```
+
 ## Engagement-platform agnostic
 
-These skills are extracted from operational tradecraft accumulated across external attack-surface engagements. The 90+ modules generalize to any OSINT engagement and slot into any ASM / ticketing / asset-graph platform you already use — or none.
+These skills are extracted from operational tradecraft accumulated across external attack-surface engagements. The 90+ capabilities generalize to any OSINT engagement and slot into any ASM / ticketing / asset-graph platform you already use — or none.
 
 Use the skills standalone (paste a SKILL.md into a Claude Project) or wired into your own pipeline.
