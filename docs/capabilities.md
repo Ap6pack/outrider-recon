@@ -1,6 +1,6 @@
 # Capabilities
 
-72 capabilities across 12 domains. Categorized by function -- pick a domain to drill in.
+81 capabilities across 13 domains. Categorized by function -- pick a domain to drill in.
 
 ---
 
@@ -136,5 +136,18 @@
 | IoT (MQTT · CoAP · UPnP · Hikvision / Dahua DVRs) | analysis-and-reporting, docs/reference/specialty-domains.md |
 | Government (`.gov` / `.mil` · FedRAMP · FISMA · CUI · SAM.gov) | analysis-and-reporting, docs/reference/specialty-domains.md |
 
+## Continuous Monitoring and Engagement Ops
+
+| Capability | Skill |
+|---|---|
+| Daily subdomain/DNS/cert diff pipeline with Slack alerting | docs/methods/continuous-monitoring.md |
+| Weekly deep scan orchestration (Nuclei + port diff + Wayback) | docs/methods/continuous-monitoring.md |
+| False-positive suppression and tuning framework | docs/methods/continuous-monitoring.md |
+| Multi-tenant engagement isolation (scope, credentials, output) | docs/methods/multi-tenant-workflow.md |
+| Parallel execution patterns (GNU parallel, Axiom fleet) | docs/methods/multi-tenant-workflow.md |
+| Engagement decommission and evidence destruction workflow | docs/methods/multi-tenant-workflow.md |
+| Burp Suite engagement config + recon extensions | docs/methods/burp-zap-setup.md |
+| OWASP ZAP automation framework YAML recipes | docs/methods/burp-zap-setup.md |
+| Proxy traffic tagging for bug bounty compliance | docs/methods/burp-zap-setup.md |
 
 > Diagrams: see [`architecture.md`](architecture.md) for the Capability Map, Engagement Flow, and 7 other Mermaid diagrams.

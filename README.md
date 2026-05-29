@@ -2,7 +2,7 @@
 
 # outrider-recon
 
-> Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native -- scopes, enumerates, pivots, and escalates without hand-holding. **72 capabilities** · 48 secret patterns · 70 dorks · 9 read-only validators · 35 attack-path templates.
+> Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native -- scopes, enumerates, pivots, and escalates without hand-holding. **81 capabilities** · 48 secret patterns · 70 dorks · 9 read-only validators · 35 attack-path templates.
 
 ---
 
@@ -74,7 +74,10 @@ outrider-recon/
 │   ├── h1_reference.py               # HackerOne disclosed-reports reference agent (no API key)
 │   └── secret_scan.py                # stdlib-only secret scanner (JSONL output)
 ├── docs/
-│   ├── methods/                       # techniques & procedures (probes · CDN bypass · sweeps)
+│   ├── methods/                       # techniques & procedures (probes · CDN bypass · sweeps · monitoring · multi-tenant · Burp/ZAP)
+│   │   ├── continuous-monitoring.md   # daily/weekly diff pipelines · alert architecture · FP tuning
+│   │   ├── multi-tenant-workflow.md   # engagement isolation · parallel execution · decommission
+│   │   ├── burp-zap-setup.md          # proxy config recipes · extensions · traffic tagging
 │   ├── reference/                     # tool directory · install commands · specialty domains
 │   ├── architecture.md
 │   ├── capabilities.md
@@ -93,12 +96,12 @@ outrider-recon/
 
 | Doc | Contents |
 |---|---|
-| [`docs/capabilities.md`](docs/capabilities.md) | Full capability index (72 capabilities across 12 domains) + architecture diagrams |
+| [`docs/capabilities.md`](docs/capabilities.md) | Full capability index (81 capabilities across 13 domains) + architecture diagrams |
 | [`docs/architecture.md`](docs/architecture.md) | Design philosophy · asset-graph model · confidence/severity/detectability models · sidecar coordination |
 | [`docs/coverage.md`](docs/coverage.md) | Practitioner-coverage breakdown by archetype + engagement phase |
 | [`docs/installation.md`](docs/installation.md) | Symlink installs and multi-environment install patterns |
 | [`docs/usage.md`](docs/usage.md) | Trigger-phrase reference and prompt templates |
-| [`docs/methods/`](docs/methods/) | Techniques & procedures: copy-paste probes, CDN bypass, active sweeps, anti-patterns, evidence preservation |
+| [`docs/methods/`](docs/methods/) | Techniques & procedures: copy-paste probes, CDN bypass, active sweeps, anti-patterns, evidence preservation, continuous monitoring, multi-tenant workflow, Burp/ZAP setup |
 | [`docs/reference/`](docs/reference/) | Tool directory, install commands, specialty domain guides (healthcare, finance, ICS, IoT, government) |
 | [`examples/`](examples/) | 4 end-to-end engagement walk-throughs (quick recon · bug-bounty · M365 deep · secret hunting) |
 | [`tests/smoke-test-prompts.md`](tests/smoke-test-prompts.md) | 40-prompt self-evaluation suite |

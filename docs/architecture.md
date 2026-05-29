@@ -198,7 +198,7 @@ Semantic versioning. The `version:` field in YAML frontmatter is authoritative.
 - **MINOR** — new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-Current project release: v2.3. Individual skill versions in YAML frontmatter.
+Current project release: v2.4. Individual skill versions in YAML frontmatter.
 
 ## Renumbering policy
 
@@ -304,6 +304,6 @@ flowchart TD
 
 ## Engagement-platform agnostic
 
-These skills are extracted from operational tradecraft accumulated across external attack-surface engagements. The 72 capabilities generalize to any OSINT engagement and slot into any ASM / ticketing / asset-graph platform you already use -- or none.
+These skills are extracted from operational tradecraft accumulated across external attack-surface engagements. The 81 capabilities generalize to any OSINT engagement and slot into any ASM / ticketing / asset-graph platform you already use -- or none.
 
 Use the skills standalone (paste a SKILL.md into a Claude Project) or wired into your own pipeline.

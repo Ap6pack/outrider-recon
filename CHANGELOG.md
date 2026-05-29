@@ -7,6 +7,21 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.4] -- 2026-05-29
+
+### Added
+
+- Continuous monitoring playbook -- daily subdomain/DNS/cert diff pipeline, weekly deep scan orchestration, alert pipeline architecture (Slack/PagerDuty), false-positive tuning framework, baseline management, long-running engagement patterns. (docs/methods/continuous-monitoring.md)
+- Multi-tenant engagement workflow -- directory convention, scope isolation with pre-flight check, credential/token segregation, output segregation, parallel execution patterns (GNU parallel, Axiom), reporting/delivery, engagement decommission. (docs/methods/multi-tenant-workflow.md)
+- Burp Suite and ZAP setup recipes -- per-engagement config, 8+ recommended extensions, recon-specific proxy workflows, ZAP automation framework YAML, traffic tagging for bug bounty compliance, proxy chaining for OPSEC. (docs/methods/burp-zap-setup.md)
+
+### Changed
+
+- Capability count: 72 to 81 (9 new capabilities across monitoring, engagement ops, and proxy tooling).
+- Coverage estimate: 85-90% to 90-95% for OSINT-phase work.
+
+---
+
 ## [2.3] — 2026-05-29
 
 ### Architecture
