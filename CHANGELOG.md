@@ -7,6 +7,46 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [2.3] — 2026-05-29
+
+### Architecture
+
+- **Three-layer content separation.** Skill files (SKILL.md) now contain only agent-executable content — behavioral contracts, API endpoints, regex patterns, scoring rubrics, decision logic. Techniques and procedures moved to `docs/methods/`. Tool directories and reference material moved to `docs/reference/`.
+- **Behavioral contracts added to all 11 skills.** Every SKILL.md now starts with a standardized contract: when triggered → execute steps → output format → severity rules → gating rules → chain to next skill.
+
+### Added
+
+- **`docs/methods/`** — 5 files: copy-paste probes, CDN bypass techniques, active sweep scripts, anti-patterns, evidence preservation.
+- **`docs/reference/`** — 3 files: consolidated tool directory, tooling install commands, specialty domain guides.
+- **`web-surface`** — JS guess-paths (11 paths), endpoint extraction regex tiers (3 tiers), subdomain takeover provider fingerprints (27 providers), cloud bucket permutation arsenal (6 prefixes × 15 suffixes × 47 stems).
+- **`recon-asset-discovery`** — Full 8-source crt.sh fallback chain (Censys, CertSpotter, CertStream, Subfinder, AlienVault OTX, ThreatMiner, URLScan, Anubis-DB). Wordlist sources table (7 sources with size guidance).
+- **`identity-fabric`** — 5 SAML metadata probe paths. SSO subdomain prefixes expanded from 4 to 8. OIDC discovery directive on all alive subdomains.
+- **`people-breach-intel`** — 5 additional package registries (RubyGems, Cargo, Packagist, NuGet, Maven Central). Mattermost/Rocket.Chat/self-hosted workspace discovery.
+- **`analysis-and-reporting`** — Severity decision matrix expanded to 92 worked examples. Attack-path hint patterns expanded to 35 templates. Sector severity overrides table.
+- **`docs/reference/tool-directory.md`** — 20+ tools added across categories: workspace discovery, vehicle/fleet intel, physical recon discipline, flight OSINT, cryptocurrency, threat intel, geospatial.
+- **`docs/reference/tooling-install.md`** — 15 install commands added (assetfinder, dnsx, aquatone, feroxbuster, gospider, LinkFinder, cloud_enum, CloudSploit, o365enum, CredMaster, gf, hakrawler, reconftw, axiom, and more).
+- **`docs/reference/specialty-domains.md`** — Expanded healthcare, finance, ICS/SCADA, government sections. Added IoT/consumer/SOHO and maritime/aviation/automotive.
+- **`tests/smoke-test-prompts.md`** — Expanded from 32 to 40 prompts with updated section references.
+
+### Changed
+
+- **Skill line counts:**
+
+| Skill | Before | After |
+|---|---|---|
+| `web-surface` | 364 | 417 |
+| `identity-fabric` | 426 | 450 |
+| `analysis-and-reporting` | 303 | 279 |
+| `people-breach-intel` | 313 | 247 |
+| `recon-asset-discovery` | 286 | 188 |
+| `osint-methodology` | 455 | 420 |
+| Total (11 skills) | ~3,224 | ~2,997 |
+| `docs/methods/` | — | 380 |
+| `docs/reference/` | — | 551 |
+| **Grand total** | ~3,224 | ~3,928 |
+
+---
+
 ## [2.2.1] — 2026-05-24
 
 ### Changed
@@ -161,3 +201,7 @@ Major rewrite for external red-team posture. Both skills tagged `version: 2.0`.
 
 - `osint-methodology`: original framework based on [SnailSploit/offensive-checklist](https://github.com/SnailSploit/offensive-checklist).
 - `offensive-osint`: original tool-reference cheat sheet.
+
+### Attribution
+
+This project is a fork of [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT).

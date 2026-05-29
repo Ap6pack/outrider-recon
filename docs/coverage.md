@@ -56,20 +56,21 @@ Honest assessment of what these skills cover vs. what real practitioners need.
 - **Pricing, NDA, SOW templates** — business operations, not technical.
 - **Real PII / breach corpus content** — privacy + opsec.
 
-## Smoke-test results (32 prompts)
+## Smoke-test results (40 prompts)
 
-The repo ships 32 self-test prompts ([`tests/smoke-test-prompts.md`](../tests/smoke-test-prompts.md)) covering the major capability areas.
+The repo ships 40 self-test prompts ([`tests/smoke-test-prompts.md`](../tests/smoke-test-prompts.md)) covering the major capability areas.
 
-| Run | PASS | PARTIAL | FAIL | Grade |
-|---|---|---|---|---|
-| v2.0 (initial) | 1 | 9 | 22 | C |
-| **v2.1 (current)** | **31** | **1** | **0** | **A** |
+| Run | Prompts | PASS | PARTIAL | FAIL | Grade |
+|---|---|---|---|---|---|
+| v2.0 (initial) | 32 | 1 | 9 | 22 | C |
+| v2.1 | 32 | 31 | 1 | 0 | A |
+| **v2.3 (current)** | **40** | — | — | — | **awaiting run** |
 
-The single PARTIAL is Test 5 (cloud-bucket combinatorial generation) — acceptable; the inputs + technique are documented, runtime synthesis is appropriate.
+The single PARTIAL in v2.1 is Test 5 (cloud-bucket combinatorial generation) — acceptable; the inputs + technique are documented, runtime synthesis is appropriate. Prompts #33–40 added in v2.3 cover crt.sh fallback chain, bulk ASN lookup, prefix sweep, legacy mail SSO exposure, M365 via Mimecast, DMARC vendor inference, and Wayback JS pivot.
 
 ## Caveats
 
-The smoke-test number (96.9% PASS) is **Claude grading itself on tests Claude designed**. It's a useful signal for tracking gaps but not an objective measure of real-world coverage. A real practitioner would find more gaps. Treat it as "the skills now answer the obvious questions"; non-obvious questions may need a follow-on iteration.
+Smoke-test scores are **Claude grading itself on tests Claude designed**. Useful for tracking gaps but not an objective measure of real-world coverage. A real practitioner would find more gaps. Treat it as "the skills now answer the obvious questions"; non-obvious questions may need a follow-on iteration.
 
 ## What experienced practitioners would say is still missing (within OSINT scope)
 

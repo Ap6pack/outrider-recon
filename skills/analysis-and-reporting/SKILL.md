@@ -1,6 +1,6 @@
 ---
 name: analysis-and-reporting
-description: "Endpoint interest scoring (0–100), mobile app ownership confidence, attack-path hint patterns (27 templates), severity decision matrix (80+ examples), AI-assisted OSINT, archiving/evidence, automation, sidecar coordination, tooling quick-install, and sector-specific notes."
+description: "Endpoint interest scoring (0–100), mobile app ownership confidence, attack-path hint patterns (35 templates), severity decision matrix (92 examples), sector severity overrides, and sidecar coordination."
 version: 1.0.0
 triggers:
   - endpoint interest score

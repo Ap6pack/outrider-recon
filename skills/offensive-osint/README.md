@@ -60,8 +60,8 @@ Highlights:
 - **§21 — Mobile app ownership confidence (0–100 rubric)**.
 - **§22 — Identity-fabric concrete endpoints** (incl. M365 Deep + GraphQL field-suggestion enum).
 - **§23 — 9 read-only secret validators** + post-discovery enumeration workflows.
-- **§39 — 27 attack-path hint templates**.
-- **§40 — Severity decision matrix (80+ worked examples)**.
+- **§39 — 35 attack-path hint templates**.
+- **§40 — Severity decision matrix (92 worked examples)**.
 - **§41–§47 — LinkedIn enum, job posting analysis, Slack/Discord discovery, package registry leaks, sat imagery, tooling install, sector notes**.
 - **§48 — Runnable secret-scan helper** (stdlib-only Python, available standalone at [`scripts/secret_scan.py`](scripts/secret_scan.py)).
 

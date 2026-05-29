@@ -2,7 +2,7 @@
 
 # outrider-recon
 
-> Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native — scopes, enumerates, pivots, and escalates without hand-holding. **90+ capabilities** · 48 secret patterns · 80+ dorks · 9 read-only validators · 27 attack-path templates.
+> Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native — scopes, enumerates, pivots, and escalates without hand-holding. **90+ capabilities** · 48 secret patterns · 80+ dorks · 9 read-only validators · 35 attack-path templates.
 
 ---
 
@@ -14,18 +14,18 @@ The pipeline is structured as a router + specialized sub-agents, each owning a s
 
 - **`osint-methodology`** — *how to think.* Strategic + procedural. Asset-graph discipline, severity rubric, time budgeting, identity-fabric mapping, deliverable templates.
 - **`offensive-osint`** — *router.* Dispatches to the right sub-agent based on task type. Entry point for the pipeline.
-- **`recon-asset-discovery`** — subdomains, ASN/BGP, CT logs, WHOIS/RDAP, DNS catalog, geospatial, regional search engines.
-- **`web-surface`** — Swagger/GraphQL probe paths, curl one-liners, vendor fingerprints, CDN bypass, Wayback CDX, Postman, endpoint scoring.
-- **`identity-fabric`** — Entra, Okta, ADFS, SAML, M365 deep enum, GraphQL field-suggestion, LinkedIn employee enum.
+- **`recon-asset-discovery`** — subdomains (8-source crt.sh fallback chain), ASN/BGP, CT logs, WHOIS/RDAP, DNS catalog, wordlist sources.
+- **`web-surface`** — Swagger/GraphQL probe paths, JS guess-paths, endpoint extraction regexes, vendor fingerprints, subdomain takeover (27 providers), cloud bucket permutation, CDN bypass, Wayback CDX, Postman, endpoint scoring.
+- **`identity-fabric`** — Entra, Okta, ADFS, SAML (5 metadata paths), M365 deep enum, GraphQL field-suggestion, LinkedIn employee enum.
 - **`secrets-and-dorks`** — 48-pattern secret regex catalog, 80+ dork corpus, GitHub code-search dorks, 9 read-only validators.
 - **`post-discovery`** — JWT triage, AWS IAM enum, GitHub/Slack post-credential workflows. Gated: run validators first.
 - **`cloud-and-infra`** — cloud-native fingerprints, K8s/etcd/kubelet, CI/CD exposure, TLS deep audit.
-- **`people-breach-intel`** — HudsonRock, breach data, username/email/phone, people search, social media, crypto, media.
-- **`analysis-and-reporting`** — scoring rubrics, attack-path hints, severity decision matrix, sector-specific notes.
+- **`people-breach-intel`** — HudsonRock, breach data, email-pattern inference, package registry leak hunting (7 registries), Slack/Discord/Mattermost discovery.
+- **`analysis-and-reporting`** — scoring rubrics, 35 attack-path hints, 92-row severity decision matrix, sector severity overrides.
 
 Deploy the pipeline into your Claude environment and it operates as a senior recon analyst: it knows the techniques, the tooling, the edge cases, and the escalation paths — and it stays in scope.
 
-96.9% PASS on a 32-prompt self-evaluation · ~85–90% practitioner coverage for the recon phase of authorized engagements.
+40-prompt self-evaluation suite · ~85–90% practitioner coverage for the recon phase of authorized engagements.
 
 ---
 
@@ -36,23 +36,29 @@ outrider-recon/
 ├── skills/
 │   ├── osint-methodology/SKILL.md     # how to think (pipeline · rubric · anti-patterns · deliverables)
 │   ├── offensive-osint/SKILL.md       # router — dispatches to sub-skills below
-│   ├── recon-asset-discovery/SKILL.md # subdomains · ASN · CT · DNS · WHOIS
-│   ├── web-surface/SKILL.md           # probe paths · curl probes · Wayback · Postman
+│   ├── recon-asset-discovery/SKILL.md # subdomains · ASN · CT · DNS · WHOIS · wordlists
+│   ├── web-surface/SKILL.md           # probe paths · takeover · buckets · Wayback · Postman
 │   ├── identity-fabric/SKILL.md       # Entra · Okta · ADFS · SAML · M365 · LinkedIn
 │   ├── secrets-and-dorks/SKILL.md     # 48 regexes · 80+ dorks · 9 validators
 │   ├── post-discovery/SKILL.md        # JWT · AWS IAM · GitHub · Slack workflows
 │   ├── cloud-and-infra/SKILL.md       # cloud-native · K8s · CI-CD · TLS
-│   ├── people-breach-intel/SKILL.md   # breach · HudsonRock · email · people · media
-│   ├── analysis-and-reporting/SKILL.md # scoring · severity matrix · sector notes
+│   ├── people-breach-intel/SKILL.md   # breach · HudsonRock · email · pkg registries
+│   ├── analysis-and-reporting/SKILL.md # scoring · severity matrix · sector overrides
 │   └── report-template/SKILL.md       # bug-bounty report scaffold
 ├── skills/offensive-osint/scripts/
 │   ├── h1_reference.py               # HackerOne disclosed-reports reference agent (no API key)
 │   └── secret_scan.py                # stdlib-only secret scanner (JSONL output)
 ├── scripts/
 │   └── sync-skill-content.sh         # restore full skill content from docs/full-skills/
-├── docs/                              # architecture · coverage · install · usage
+├── docs/
+│   ├── methods/                       # techniques & procedures (probes · CDN bypass · sweeps)
+│   ├── reference/                     # tool directory · install commands · specialty domains
+│   ├── architecture.md
+│   ├── coverage.md
+│   ├── installation.md
+│   └── usage.md
 ├── examples/                          # 4 end-to-end engagement walk-throughs
-├── tests/smoke-test-prompts.md        # 32-prompt self-evaluation
+├── tests/smoke-test-prompts.md        # 40-prompt self-evaluation
 ├── CLAUDE.md.example                  # copy to CLAUDE.md and customise for your engagement
 └── assets/outrider-recon-banner.svg
 ```
@@ -181,8 +187,8 @@ Each skill directory is self-contained. Drop into `~/.claude/skills/` and Claude
 | Capability | Skill |
 |---|---|
 | Findings rubric (CRITICAL/HIGH/MED/LOW/INFO + escalation) | methodology |
-| Severity decision matrix (88 worked examples) | arsenal |
-| Attack-path hint patterns (27 templates) | arsenal |
+| Severity decision matrix (92 worked examples) | arsenal |
+| Attack-path hint patterns (35 templates) | arsenal |
 | Bug-bounty submission templates (HackerOne / Bugcrowd / Intigriti) | methodology |
 | Client deliverable templates (exec summary · risk-translation matrix · cadence) | methodology |
 | Reproduction package | methodology |
@@ -201,7 +207,7 @@ Each skill directory is self-contained. Drop into `~/.claude/skills/` and Claude
 
 ## Capability Map
 
-Two skills, twelve capability domains. Drill into the [Skill Index](#skill-index) above for concrete sub-capabilities.
+Eleven skills, twelve capability domains. Drill into the [Skill Index](#skill-index) above for concrete sub-capabilities.
 
 ```mermaid
 %%{init: {'theme':'base', 'themeVariables': {'primaryColor':'#1e293b','primaryTextColor':'#f1f5f9','primaryBorderColor':'#475569','lineColor':'#94a3b8'}}}%%
@@ -330,8 +336,10 @@ Both skills include a soft scope-check when you ask Claude to act against an unv
 | [`docs/coverage.md`](docs/coverage.md) | Honest practitioner-coverage breakdown by archetype + engagement phase |
 | [`docs/installation.md`](docs/installation.md) | Symlink installs and multi-environment install patterns |
 | [`docs/usage.md`](docs/usage.md) | Trigger-phrase reference and prompt templates |
+| [`docs/methods/`](docs/methods/) | Techniques & procedures: copy-paste probes, CDN bypass, active sweeps, anti-patterns, evidence preservation |
+| [`docs/reference/`](docs/reference/) | Tool directory, install commands, specialty domain guides (healthcare, finance, ICS, IoT, government) |
 | [`examples/`](examples/) | 4 end-to-end engagement walk-throughs (quick recon · bug-bounty · M365 deep · secret hunting) |
-| [`tests/smoke-test-prompts.md`](tests/smoke-test-prompts.md) | 32-prompt self-evaluation suite (current grade: 31/32 PASS) |
+| [`tests/smoke-test-prompts.md`](tests/smoke-test-prompts.md) | 40-prompt self-evaluation suite |
 | [`CHANGELOG.md`](CHANGELOG.md) | Version history |
 | [`CONTRIBUTING.md`](CONTRIBUTING.md) | Pull-request guidelines |
 
@@ -342,6 +350,8 @@ Both skills include a soft scope-check when you ask Claude to act against an unv
 Operational tradecraft accumulated across external attack-surface engagements, codified into Claude skills. Engagement-platform agnostic - slot into any ASM / ticketing / asset-graph platform you already use, or none.
 
 **Author:** [Ap6pack](https://github.com/Ap6pack)
+
+**Forked from:** [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT)
 
 **Original framework:** [SnailSploit/offensive-checklist](https://github.com/SnailSploit/offensive-checklist) (v1.x)
 

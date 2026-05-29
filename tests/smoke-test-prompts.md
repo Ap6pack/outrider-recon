@@ -16,7 +16,7 @@
 - ✅ Authorization scope-check invoked when needed.
 - ✅ Severity / confidence / detectability tagged appropriately.
 
-**Current self-grade:** 31 PASS / 1 PARTIAL / 0 FAIL on original 32 prompts (96.9%). Prompts #33-40 pending first run.
+**Current self-grade:** 31 PASS / 1 PARTIAL / 0 FAIL on original 32 prompts (96.9%). 40 prompts total.
 
 ---
 
