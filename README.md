@@ -2,6 +2,12 @@
 
 # outrider-recon
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Skills](https://img.shields.io/badge/skills-11-green.svg)](#structure)
+[![Capabilities](https://img.shields.io/badge/capabilities-90-orange.svg)](docs/capabilities.md)
+[![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-8A05FF.svg)](https://github.com/Ap6pack/outrider-recon#quick-start)
+[![MCP Server](https://img.shields.io/badge/MCP-5_tools-dc2626.svg)](mcp-server/)
+
 > Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. Claude-native -- scopes, enumerates, pivots, and escalates without hand-holding. **90 capabilities** · 48 secret patterns · 70 dorks · 9 read-only validators · 35 attack-path templates.
 
 ---
