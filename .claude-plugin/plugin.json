@@ -1,7 +1,7 @@
 {
   "name": "outrider-recon",
   "version": "3.0.0",
-  "description": "Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. 81 capabilities across 11 skills covering subdomain enumeration, secret hunting, identity/SSO mapping, breach correlation, vulnerability prioritization, and attack-surface reporting.",
+  "description": "Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. 90 capabilities across 11 skills covering subdomain enumeration, secret hunting, identity/SSO mapping, breach correlation, vulnerability prioritization, and attack-surface reporting.",
   "author": {
     "name": "Ap6pack",
     "url": "https://github.com/Ap6pack"
@@ -21,24 +21,5 @@
     "subdomain-enumeration",
     "secret-scanning"
   ],
-  "skills": "./skills/",
-  "interface": {
-    "displayName": "Outrider Recon",
-    "shortDescription": "Autonomous recon pipeline for authorized red-team and bug-bounty.",
-    "longDescription": "11 skills covering the full external recon lifecycle: methodology, asset discovery, web surface enumeration, identity/SSO mapping, secret/dork hunting, post-credential workflows, cloud/infrastructure, breach intelligence, analysis/reporting, and automated report generation. Operates as a senior recon analyst that plans, executes, pivots, and escalates without hand-holding.",
-    "developerName": "Ap6pack",
-    "category": "Security",
-    "capabilities": [
-      "Interactive"
-    ],
-    "websiteURL": "https://github.com/Ap6pack/outrider-recon",
-    "brandColor": "#dc2626",
-    "defaultPrompt": [
-      "Plan a 4-hour external recon on acme.com (in-scope bug bounty)",
-      "Found AKIA key in a public gist. Walk me through triage.",
-      "Audit target.com email security posture for spoof feasibility"
-    ],
-    "logo": "./assets/outrider-recon-banner.svg",
-    "screenshots": []
-  }
+  "skills": "./skills/"
 }
