@@ -9,6 +9,7 @@ Thumbs.db
 *.iml
 
 # Engagement artifacts (NEVER commit these)
+targets/
 evidence/
 findings/
 runs/
