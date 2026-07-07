@@ -1,0 +1,9 @@
+{
+  "matches": [
+    {
+      "surface": "OpenAPI schema with object-shaped paths",
+      "patterns": ["IDOR/BOLA", "mass assignment", "broken object-level authorization"],
+      "note": "Fictional sample inspired by common public disclosure patterns."
+    }
+  ]
+}

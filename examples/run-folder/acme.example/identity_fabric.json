@@ -1,0 +1,7 @@
+{
+  "providers": [
+    {"asset": "sso.acme.example", "type": "oidc", "evidence": "OIDC metadata available"}
+  ],
+  "tenants": [],
+  "domains": ["acme.example"]
+}

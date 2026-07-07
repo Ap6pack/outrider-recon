@@ -1,0 +1,18 @@
+target: acme.example
+created_at: 2026-07-07T00:00:00+00:00
+engagement_type: authorized_external_recon
+boundary:
+  - read_only_recon_by_default
+  - explicit_rules_of_engagement_required_for_post_discovery
+  - no_destructive_validation_without_written_authorization
+in_scope:
+  - acme.example
+  - "*.acme.example"
+out_of_scope:
+  - legacy.acme.example
+  - "*.staff-only.acme.example"
+traffic_tagging:
+  user_agent: Outrider-Recon-Example
+  source_ip: example-only
+notes:
+  - Fictional sample run folder. Do not treat this as a real target.

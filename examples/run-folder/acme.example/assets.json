@@ -1,0 +1,7 @@
+{
+  "assets": [
+    {"asset": "api.acme.example", "type": "api_host", "priority": "P1", "reason": "Exposed OpenAPI schema with object-shaped paths"},
+    {"asset": "sso.acme.example", "type": "identity_surface", "priority": "P1", "reason": "OIDC metadata and federation hints"},
+    {"asset": "cdn.acme.example", "type": "static_host", "priority": "low", "reason": "Static-only surface"}
+  ]
+}

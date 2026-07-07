@@ -1,0 +1,10 @@
+{
+  "apis": [
+    {
+      "asset": "api.acme.example",
+      "evidence": "GET /openapi.json returned HTTP 200",
+      "paths": ["/users/{id}", "/accounts/{accountId}", "/orders/{orderId}"]
+    }
+  ],
+  "interesting_paths": []
+}
