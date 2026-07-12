@@ -18,15 +18,7 @@ jobs:
           globs: |
             **/*.md
             !node_modules
-          config: |
-            {
-              "default": true,
-              "MD013": false,
-              "MD024": { "siblings_only": true },
-              "MD025": false,
-              "MD033": false,
-              "MD041": false
-            }
+          config: .markdownlint.json
 
   yaml-frontmatter:
     name: SKILL.md YAML frontmatter
