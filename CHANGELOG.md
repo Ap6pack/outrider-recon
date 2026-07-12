@@ -296,3 +296,7 @@ Major rewrite for external red-team posture. Both skills tagged `version: 2.0`.
 ### Attribution
 
 This project is a fork of [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT).
+
+## Unreleased
+
+- Added versioned skill request/result contracts, a deterministic shipped-skill catalog, policy-aware request creation and validation, evidence-backed result validation with candidate/action assessments, and shared contract instructions for all shipped skills without adding skill execution or finding promotion.

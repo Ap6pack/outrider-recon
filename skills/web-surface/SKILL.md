@@ -526,3 +526,15 @@ done | sort -u
 Legacy endpoints often reveal admin panels, forgotten upload forms, and deprecated APIs that still resolve. Cross-reference discovered paths with `§5` always-on HTTP checks.
 | Postman search | `<https://www.postman.com/_api/ws/proxy`> | POST (body: `{"service":"search","method":"POST","path":"/search-all","body":{"queryIndices":["collaboration.workspace"],"queryText":"{domain}","size":100}}`) |
 | StackExchange | `<https://api.stackexchange.com/2.3/search/advanced?site=stackoverflow.com&q={domain}&filter=withbody`> | GET |
+
+## Structured Outrider run contract
+
+Follow the shared run-contract instructions in `../_shared/run-contract.md`.
+
+- Contract skill identifier: `web-surface`.
+- Consume `skill_request` version 1 and produce `skill_result` version 1 when participating in an Outrider run.
+- Use evidence IDs for all claims; do not cite unregistered local paths as claim evidence.
+- Discoveries are observations and do not expand scope or approval.
+- Do not claim final finding validation; use `finding_candidate` only when a human-reviewed candidate should be handed off.
+- Do not directly edit `manifest.json`, `scope.yaml`, `run.jsonl`, `evidence.jsonl`, or `approvals.jsonl`.
+- Use policy-gated MCP with the explicit `run_dir`; the Python control layer and MCP boundary must reevaluate current controls.

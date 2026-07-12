@@ -302,3 +302,15 @@ done
 ```
 
 Unregistered candidate near target's published package → MEDIUM finding (typosquat / supply-chain risk).
+
+## Structured Outrider run contract
+
+Follow the shared run-contract instructions in `../_shared/run-contract.md`.
+
+- Contract skill identifier: `people-breach-intel`.
+- Consume `skill_request` version 1 and produce `skill_result` version 1 when participating in an Outrider run.
+- Use evidence IDs for all claims; do not cite unregistered local paths as claim evidence.
+- Discoveries are observations and do not expand scope or approval.
+- Do not claim final finding validation; use `finding_candidate` only when a human-reviewed candidate should be handed off.
+- Do not directly edit `manifest.json`, `scope.yaml`, `run.jsonl`, `evidence.jsonl`, or `approvals.jsonl`.
+- Use policy-gated MCP with the explicit `run_dir`; the Python control layer and MCP boundary must reevaluate current controls.

@@ -80,3 +80,17 @@ Load the sub-skill that matches the current task. Each is self-contained and und
 - Run read-only validators (`secrets-and-dorks`) before escalating any credential finding.
 - `post-discovery` is gated — confirm read-only validation passes first.
 - No destructive probes. No active scanning outside explicit written scope.
+
+## Structured Outrider run contract
+
+Follow the shared run-contract instructions in `../_shared/run-contract.md`.
+
+- Contract skill identifier: `offensive-osint`.
+- Consume `skill_request` version 1 and produce `skill_result` version 1 when participating in an Outrider run.
+- Use evidence IDs for all claims; do not cite unregistered local paths as claim evidence.
+- Discoveries are observations and do not expand scope or approval.
+- Do not claim final finding validation; use `finding_candidate` only when a human-reviewed candidate should be handed off.
+- Do not directly edit `manifest.json`, `scope.yaml`, `run.jsonl`, `evidence.jsonl`, or `approvals.jsonl`.
+- Use policy-gated MCP with the explicit `run_dir`; the Python control layer and MCP boundary must reevaluate current controls.
+- Router role: this skill may select another shipped skill while retaining the same `run_id` and request context.
+- Router role: do not invent unknown skill names, bypass contract validation, or aggregate unsupported narrative into a validated finding.

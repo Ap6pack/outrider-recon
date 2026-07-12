@@ -248,3 +248,15 @@ curl -sk -m 10 -H "$H" https://api.openai.com/v1/fine_tuning/jobs | jq .
 3. If the key matches a known regex (`secrets-and-dorks` §1), use vendor-specific scope check.
 4. If unknown service, search GitHub: `gh search code "<prefix>" --type=code`.
 5. Identify scope before validating; some keys are write-broad on first use.
+
+## Structured Outrider run contract
+
+Follow the shared run-contract instructions in `../_shared/run-contract.md`.
+
+- Contract skill identifier: `post-discovery`.
+- Consume `skill_request` version 1 and produce `skill_result` version 1 when participating in an Outrider run.
+- Use evidence IDs for all claims; do not cite unregistered local paths as claim evidence.
+- Discoveries are observations and do not expand scope or approval.
+- Do not claim final finding validation; use `finding_candidate` only when a human-reviewed candidate should be handed off.
+- Do not directly edit `manifest.json`, `scope.yaml`, `run.jsonl`, `evidence.jsonl`, or `approvals.jsonl`.
+- Use policy-gated MCP with the explicit `run_dir`; the Python control layer and MCP boundary must reevaluate current controls.

@@ -42,6 +42,9 @@ class CliCommandTests(unittest.TestCase):
         "evidence.jsonl",
         "approvals.jsonl",
         "artifacts",
+        "contracts",
+        "contracts/requests",
+        "contracts/results",
         *expected_json_sidecars,
         *expected_markdown_templates,
     }
@@ -206,3 +209,33 @@ class CliCommandTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class ContractCliTests(unittest.TestCase):
+    def run_cli(self, *argv):
+        stdout = StringIO()
+        with patch.object(sys, "argv", ["outrider", *argv]), redirect_stdout(stdout):
+            status = cli.main()
+        return status, stdout.getvalue()
+
+    def test_contract_request_create_validate_exit_codes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.run_cli("init", "example.com", "--scope", "example.com", "--output-dir", tmpdir, "--actor", "authorized-operator")
+            run = str(Path(tmpdir) / "example.com")
+            status, out = self.run_cli("contract", "request", "create", run, "recon-asset-discovery", "--actor", "authorized-operator", "--objective", "obj", "--action-type", "public_source_lookup", "--candidate", "example.com")
+            self.assertEqual(status, 1)
+            self.assertNotIn("Traceback", out)
+            self.run_cli("state", "transition", run, "scoped", "--actor", "authorized-operator")
+            status, out = self.run_cli("contract", "request", "create", run, "recon-asset-discovery", "--actor", "authorized-operator", "--objective", "obj", "--action-type", "public_source_lookup", "--candidate", "example.com", "--json")
+            self.assertEqual(status, 0)
+            payload = json.loads(out)
+            self.assertEqual(payload["overall_status"], "valid")
+            request_file = str(Path(run) / payload["created_file"])
+            status, out = self.run_cli("contract", "request", "validate", run, request_file)
+            self.assertEqual(status, 0)
+            self.assertIn("VALID", out)
+            bad = Path(run) / "contracts" / "requests" / "bad.json"
+            bad.write_text("{", encoding="utf-8")
+            status, out = self.run_cli("contract", "request", "validate", run, str(bad))
+            self.assertEqual(status, 2)
+            self.assertNotIn("Traceback", out)

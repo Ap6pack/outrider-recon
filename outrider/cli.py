@@ -23,6 +23,12 @@ from outrider.evidence import (
     verify_all_evidence,
 )
 from outrider.scope import evaluate_scope_path
+from outrider.skill_contract import (
+    SkillContractValidationError,
+    create_skill_request,
+    validate_skill_request,
+    validate_skill_result,
+)
 from outrider.state import (
     InvalidTransitionError,
     StateValidationError,
@@ -268,6 +274,12 @@ def init_run(args: argparse.Namespace) -> int:
         artifacts_dir.mkdir()
         created.append("artifacts/")
 
+    for rel in ["contracts", "contracts/requests", "contracts/results"]:
+        path = run_dir / rel
+        if not path.exists():
+            path.mkdir(parents=True, exist_ok=True)
+            created.append(rel + "/")
+
     markdown_files = {
         "findings.md": render_findings_md(target),
         "technique_cards.md": render_technique_cards_md(target),
@@ -301,6 +313,9 @@ def show_run(args: argparse.Namespace) -> int:
         "evidence.jsonl",
         "approvals.jsonl",
         "artifacts/",
+        "contracts/",
+        "contracts/requests/",
+        "contracts/results/",
         "assets.json",
         "web_surface.json",
         "identity_fabric.json",
@@ -608,6 +623,73 @@ def action_check(args: argparse.Namespace) -> int:
     )
 
 
+
+def _print_contract_report(report, as_json: bool) -> None:
+    payload = report.to_dict()
+    if as_json:
+        print(json.dumps(payload, sort_keys=True))
+        return
+    print(report.overall_status.upper())
+    if report.result_id:
+        print(f"Result ID: {report.result_id}")
+    if report.request_id:
+        print(f"Request ID: {report.request_id}")
+    if report.run_id:
+        print(f"Run ID: {report.run_id}")
+    if report.skill:
+        print(f"Skill: {report.skill}")
+    if report.current_request_policy_decision:
+        d = report.current_request_policy_decision
+        print(f"Action: {d.get('action_type')}")
+        print(f"Normalized candidate: {d.get('normalized_candidate') or 'n/a'}")
+        print(f"Current policy decision: {d.get('decision')}")
+        print(f"Policy reason: {d.get('reason')}")
+    print(f"Evidence count: {report.evidence_count}")
+    print(f"Evidence verified: {report.evidence_verified}")
+    if report.discovered_candidate_scope_assessments:
+        print("Discovered candidate assessments:")
+        for d in report.discovered_candidate_scope_assessments:
+            print(f"  - {d.get('normalized_candidate') or d.get('original_candidate')}: {d.get('decision')} ({d.get('reason')})")
+    if report.recommended_action_policy_assessments:
+        print("Recommended action assessments:")
+        for d in report.recommended_action_policy_assessments:
+            handoff = " handoff_only" if d.get("handoff_only") else ""
+            print(f"  - {d.get('action_type')} {d.get('normalized_candidate') or 'n/a'}: {d.get('decision')} ({d.get('reason')}){handoff}")
+    if report.errors:
+        print("Reason: " + "; ".join(report.errors))
+
+
+def contract_request_create(args: argparse.Namespace) -> int:
+    try:
+        req, path, report = create_skill_request(args.run_dir, args.skill, args.actor, args.objective, args.action_type, args.candidate, args.evidence_id or [], args.max_items, args.notes)
+        if args.json:
+            payload = report.to_dict(); payload["created_file"] = str(path.relative_to(Path(args.run_dir)))
+            print(json.dumps(payload, sort_keys=True))
+        else:
+            _print_contract_report(report, False)
+            print(f"Created file: {path.relative_to(Path(args.run_dir))}")
+        return 0
+    except SkillContractValidationError as exc:
+        msg = str(exc)
+        print((json.dumps({"error": msg}, sort_keys=True) if args.json else f"ERROR: {msg}"))
+        return 1 if "policy" in msg or "evidence" in msg else 2
+
+
+def contract_request_validate(args: argparse.Namespace) -> int:
+    report = validate_skill_request(args.run_dir, args.request_file)
+    _print_contract_report(report, args.json)
+    if report.overall_status == "valid": return 0
+    if report.structural_valid: return 1
+    return 2
+
+
+def contract_result_validate(args: argparse.Namespace) -> int:
+    report = validate_skill_result(args.run_dir, args.result_file)
+    _print_contract_report(report, args.json)
+    if report.overall_status == "valid": return 0
+    if report.structural_valid: return 1
+    return 2
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="outrider",
@@ -767,6 +849,36 @@ def build_parser() -> argparse.ArgumentParser:
     evidence_verify_parser.add_argument("--evidence-id")
     evidence_verify_parser.add_argument("--json", action="store_true")
     evidence_verify_parser.set_defaults(func=evidence_verify)
+
+
+    contract_parser = subcommands.add_parser("contract", help="Create and validate skill interchange contracts.")
+    contract_sub = contract_parser.add_subparsers(dest="contract_command", required=True)
+    contract_req = contract_sub.add_parser("request", help="Skill request contracts.")
+    contract_req_sub = contract_req.add_subparsers(dest="request_command", required=True)
+    contract_req_create = contract_req_sub.add_parser("create", help="Create a skill request contract.")
+    contract_req_create.add_argument("run_dir")
+    contract_req_create.add_argument("skill")
+    contract_req_create.add_argument("--actor", required=True)
+    contract_req_create.add_argument("--objective", required=True)
+    contract_req_create.add_argument("--action-type", required=True)
+    contract_req_create.add_argument("--candidate")
+    contract_req_create.add_argument("--evidence-id", action="append")
+    contract_req_create.add_argument("--max-items", type=int, default=100)
+    contract_req_create.add_argument("--notes")
+    contract_req_create.add_argument("--json", action="store_true")
+    contract_req_create.set_defaults(func=contract_request_create)
+    contract_req_validate = contract_req_sub.add_parser("validate", help="Validate a skill request contract.")
+    contract_req_validate.add_argument("run_dir")
+    contract_req_validate.add_argument("request_file")
+    contract_req_validate.add_argument("--json", action="store_true")
+    contract_req_validate.set_defaults(func=contract_request_validate)
+    contract_res = contract_sub.add_parser("result", help="Skill result contracts.")
+    contract_res_sub = contract_res.add_subparsers(dest="result_command", required=True)
+    contract_res_validate = contract_res_sub.add_parser("validate", help="Validate a skill result contract.")
+    contract_res_validate.add_argument("run_dir")
+    contract_res_validate.add_argument("result_file")
+    contract_res_validate.add_argument("--json", action="store_true")
+    contract_res_validate.set_defaults(func=contract_result_validate)
 
     return parser
 
