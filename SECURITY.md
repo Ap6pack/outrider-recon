@@ -13,16 +13,18 @@ This pipeline is intended for **external OSINT-driven reconnaissance against aut
 
 ## Responsible-use posture
 
-The pipeline includes a **soft scope-check** that triggers when a user asks Claude to act against an unverified third-party target:
+The current pipeline includes a **soft scope-check** at the Claude skill/operator layer that triggers when a user asks Claude to act against an unverified third-party target:
 
 > *"Quick scope check: is this a target you own or have written authorization to assess (e.g., a red-team engagement, in-scope bug-bounty asset, or your own infrastructure)?"*
 
 Pipeline content also includes:
 
 - An "Authorization & Legal Posture" section at the top of each SKILL.md.
-- Hard "Do NOT" rules covering destructive probes, credential-validator misuse, scope violations.
+- "Do NOT" rules covering destructive probes, credential-validator misuse, scope violations.
 - Detection-aware guidance encouraging back-off rather than evasion when active defenses are detected.
 - Validator discipline — only read-only credential verification; never destructive.
+
+These controls are currently primarily skill-level and operator-enforced. Deterministic Python/MCP scope enforcement, approval records, and tool-boundary checks are planned, but they are not currently implemented.
 
 ## Reporting a security issue with the skills themselves
 
@@ -51,16 +53,17 @@ If you used these skills during an authorized engagement and found a vulnerabili
 
 ## Supported versions
 
-| Version | Support status |
+| Version domain | Support status |
 |---|---|
-| 2.3.x (current) | ✅ Active |
-| 2.1.x | ⚠️ Bug fixes only |
-| 2.0.x | ❌ End of life |
-| 1.x | ❌ End of life |
+| Plugin/content v3.0 | ✅ Active |
+| Python CLI package | Early scaffolding; support follows the package metadata in `pyproject.toml` |
+| Individual skills | Supported according to each skill's YAML frontmatter and the active plugin/content release |
+| 2.x plugin/content lines | ⚠️ Superseded by v3.0 content |
+| 1.x plugin/content lines | ❌ End of life |
 
 ## Security best practices for users
 
-- Pin the pipeline version (`v2.3`) in any production deployment.
+- Pin the plugin/content release and Python package version separately in any production deployment.
 - Verify SHA-256 of skill files after cloning to confirm integrity.
 - Verify SHA-256 of any binary helper scripts before execution.
 - Don't commit your engagement-specific notes into a fork of this repo.

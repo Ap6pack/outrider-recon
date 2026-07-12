@@ -1,5 +1,20 @@
 # Architecture & Design Philosophy
 
+## Implementation status
+
+This document describes both implemented behavior and architectural design intent. The current implementation is intentionally split across separate domains:
+
+| Domain | Current status | Version source | Notes |
+|---|---|---|---|
+| Claude plugin/content release | Implemented as the skill bundle, plugin manifest, docs, examples, install scripts, and optional MCP companion listed in the changelog. | `CHANGELOG.md` and `.claude-plugin/plugin.json` | This release domain tracks the packaged Claude-facing content. |
+| Python CLI package | Implemented as run-folder scaffolding only. | `pyproject.toml` and `outrider/__init__.py` | The CLI currently initializes and shows run folders; it does not enforce scope, approvals, schemas, or evidence integrity. |
+| Individual skill frontmatter | Implemented per `skills/*/SKILL.md`. | Each skill's YAML `version:` field | Skill versions may differ from the plugin/content release and from the Python package version. |
+| MCP server | Implemented as optional live enrichment. | MCP server files and dependency metadata | The MCP server provides live lookup tools but does not currently enforce scope. |
+
+These version domains do not have to use the same number. A plugin/content release can advance independently from the Python CLI package, individual skill frontmatter, or MCP implementation.
+
+The asset graph, output schema, sidecar coordination, validator discipline, and approval/scope concepts below are the intended architecture. Some are implemented as Claude skill instructions and documentation today; deterministic Python/MCP enforcement is planned but not currently implemented unless explicitly described in code.
+
 ## The router + sub-skill split
 
 The skills are split into **methodology** ("how to think"), a **router** ("which sub-skill handles this"), and **9 focused sub-skills** ("what to reach for"). This reflects how practitioners actually work:
@@ -119,7 +134,7 @@ flowchart TD
     style Person fill:#ea580c,color:#fff
 ```
 
-29 asset types organized in 9 categories. 23 typed edges. Discipline: every discovery is a typed asset (never a free-floating string), with provenance tracked.
+29 asset types organized in 9 categories. 23 typed edges. Discipline: every discovery is a typed asset (never a free-floating string), with provenance tracked. This is the design model; the current Python CLI creates placeholder run-folder files and does not yet validate this graph.
 
 ## Output schema
 
@@ -145,7 +160,7 @@ Finding:
   remediation:  <action the asset owner can take>
 ```
 
-This shape is portable to any asset / findings store (ASM platforms, ticketing systems, custom DBs).
+This shape is portable to any asset / findings store (ASM platforms, ticketing systems, custom DBs). It is not yet enforced by a Python schema validator.
 
 ## Cross-module sidecar coordination
 
@@ -160,7 +175,7 @@ flowchart LR
     style A fill:#7c3aed,color:#fff
 ```
 
-Patterns documented in `analysis-and-reporting` §6.
+Patterns documented in `analysis-and-reporting` §6. Current sidecar coordination is skill/documentation-level guidance; the Python CLI does not yet validate sidecar schemas.
 
 ## Validator discipline
 
@@ -179,7 +194,7 @@ flowchart LR
     style A fill:#9a3412,color:#fff
 ```
 
-9 providers covered (Postman, AWS, GitHub, Slack, Anthropic, OpenAI, npm, Atlassian, DataDog). Hard rule: never create / delete / send. Tag every validation with detectability + `checked_at`.
+9 providers covered (Postman, AWS, GitHub, Slack, Anthropic, OpenAI, npm, Atlassian, DataDog). Hard rule: never create / delete / send. Tag every validation with detectability + `checked_at`. These validator rules are currently expressed in skills and operator procedures; deterministic enforcement is planned for future Python/MCP integration.
 
 ## Trigger frontmatter discipline
 
@@ -192,13 +207,22 @@ Each skill declares ~50–110 trigger phrases in YAML frontmatter. Triggers are:
 
 ## Versioning
 
-Semantic versioning. The `version:` field in YAML frontmatter is authoritative.
+Semantic versioning applies within each release domain rather than requiring all version numbers to match.
+
+| Version domain | Authoritative location | What it describes |
+|---|---|---|
+| Plugin/content release | `CHANGELOG.md` and `.claude-plugin/plugin.json` | The Claude-facing content bundle, documentation, examples, install scripts, and optional companion components. |
+| Python CLI package | `pyproject.toml` and `outrider/__init__.py` | The installable Python package and `outrider` console script. |
+| Individual skill versions | YAML frontmatter in each `skills/*/SKILL.md` | Skill-specific trigger/content changes. |
+| MCP server implementation | `mcp-server/` source and dependency files | Optional live enrichment server behavior and dependencies. |
+
+For individual skills:
 
 - **MAJOR** — section renumbering, breaking trigger changes, schema changes to Finding output.
 - **MINOR** — new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-Current project release: v3.0. Individual skill versions in YAML frontmatter.
+The existing plugin/content release is v3.0. The Python CLI package and individual skill versions are separate domains and may use different numbers.
 
 ## Renumbering policy
 

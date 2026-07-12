@@ -7,6 +7,16 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
+## [Unreleased]
+
+### Documentation
+
+- Clarify implementation status across Claude skills, Python CLI scaffolding, optional MCP enrichment, and the planned web UI control/review plane.
+- Document separate version domains for the plugin/content release, Python CLI package, individual skill frontmatter, and MCP server implementation.
+- Reconcile stale installation and security-policy references to older plugin/content release lines without creating a new numbered release.
+
+---
+
 ## [3.0] -- 2026-05-29
 
 ### Added
