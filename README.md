@@ -66,6 +66,33 @@ Scope → Recon → Enrich → Bug Bounty Intel → Score → Finding Cards → 
 
 ---
 
+
+## Evidence registry
+
+Outrider run folders include an append-only `evidence.jsonl` registry and an `artifacts/` directory for local evidence artifacts. Artifact contents remain in `artifacts/`; the registry stores only metadata, provenance, paths, SHA-256 hashes, and sizes.
+
+```bash
+outrider init example.com --actor authorized-operator --authorization-reference EXAMPLE-ROE-001
+mkdir -p runs/example.com/artifacts/http
+printf 'HTTP/1.1 200 OK\n' \
+  > runs/example.com/artifacts/http/homepage-response.txt
+
+outrider evidence register \
+  runs/example.com \
+  artifacts/http/homepage-response.txt \
+  --actor authorized-operator \
+  --type http-response \
+  --media-type text/plain \
+  --source manual-capture
+
+outrider evidence list runs/example.com
+outrider evidence verify runs/example.com
+```
+
+Evidence files must be beneath `artifacts/`. Absolute paths, traversal, symlinks, symlinked parents, directories, and Outrider control files are rejected. Duplicate paths are rejected; if an artifact is updated, save it under a new filename and register that path instead of changing an old registry entry.
+
+Evidence registration does not grant authorization or approval, does not change run state, does not append to `run.jsonl`, and does not perform scope checks. Verification is local, read-only, and performs no network activity. Run folders and evidence artifacts are operational output and must never be committed.
+
 ## Disclosed Report Intelligence
 
 Outrider includes a public bug-bounty intelligence layer. It can query HackerOne Hacktivity public disclosures and use prior real-world reports as technique references during recon.

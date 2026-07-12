@@ -6,6 +6,14 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+from outrider.evidence import (
+    EvidenceRegistrationError,
+    EvidenceValidationError,
+    load_evidence_registry,
+    register_evidence,
+    verify_all_evidence,
+    verify_evidence,
+)
 from outrider.scope import evaluate_scope_path
 from outrider.state import InvalidTransitionError, StateValidationError, bootstrap_legacy_run, initialize_state, load_state, transition_state
 
@@ -209,6 +217,14 @@ def init_run(args: argparse.Namespace) -> int:
             initialize_state(run_dir, target, args.actor, args.authorization_reference)
             created.append("manifest.json")
 
+    evidence_path = run_dir / "evidence.jsonl"
+    if not evidence_path.exists():
+        evidence_path.touch()
+        created.append("evidence.jsonl")
+    artifacts_path = run_dir / "artifacts"
+    if not artifacts_path.exists():
+        artifacts_path.mkdir()
+        created.append("artifacts/")
 
     for filename, payload in DEFAULT_FILES.items():
         if write_if_missing(run_dir / filename, json.dumps(payload, indent=2, sort_keys=True) + "\n"):
@@ -240,7 +256,7 @@ def show_run(args: argparse.Namespace) -> int:
     if not run_dir.exists():
         print(f"Run folder not found: {run_dir}")
         return 1
-    expected = ["manifest.json", "scope.yaml", "run.jsonl", "assets.json", "web_surface.json", "identity_fabric.json", "bb_intel.json", "findings.md", "technique_cards.md", "surface.md", "report.md"]
+    expected = ["manifest.json", "scope.yaml", "run.jsonl", "evidence.jsonl", "artifacts", "assets.json", "web_surface.json", "identity_fabric.json", "bb_intel.json", "findings.md", "technique_cards.md", "surface.md", "report.md"]
     print(f"Outrider run: {run_dir}")
     for filename in expected:
         marker = "ok" if (run_dir / filename).exists() else "missing"
@@ -320,6 +336,66 @@ def state_bootstrap(args: argparse.Namespace) -> int:
         return 2
 
 
+
+def evidence_register(args: argparse.Namespace) -> int:
+    try:
+        record = register_evidence(args.run_dir, args.relative_path, args.actor, args.artifact_type, args.media_type, args.source, args.note)
+    except EvidenceRegistrationError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    except (EvidenceValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    if args.json:
+        print(json.dumps(record.to_dict(), sort_keys=True))
+    else:
+        print("Evidence registered")
+        print(f"Evidence ID: {record.evidence_id}")
+        print(f"Run ID: {record.run_id}")
+        print(f"Path: {record.path}")
+        print(f"Artifact type: {record.artifact_type}")
+        print(f"SHA-256: {record.sha256}")
+        print(f"Size: {record.size_bytes}")
+        print(f"Actor: {record.actor}")
+    return 0
+
+
+def evidence_list(args: argparse.Namespace) -> int:
+    try:
+        summary = load_evidence_registry(args.run_dir)
+    except (EvidenceValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    if args.json:
+        print(json.dumps(summary.to_dict(), sort_keys=True))
+    else:
+        print(f"Run ID: {summary.run_id}")
+        print(f"Evidence count: {summary.evidence_count}")
+        for record in summary.records:
+            print(f"{record.sequence}: {record.evidence_id} {record.path} {record.artifact_type} {record.sha256} {record.size_bytes} {record.actor} {record.registered_at}")
+    return 0
+
+
+def evidence_verify_cmd(args: argparse.Namespace) -> int:
+    try:
+        results = (verify_evidence(args.run_dir, args.evidence_id),) if args.evidence_id else verify_all_evidence(args.run_dir)
+    except (EvidenceValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    if args.json:
+        print(json.dumps({"results": [item.to_dict() for item in results]}, sort_keys=True))
+    else:
+        for item in results:
+            print(f"Evidence ID: {item.evidence_id}")
+            print(f"Path: {item.path or 'n/a'}")
+            print(f"Expected SHA-256: {item.expected_sha256 or 'n/a'}")
+            print(f"Actual SHA-256: {item.actual_sha256 or 'n/a'}")
+            print(f"Expected size: {item.expected_size}")
+            print(f"Actual size: {item.actual_size if item.actual_size is not None else 'n/a'}")
+            print(f"Status: {item.status}")
+            print(f"Reason: {item.reason}")
+    return 0 if all(item.status == "verified" for item in results) else 1
+
 def scope_check(args: argparse.Namespace) -> int:
     decision = evaluate_scope_path(args.run_dir, args.candidate)
     if args.json:
@@ -359,6 +435,28 @@ def build_parser() -> argparse.ArgumentParser:
     scope_parser.add_argument("candidate", help="Domain, IP address, or URL to evaluate.")
     scope_parser.add_argument("--json", action="store_true", help="Emit the structured scope decision as JSON.")
     scope_parser.set_defaults(func=scope_check)
+
+    evidence_parser = subcommands.add_parser("evidence", help="Register, list, and verify local evidence artifacts.")
+    evidence_sub = evidence_parser.add_subparsers(dest="evidence_command", required=True)
+    evidence_register_parser = evidence_sub.add_parser("register", help="Append an evidence registry record for an artifact.")
+    evidence_register_parser.add_argument("run_dir")
+    evidence_register_parser.add_argument("relative_path")
+    evidence_register_parser.add_argument("--actor", required=True)
+    evidence_register_parser.add_argument("--type", dest="artifact_type", required=True)
+    evidence_register_parser.add_argument("--media-type")
+    evidence_register_parser.add_argument("--source")
+    evidence_register_parser.add_argument("--note")
+    evidence_register_parser.add_argument("--json", action="store_true")
+    evidence_register_parser.set_defaults(func=evidence_register)
+    evidence_list_parser = evidence_sub.add_parser("list", help="List registered evidence.")
+    evidence_list_parser.add_argument("run_dir")
+    evidence_list_parser.add_argument("--json", action="store_true")
+    evidence_list_parser.set_defaults(func=evidence_list)
+    evidence_verify_parser = evidence_sub.add_parser("verify", help="Verify registered artifacts.")
+    evidence_verify_parser.add_argument("run_dir")
+    evidence_verify_parser.add_argument("--evidence-id")
+    evidence_verify_parser.add_argument("--json", action="store_true")
+    evidence_verify_parser.set_defaults(func=evidence_verify_cmd)
 
     state_parser = subcommands.add_parser("state", help="Show or transition durable run workflow state.")
     state_sub = state_parser.add_subparsers(dest="state_command", required=True)

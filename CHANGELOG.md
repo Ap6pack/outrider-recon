@@ -11,6 +11,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Append-only evidence registration with SHA-256 and size recording, local artifact verification, path-containment and symlink protections, and `outrider evidence` CLI commands.
+
 - Stable UUID-backed run manifests, append-only schema-versioned workflow state events, validated workflow transitions, and explicit legacy-run bootstrap commands.
 
 - Add deterministic scope-file validation with exact-domain, wildcard-subdomain, exact-IP, and CIDR matching.

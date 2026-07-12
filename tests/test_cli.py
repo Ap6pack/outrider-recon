@@ -37,6 +37,8 @@ class CliCommandTests(unittest.TestCase):
         "manifest.json",
         "scope.yaml",
         "run.jsonl",
+        "evidence.jsonl",
+        "artifacts",
         *expected_json_sidecars,
         *expected_markdown_templates,
     }
@@ -151,6 +153,58 @@ class CliCommandTests(unittest.TestCase):
             invalid_status, invalid_output = self.run_cli("scope-check", str(run_dir), "example.com")
             self.assertEqual(invalid_status, 2)
             self.assertIn("ERROR", invalid_output)
+
+
+    def test_evidence_cli_register_list_verify_and_error_codes(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            status, _ = self.run_cli("init", "example.com", "--output-dir", tmpdir, "--actor", "authorized-operator", "--authorization-reference", "EXAMPLE-ROE-001")
+            self.assertEqual(status, 0)
+            run_dir = Path(tmpdir) / "example.com"
+            artifact = run_dir / "artifacts" / "http" / "homepage-response.txt"
+            artifact.parent.mkdir()
+            artifact.write_text("HTTP/1.1 200 OK\n", encoding="utf-8")
+
+            reg_status, reg_output = self.run_cli("evidence", "register", str(run_dir), "artifacts/http/homepage-response.txt", "--actor", "authorized-operator", "--type", "http-response", "--media-type", "text/plain", "--source", "manual-capture", "--json")
+            self.assertEqual(reg_status, 0)
+            record = json.loads(reg_output)
+            self.assertEqual(record["path"], "artifacts/http/homepage-response.txt")
+
+            list_status, list_output = self.run_cli("evidence", "list", str(run_dir))
+            self.assertEqual(list_status, 0)
+            self.assertIn(record["evidence_id"], list_output)
+            self.assertIn(record["path"], list_output)
+            json_list_status, json_list = self.run_cli("evidence", "list", str(run_dir), "--json")
+            self.assertEqual(json_list_status, 0)
+            self.assertEqual(json.loads(json_list)["evidence_count"], 1)
+
+            verify_status, verify_output = self.run_cli("evidence", "verify", str(run_dir))
+            self.assertEqual(verify_status, 0)
+            self.assertIn("Status: verified", verify_output)
+            artifact.write_text("changed\n", encoding="utf-8")
+            changed_status, _ = self.run_cli("evidence", "verify", str(run_dir))
+            self.assertEqual(changed_status, 1)
+            artifact.unlink()
+            missing_status, _ = self.run_cli("evidence", "verify", str(run_dir))
+            self.assertEqual(missing_status, 1)
+            unknown_status, _ = self.run_cli("evidence", "verify", str(run_dir), "--evidence-id", "00000000-0000-4000-8000-000000000000")
+            self.assertEqual(unknown_status, 1)
+
+            artifact.write_text("new\n", encoding="utf-8")
+            dup_status, _ = self.run_cli("evidence", "register", str(run_dir), "artifacts/http/homepage-response.txt", "--actor", "authorized-operator", "--type", "http-response")
+            self.assertEqual(dup_status, 1)
+            bad_status, bad_output = self.run_cli("evidence", "register", str(run_dir), "../outside.txt", "--actor", "authorized-operator", "--type", "http-response")
+            self.assertEqual(bad_status, 2)
+            self.assertNotIn("Traceback", bad_output)
+            (run_dir / "evidence.jsonl").write_text("{bad\n", encoding="utf-8")
+            malformed_status, _ = self.run_cli("evidence", "list", str(run_dir))
+            self.assertEqual(malformed_status, 2)
+
+    def test_empty_evidence_list_and_verify_succeed(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.assertEqual(self.run_cli("init", "example.com", "--output-dir", tmpdir)[0], 0)
+            run_dir = Path(tmpdir) / "example.com"
+            self.assertEqual(self.run_cli("evidence", "list", str(run_dir))[0], 0)
+            self.assertEqual(self.run_cli("evidence", "verify", str(run_dir))[0], 0)
 
     def test_show_returns_failure_for_missing_run_directory(self):
         with tempfile.TemporaryDirectory() as tmpdir:
