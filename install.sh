@@ -39,7 +39,7 @@ if [ -d "$INSTALL_DIR/skills/offensive-osint/scripts" ]; then
   cp "$INSTALL_DIR/skills/offensive-osint/scripts/"*.py "$SKILLS_DIR/offensive-osint/scripts/" 2>/dev/null || true
 fi
 
-SKILL_COUNT=$(ls -d "$SKILLS_DIR"/*/SKILL.md 2>/dev/null | wc -l)
+SKILL_COUNT=$(find "$SKILLS_DIR" -mindepth 2 -maxdepth 2 -type f -name SKILL.md 2>/dev/null | wc -l)
 echo ""
 echo "Done! $SKILL_COUNT skills installed."
 echo "Start a new Claude Code session and try:"
