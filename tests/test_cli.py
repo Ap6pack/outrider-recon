@@ -34,6 +34,7 @@ class CliCommandTests(unittest.TestCase):
         "report.md",
     }
     expected_files = {
+        "manifest.json",
         "scope.yaml",
         "run.jsonl",
         *expected_json_sidecars,
@@ -83,10 +84,10 @@ class CliCommandTests(unittest.TestCase):
                 for line in (run_dir / "run.jsonl").read_text(encoding="utf-8").splitlines()
             ]
             self.assertEqual(len(events), 1)
-            self.assertEqual(events[0]["event"], "run_initialized")
-            self.assertEqual(events[0]["target"], "example.com")
-            self.assertEqual(events[0]["run_dir"], str(run_dir))
-            self.assertIn("created_at", events[0])
+            self.assertEqual(events[0]["event_type"], "run_initialized")
+            self.assertEqual(events[0]["new_state"], "initialized")
+            self.assertEqual(events[0]["sequence"], 1)
+            self.assertIn("occurred_at", events[0])
 
             edited_report = "# Operator edited report\n\nKeep this content.\n"
             (run_dir / "report.md").write_text(edited_report, encoding="utf-8")
@@ -102,7 +103,7 @@ class CliCommandTests(unittest.TestCase):
             self.assertIn("No files created; run folder already existed.", rerun_output)
             self.assertEqual((run_dir / "report.md").read_text(encoding="utf-8"), edited_report)
             rerun_events = (run_dir / "run.jsonl").read_text(encoding="utf-8").splitlines()
-            self.assertEqual(len(rerun_events), 2)
+            self.assertEqual(len(rerun_events), 1)
 
     def test_init_uses_empty_out_of_scope_list_and_preserves_scope(self):
         with tempfile.TemporaryDirectory() as tmpdir:

@@ -11,6 +11,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Stable UUID-backed run manifests, append-only schema-versioned workflow state events, validated workflow transitions, and explicit legacy-run bootstrap commands.
+
 - Add deterministic scope-file validation with exact-domain, wildcard-subdomain, exact-IP, and CIDR matching.
 - Add out-of-scope precedence, default-deny scope decisions, and the offline `outrider scope-check` CLI command.
 
