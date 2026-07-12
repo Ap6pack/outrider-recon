@@ -104,6 +104,53 @@ class CliCommandTests(unittest.TestCase):
             rerun_events = (run_dir / "run.jsonl").read_text(encoding="utf-8").splitlines()
             self.assertEqual(len(rerun_events), 2)
 
+    def test_init_uses_empty_out_of_scope_list_and_preserves_scope(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            status, _ = self.run_cli("init", "example.com", "--output-dir", tmpdir)
+            self.assertEqual(status, 0)
+            run_dir = Path(tmpdir) / "example.com"
+            scope_path = run_dir / "scope.yaml"
+            scope_yaml = scope_path.read_text(encoding="utf-8")
+            self.assertIn("out_of_scope: []", scope_yaml)
+            edited_scope = "in_scope:\n  - edited.example.com\nout_of_scope: []\n"
+            scope_path.write_text(edited_scope, encoding="utf-8")
+            rerun_status, _ = self.run_cli("init", "example.com", "--output-dir", tmpdir)
+            self.assertEqual(rerun_status, 0)
+            self.assertEqual(scope_path.read_text(encoding="utf-8"), edited_scope)
+
+    def test_scope_check_cli_allow_deny_error_and_json(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            run_dir = Path(tmpdir) / "run"
+            run_dir.mkdir()
+            (run_dir / "scope.yaml").write_text(
+                "in_scope:\n  - example.com\n  - '*.example.com'\nout_of_scope:\n  - blocked.example.com\n",
+                encoding="utf-8",
+            )
+            allow_status, allow_output = self.run_cli("scope-check", str(run_dir), "example.com")
+            self.assertEqual(allow_status, 0)
+            self.assertIn("ALLOW", allow_output)
+            deny_status, deny_output = self.run_cli("scope-check", str(run_dir), "other.example.net")
+            self.assertEqual(deny_status, 1)
+            self.assertIn("DENY", deny_output)
+            excluded_status, excluded_output = self.run_cli("scope-check", str(run_dir), "blocked.example.com")
+            self.assertEqual(excluded_status, 1)
+            self.assertIn("DENY", excluded_output)
+            json_status, json_output = self.run_cli("scope-check", str(run_dir), "https://api.example.com/path", "--json")
+            self.assertEqual(json_status, 0)
+            payload = json.loads(json_output)
+            self.assertEqual(payload["decision"], "allow")
+            self.assertEqual(payload["normalized_candidate"], "api.example.com")
+            self.assertEqual(payload["matched_rule"], "*.example.com")
+            self.assertEqual(payload["matched_rule_source"], "in_scope")
+            self.assertIn("reason", payload)
+            missing_status, missing_output = self.run_cli("scope-check", str(Path(tmpdir) / "missing"), "example.com")
+            self.assertEqual(missing_status, 2)
+            self.assertIn("ERROR", missing_output)
+            (run_dir / "scope.yaml").write_text("in_scope: []\n", encoding="utf-8")
+            invalid_status, invalid_output = self.run_cli("scope-check", str(run_dir), "example.com")
+            self.assertEqual(invalid_status, 2)
+            self.assertIn("ERROR", invalid_output)
+
     def test_show_returns_failure_for_missing_run_directory(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             missing_dir = Path(tmpdir) / "missing"

@@ -12,7 +12,9 @@ license = { text = "MIT" }
 authors = [
   { name = "Ap6pack" }
 ]
-dependencies = []
+dependencies = [
+  "PyYAML>=6",
+]
 
 [project.scripts]
 outrider = "outrider.cli:main"
