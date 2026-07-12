@@ -11,6 +11,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Time-bounded approval grants, append-only revocations, derived approval status, scope/state/approval action-policy checks, permanently prohibited action categories, and `outrider approval` / `outrider action-check` CLI commands.
+
 - Append-only evidence registration, SHA-256 and size recording, local artifact verification, artifact path-containment and symlink protections, and `outrider evidence` CLI commands.
 
 - Stable UUID-backed run manifests, append-only schema-versioned workflow state events, validated workflow transitions, and explicit legacy-run bootstrap commands.
