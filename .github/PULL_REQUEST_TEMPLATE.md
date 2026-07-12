@@ -31,7 +31,7 @@ Brief summary of what this PR changes.
 
 ## Affected sections (if applicable)
 
-- skill: __________ §____
+- skill: \***\*\_\_\*\*** §\_\_\_\_
 
 ## Checklist
 
@@ -46,7 +46,7 @@ Brief summary of what this PR changes.
 
 ## Sample prompt that exercises this change
 
-```
+```text
 [paste a prompt here that triggers the new content]
 ```
 
@@ -56,8 +56,8 @@ Brief summary of what this PR changes.
 
 ## Related issues
 
-Closes #___
-References #___
+Closes #**_
+References #_**
 
 ## Additional notes
 

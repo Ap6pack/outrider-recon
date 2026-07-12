@@ -25,6 +25,7 @@ triggers:
 **When triggered:** Report generation, bug bounty submission, vulnerability write-up, or client deliverable creation is needed.
 
 **Execute:**
+
 1. Collect all findings from the current engagement — pull from sidecar JSON files if available (`analysis-and-reporting` §6).
 2. For bug bounty submissions: populate the Bug Bounty Report Template (§1) for each finding.
 3. For client deliverables: populate the Client Report Template (§2) covering all findings.
@@ -44,7 +45,7 @@ triggers:
 
 ## 1. Bug Bounty Report Template
 
-```
+```text
 Title: [{severity}] [{component}] {brief description}
 
 ## Overview
@@ -80,6 +81,7 @@ Title: [{severity}] [{component}] {brief description}
 ```
 
 **Platform notes:**
+
 - HackerOne: CVSS-based severity
 - Bugcrowd: VRT taxonomy (P1–P5)
 - Intigriti / YesWeHack: Similar to HackerOne
@@ -89,7 +91,7 @@ Title: [{severity}] [{component}] {brief description}
 
 ## 2. Client Report Template
 
-```
+```text
 # Engagement Report: {target} — {date range}
 
 ## Executive Summary

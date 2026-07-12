@@ -24,4 +24,3 @@
 - **Treating exec-summary as an afterthought.** Plan deliverables at engagement start.
 
 ---
-

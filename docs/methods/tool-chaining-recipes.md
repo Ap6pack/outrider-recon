@@ -9,15 +9,15 @@
 
 **Key modules for external recon:**
 
-| Module | Purpose |
-|---|---|
-| `recon/domains-hosts/hackertarget` | Subdomain enum via HackerTarget API |
-| `recon/domains-hosts/certificate_transparency` | CT log subdomain discovery |
-| `recon/hosts-hosts/resolve` | Resolve discovered hosts to IPs |
-| `recon/domains-contacts/whois_pocs` | Registrant/admin contacts from WHOIS |
-| `recon/profiles-profiles/namechk` | Username enumeration across platforms |
-| `reporting/csv` | Export results to CSV |
-| `reporting/json` | Export results to JSON |
+| Module                                         | Purpose                               |
+| ---------------------------------------------- | ------------------------------------- |
+| `recon/domains-hosts/hackertarget`             | Subdomain enum via HackerTarget API   |
+| `recon/domains-hosts/certificate_transparency` | CT log subdomain discovery            |
+| `recon/hosts-hosts/resolve`                    | Resolve discovered hosts to IPs       |
+| `recon/domains-contacts/whois_pocs`            | Registrant/admin contacts from WHOIS  |
+| `recon/profiles-profiles/namechk`              | Username enumeration across platforms |
+| `reporting/csv`                                | Export results to CSV                 |
+| `reporting/json`                               | Export results to JSON                |
 
 **Full session -- create workspace, enumerate, resolve, export:**
 
@@ -66,13 +66,13 @@ spiderfoot -s acme-corp.com -t EMAILADDR,INTERNET_NAME,IP_ADDRESS \
 
 **Module categories:**
 
-| Category | Modules | Finds |
-|---|---|---|
-| DNS | `sfp_dnsresolve`, `sfp_dnsbrute`, `sfp_crt` | Subdomains, IPs, CNAMEs |
-| Email | `sfp_emailformat`, `sfp_hunter`, `sfp_haveibeenpwned` | Addresses, breach status |
-| Social | `sfp_accounts`, `sfp_names` | Usernames, profiles |
-| Breach | `sfp_haveibeenpwned`, `sfp_dehashed` | Credential exposure |
-| Cloud | `sfp_azuretenant`, `sfp_s3bucket`, `sfp_dnszonexfer` | Tenant info, open buckets |
+| Category | Modules                                               | Finds                     |
+| -------- | ----------------------------------------------------- | ------------------------- |
+| DNS      | `sfp_dnsresolve`, `sfp_dnsbrute`, `sfp_crt`           | Subdomains, IPs, CNAMEs   |
+| Email    | `sfp_emailformat`, `sfp_hunter`, `sfp_haveibeenpwned` | Addresses, breach status  |
+| Social   | `sfp_accounts`, `sfp_names`                           | Usernames, profiles       |
+| Breach   | `sfp_haveibeenpwned`, `sfp_dehashed`                  | Credential exposure       |
+| Cloud    | `sfp_azuretenant`, `sfp_s3bucket`, `sfp_dnszonexfer`  | Tenant info, open buckets |
 
 **Scan profiles:** Passive-only (no target contact) / Moderate (DNS + public APIs) / Full (brute-force, active probes, port scanning).
 

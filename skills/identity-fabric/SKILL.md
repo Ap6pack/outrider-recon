@@ -41,7 +41,8 @@ triggers:
 **When triggered:** SSO/IdP fingerprinting, tenant discovery, auth architecture mapping, Microsoft 365 enumeration, Okta/Entra/ADFS probing, OIDC discovery, LinkedIn employee enumeration, or device-code phishing feasibility assessment is needed.
 
 **Execute:**
-1. Probe OIDC discovery endpoints (§1.1-1.5) on every alive subdomain and known SSO prefixes (auth.*, login.*, sso.*, idp.*, iam.*, identity.*, accounts.*, oauth.*). Probe `/.well-known/openid-configuration` on every alive subdomain regardless of prefix.
+
+1. Probe OIDC discovery endpoints (§1.1-1.5) on every alive subdomain and known SSO prefixes (auth._, login._, sso._, idp._, iam._, identity._, accounts._, oauth._). Probe `/.well-known/openid-configuration` on every alive subdomain regardless of prefix.
 2. Extract tenant GUIDs from OIDC metadata issuer fields.
 3. Run getuserrealm.srf to classify Managed vs Federated (§1.1).
 4. If deep mode authorized, run GetCredentialType user-enum capped at 20 attempts (§1.1). Medium detectability.
@@ -66,26 +67,34 @@ Methodology lives in the companion `osint-methodology` skill §11. This is the U
 ### 1.1 Microsoft Entra (Azure AD)
 
 **OIDC metadata + tenant GUID extraction:**
-```
+
+```text
 GET https://login.microsoftonline.com/{tenant-or-domain}/.well-known/openid-configuration
 ```
+
 Response field `issuer` contains the tenant GUID. GUID regex:
+
 ```regex
 \b[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}\b
 ```
+
 Detectability: low.
 
 **getuserrealm.srf — managed vs federated probe:**
-```
+
+```text
 GET https://login.microsoftonline.com/getuserrealm.srf?login=<probe-user>@<domain>
 ```
+
 Response: JSON with `NameSpaceType` field (`Managed` / `Federated` / `Unknown`). Federated also includes `FederationBrandName` and `AuthURL` (the upstream IdP URL). Detectability: low.
 
 **Autodiscover v2:**
-```
+
+```text
 POST https://autodiscover-s.outlook.com/autodiscover/metadata/json/1
 Body: {"Email": "<probe-user>@<domain>"}
 ```
+
 Returns the protocol endpoint for the user; presence indicates tenant membership. Detectability: low.
 
 **Autodiscover IP correlation (passive M365 confirmation):**
@@ -95,6 +104,7 @@ Resolve `autodiscover.<domain>` and check if it lands in Microsoft Exchange Onli
 ```bash
 dig +short A autodiscover.target.example
 ```
+
 ```powershell
 Resolve-DnsName "autodiscover.$D" -Type A | Select Name,IPAddress
 ```
@@ -104,7 +114,8 @@ Microsoft Exchange Online IPs (truncated common ranges): `40.96.0.0/13`, `52.96.
 If `autodiscover.<domain>` lands in that space → `M365_CONFIRMED` even when nothing else does. Detectability: low (passive DNS).
 
 **GetCredentialType — user-enum (deep mode only):**
-```
+
+```text
 POST https://login.microsoftonline.com/common/GetCredentialType
 Content-Type: application/json
 Body:
@@ -123,69 +134,83 @@ Body:
   "federationFlags": 0
 }
 ```
+
 Response field `IfExistsResult` indicates user existence: `0` = exists, `1` = doesn't exist, `5` = exists in federated tenant. Detectability: medium (logged in tenant audit). Cap at 20 attempts per tenant.
 
 ### 1.2 Okta
 
 **Org slug derivation:** start with stems from discovered subdomains and root-domain stem. Probe `<slug>.okta.com` and `<slug>.oktapreview.com`. Slug regex:
+
 ```regex
 [a-z0-9][a-z0-9-]{1,40}\.okta(?:preview)?\.com
 ```
 
 **OIDC fingerprint:**
-```
+
+```text
 GET https://<slug>.okta.com/.well-known/openid-configuration
 ```
 
 **/api/v1/authn user-enum (deep mode):**
-```
+
+```text
 POST https://<slug>.okta.com/api/v1/authn
 Content-Type: application/json
 Body: {"username": "<email>", "password": "invalid_password_for_enum"}
 ```
+
 Response distinguishes user existence:
+
 - `400` with `errorCode: E0000004` → user doesn't exist (or generic password error in some configs).
 - `401` with `status: PASSWORD_WARN` / `LOCKED_OUT` / `MFA_REQUIRED` → user exists.
+
 Detectability: medium (audit-log per attempt). Cap at 20 attempts per tenant.
 
 ### 1.3 ADFS
 
 **Passive fingerprint:**
-```
+
+```text
 GET https://{domain}/adfs/idpinitiatedsignon.aspx
 ```
+
 A `200 OK` with a `urn:com:microsoft:ADFS:` reference in HTML indicates ADFS. Version-string greppable in HTML resource references.
 
 **Mex endpoint (deep mode):**
-```
+
+```text
 GET https://{domain}/adfs/Services/Trust/mex
 ```
+
 Returns SOAP federation metadata including endpoint URLs, signing certs, and supported claim types.
 
 ### 1.4 Google Workspace
 
 **OIDC discovery:**
-```
+
+```text
 GET https://{domain}/.well-known/openid-configuration
 ```
-Google-Workspace-hosted-domain customers expose discovery endpoints with characteristic `issuer` URI (`https://accounts.google.com`) and JWKS URI. MX records pointing to `aspmx.l.google.com` are a corroborating signal.
+
+Google-Workspace-hosted-domain customers expose discovery endpoints with characteristic `issuer` URI (`<https://accounts.google.com`>) and JWKS URI. MX records pointing to `aspmx.l.google.com` are a corroborating signal.
 
 ### 1.5 Generic OIDC (Keycloak / Auth0 / Ping / OneLogin / Duo)
 
 **Discovery:** probe `/.well-known/openid-configuration` on every alive subdomain. The `issuer` and `authorization_endpoint` field URLs fingerprint the product:
 
-| Product | URL pattern in `issuer` |
-|---|---|
-| Auth0 | `https://*.auth0.com` |
-| OneLogin | `https://*.onelogin.com` |
-| Ping | `https://*.pingone.com`, `https://*.pingidentity.com` |
-| Duo | `https://*.duosecurity.com` |
-| Keycloak | URL contains `/realms/<realm>` |
+| Product  | URL pattern in `issuer`                                   |
+| -------- | --------------------------------------------------------- |
+| Auth0    | `<https://*.auth0.com`>                                   |
+| OneLogin | `<https://*.onelogin.com`>                                |
+| Ping     | `<https://*.pingone.com`>, `<https://*.pingidentity.com`> |
+| Duo      | `<https://*.duosecurity.com`>                             |
+| Keycloak | URL contains `/realms/<realm>`                            |
 
 ### 1.6 SAML metadata
 
 **Probe paths** (try each against every alive subdomain):
-```
+
+```text
 /saml/metadata
 /FederationMetadata/2007-06/FederationMetadata.xml
 /federationmetadata/2007-06/federationmetadata.xml
@@ -198,33 +223,41 @@ Google-Workspace-hosted-domain customers expose discovery endpoints with charact
 ### 1.7 AWS account-ID extraction
 
 **S3 bucket region header (passive):**
-```
+
+```text
 HEAD https://<known-bucket>.s3.amazonaws.com/
 ```
+
 Response includes `x-amz-bucket-region`. Cross-reference with bucket name entropy and known patterns to scope the account.
 
 **ARN regex (in any JSON / HTML / JS response):**
+
 ```regex
 arn:aws:[a-z0-9\-]+:[a-z0-9\-]*:([0-9]{12}):
 ```
+
 Capture group: 12-digit AWS account ID.
 
 **`AccountId` property pattern:**
+
 ```regex
 (?i)["']?account[_\-]?id["']?\s*[:=]\s*["']([0-9]{12})["']
 ```
 
 **Google OAuth client_id:**
+
 ```regex
 \b\d{8,}-[a-z0-9]{10,40}\.apps\.googleusercontent\.com\b
 ```
 
 **MSAL / Microsoft client_id (GUID property):**
+
 ```regex
 (?i)["']?client[_\-]?id["']?\s*[:=]\s*["']([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})["']
 ```
 
 **OAuth scope extraction:**
+
 ```regex
 (?i)["']?scope["']?\s*[:=]\s*["']([^"']+)["']
 ```
@@ -232,6 +265,7 @@ Capture group: 12-digit AWS account ID.
 ### 1.8 Microsoft 365 Deep Enumeration (Teams / SharePoint / OneDrive / OAuth)
 
 **Teams federation status:**
+
 ```bash
 # Resolve tenant first
 curl -sk -m 10 "https://login.microsoftonline.com/${TARGET_DOMAIN}/.well-known/openid-configuration" | jq -r '.issuer'
@@ -240,6 +274,7 @@ curl -sk -m 10 "https://teams.microsoft.com/api/mt/emea/beta/users/<email>/exter
 ```
 
 **SharePoint subdomain probe:**
+
 ```bash
 STEM=$(echo $TARGET_DOMAIN | cut -d. -f1)
 for sub in "" "-my" "-admin"; do
@@ -249,12 +284,14 @@ done
 ```
 
 **Reading the result correctly:** `HTTP 200` from these probes means **the tenant exists** (Microsoft serves a generic redirect-to-auth page) — it does **NOT** mean anonymous access is granted to the tenant's content. Distinguish:
+
 - 200 → tenant provisioned (INFO).
 - 200 + redirect to a custom anonymous-share URL (`/sites/<x>/Lists/<y>/AllItems.aspx?guestaccesstoken=...`) discovered via dorks → HIGH (data exposure).
 - 401/403 → tenant exists but auth required (INFO).
 - 404 / NXDOMAIN → tenant not provisioned at this stem (or vanity-named — check known stems from cert transparency).
 
 PowerShell:
+
 ```powershell
 $STEM = ($D -split '\.')[0]
 foreach ($s in @("","-my","-admin")) {
@@ -268,7 +305,8 @@ foreach ($s in @("","-my","-admin")) {
 }
 ```
 
-**OneDrive personal site probe** (for a known email `alice@acme.com`):
+**OneDrive personal site probe** (for a known email `<alice@acme.com>`):
+
 ```bash
 USER_TOKEN=$(echo "alice@acme.com" | tr '@.' '__')
 STEM="acme"
@@ -277,24 +315,29 @@ curl -sk -m 10 -I "https://${STEM}-my.sharepoint.com/personal/${USER_TOKEN}/Docu
 ```
 
 **M365 OAuth client_id discovery in JS:**
+
 ```bash
 curl -sk -m 10 "https://app.target.example/main.js" | \
   grep -oE 'clientId["'\''[:=]+ ?["'\'']?[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
 ```
 
 **Device-code phishing target check** (look for `device_authorization_endpoint` in OIDC metadata):
+
 ```bash
 curl -sk -m 10 "https://login.microsoftonline.com/${TARGET_DOMAIN}/v2.0/.well-known/openid-configuration" | \
   jq '.device_authorization_endpoint'
 ```
+
 If non-null and tenant doesn't restrict device-code: MEDIUM finding (device-code phishing feasible).
 
 **Power Platform / Dynamics URLs to check:**
+
 - `*.crm.dynamics.com` (per-region: `crm`, `crm2`-`crm15`, `crm.dynamics.com`).
 - `*.api.crm.dynamics.com` (Web API).
 - `make.powerapps.com` / `flow.microsoft.com` (auth-required dashboards).
 
 **Severity:**
+
 - Discovered SharePoint/OneDrive tenants → INFO (asset only).
 - Anonymous SharePoint anonymous-share link → HIGH (data exposure).
 - `device_authorization_endpoint` enabled on tenant → MEDIUM (operational risk).
@@ -305,6 +348,7 @@ If non-null and tenant doesn't restrict device-code: MEDIUM finding (device-code
 When the standard introspection query (`web-surface` §2) returns `"errors":[{"message":"GraphQL introspection is disabled"}]`, fall back to field-suggestion enumeration. Apollo and most GraphQL libraries enable "did you mean" suggestions by default.
 
 **Detection probe:**
+
 ```bash
 curl -sk -m 10 -X POST "$T/graphql" \
   -H 'Content-Type: application/json' \
@@ -313,6 +357,7 @@ curl -sk -m 10 -X POST "$T/graphql" \
 ```
 
 **Field-suggestion probe** (intentionally typo a field name to trigger suggestions):
+
 ```bash
 curl -sk -m 10 -X POST "$T/graphql" \
   -H 'Content-Type: application/json' \
@@ -323,7 +368,8 @@ curl -sk -m 10 -X POST "$T/graphql" \
 Iterate over a candidate-field wordlist (use SecLists `Discovery/Web-Content/graphql.txt` or `clairvoyance` library's seed list). Each suggestion reveals real field names. Continue until no new suggestions emerge.
 
 **Tooling:**
-- **Clairvoyance** — automated field-suggestion enumerator. `clairvoyance -w wordlist.txt -o schema.json https://target.example/graphql`. (Install: see `docs/reference/tooling-install.md`)
+
+- **Clairvoyance** — automated field-suggestion enumerator. `clairvoyance -w wordlist.txt -o schema.json <https://target.example/graphql`>. (Install: see `docs/reference/tooling-install.md`)
 - **GraphQL-Cop** — auditor that probes for introspection, batching, depth-limit, suggestion config. (Install: see `docs/reference/tooling-install.md`)
 - **InQL** (Burp extension) — Burp Suite extension for GraphQL endpoint analysis.
 - **GraphQL Voyager** — visualize once schema is reconstructed.
@@ -331,22 +377,27 @@ Iterate over a candidate-field wordlist (use SecLists `Discovery/Web-Content/gra
 **Other GraphQL-when-introspection-disabled techniques:**
 
 - **Alias-based query batching** (rate-limit / auth-bypass surface):
+
   ```json
   {
     "query": "{ a:user(id:1){name} b:user(id:2){name} c:user(id:3){name} ... }"
   }
   ```
+
   Many APIs rate-limit per-request, not per-alias. Test 100+ aliases per request.
 
 - **Query-depth-limit bypass** (DoS / introspection bypass):
+
   ```json
   {
     "query": "{ user { friends { friends { friends { friends { id } } } } } }"
   }
   ```
+
   If server allows arbitrary depth → DoS surface; if depth-limited but doesn't strip nested `__type`/`__schema` → introspection-via-depth.
 
 - **Subscription enumeration via WebSocket:**
+
   ```bash
   wscat -c "wss://target.example/graphql" -s graphql-ws
   > {"type":"connection_init"}
@@ -354,14 +405,16 @@ Iterate over a candidate-field wordlist (use SecLists `Discovery/Web-Content/gra
   ```
 
 - **Batched query bypass** (some servers process all queries in batch even if first fails):
+
   ```json
   [
-    {"query":"{ __schema { types { name } } }"},
-    {"query":"{ user(id:1) { name } }"}
+    { "query": "{ __schema { types { name } } }" },
+    { "query": "{ user(id:1) { name } }" }
   ]
   ```
 
 **Severity:**
+
 - Field-suggestion enumeration succeeds (50+ fields recoverable) → MEDIUM `MISCONFIG`.
 - Alias batching not rate-limited → MEDIUM (rate-limit-bypass surface).
 - Subscription endpoint exposed without auth → MEDIUM (often used for real-time data exfil).
@@ -375,11 +428,13 @@ LinkedIn is the highest-signal source for employee enumeration during external r
 ### 2.1 Search techniques
 
 **Free LinkedIn (no Sales Navigator):**
-- People-search by company: `https://www.linkedin.com/search/results/people/?currentCompany=["<company-id>"]`. Get company-id from the company's LinkedIn URL or profile JSON.
+
+- People-search by company: `<https://www.linkedin.com/search/results/people/?currentCompany=["<company-id>>"]`. Get company-id from the company's LinkedIn URL or profile JSON.
 - Bypass connection-degree filter: search shows 1st/2nd-degree only by default; use Google dorking instead.
 
 **Google dork for LinkedIn employee enum:**
-```
+
+```text
 site:linkedin.com/in "<company name>"
 site:linkedin.com/in "<company name>" "engineer"   # role filter
 site:linkedin.com/in "<company name>" "<location>" # location filter
@@ -389,15 +444,18 @@ site:linkedin.com/in "<company name>" -inurl:/posts
 **Bing/DuckDuckGo equivalents** — sometimes return different result sets; cross-engine union.
 
 **LinkedIn Sales Navigator (paid):**
+
 - Most efficient if available. Lead lists by company × role × seniority. Export CSV.
 
 **Tools:**
+
 - **LinkedInDumper** / **Linkook** — open-source enum tools (verify currency; they break frequently).
 - **PhantomBuster** / **Apollo.io** / **RocketReach** / **Hunter.io Email Finder** — paid SaaS that does the enum + email derivation in one workflow.
 
 ### 2.2 Role inference for prioritization
 
 For each enumerated employee, capture:
+
 - **Name** (canonical form: First Last; remove suffixes like "PMP", "PhD" for email-pattern matching).
 - **Job title** (raw + normalized to a role tier).
 - **Tenure** (years at company; longer = more access typically).
@@ -406,18 +464,19 @@ For each enumerated employee, capture:
 
 **Role priority for breach lookup + phishing target list:**
 
-| Role tier | Examples | Why |
-|---|---|---|
-| **P0** | CEO, CFO, CTO, CISO, CIO, COO, GC, CRO | Exec accounts; BEC + finance + legal authority. |
-| **P1** | VP / Director of IT / Security / Engineering / Finance / HR | Privileged tool access; reset workflows. |
-| **P2** | DevOps, SRE, Platform, Security Engineer, DBA | GitHub / cloud / CI access; secrets in their accounts. |
-| **P3** | Software Engineer, Architect, Senior Developer | Code + occasional cloud access. |
-| **P4** | Sales, Marketing, HR, Finance Analyst, Customer Support | SaaS access (Salesforce, HubSpot, Workday); BEC enabler. |
-| **P5** | Generic individual contributor, intern, contractor | Lowest single-account value but breadth matters. |
+| Role tier | Examples                                                    | Why                                                      |
+| --------- | ----------------------------------------------------------- | -------------------------------------------------------- |
+| **P0**    | CEO, CFO, CTO, CISO, CIO, COO, GC, CRO                      | Exec accounts; BEC + finance + legal authority.          |
+| **P1**    | VP / Director of IT / Security / Engineering / Finance / HR | Privileged tool access; reset workflows.                 |
+| **P2**    | DevOps, SRE, Platform, Security Engineer, DBA               | GitHub / cloud / CI access; secrets in their accounts.   |
+| **P3**    | Software Engineer, Architect, Senior Developer              | Code + occasional cloud access.                          |
+| **P4**    | Sales, Marketing, HR, Finance Analyst, Customer Support     | SaaS access (Salesforce, HubSpot, Workday); BEC enabler. |
+| **P5**    | Generic individual contributor, intern, contractor          | Lowest single-account value but breadth matters.         |
 
 ### 2.3 Email-pattern derivation from confirmed names
 
 For each captured name, derive candidate emails using `people-breach-intel` §2 templates. Cross-reference against:
+
 - Hunter.io `domain-search` to confirm pattern.
 - Breach corpus (HudsonRock + HIBP + DeHashed + IntelX) to find matches.
 
@@ -426,7 +485,8 @@ For sock-puppet discipline, see `osint-methodology` §6.1.
 ### 2.4 Output
 
 Per discovered employee:
-```
+
+```text
 Person:
   name:        "Alice Doe"
   title:       "Senior DevOps Engineer"
@@ -446,4 +506,3 @@ Person:
 ```
 
 ---
-

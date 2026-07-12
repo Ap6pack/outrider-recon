@@ -19,6 +19,7 @@ done
 ```
 
 PowerShell equivalent:
+
 ```powershell
 $D = "target.example"
 $prefixes = @("www","mail","webmail","owa","autodiscover","ftp","vpn","sslvpn","gateway","api","app","portal","login","sso","idp","iam","identity","accounts","oauth","auth","adfs","admin","intranet","hr","sap","erp","crm","support","help","status","grafana","kibana","docs","wiki","jira","jenkins","gitlab","dev","test","staging","stg","qa","uat","sandbox","preprod","preview","careers","jobs","eapps","old","legacy","beta","tender","suppliers","procurement")
@@ -30,11 +31,11 @@ foreach ($p in $prefixes) {
 
 **Wordlist sources:**
 
-| Source | URL |
-|---|---|
-| **Assetnote** | `https://wordlists.assetnote.io/` — best-curated; per-CMS/framework |
-| **SecLists** | `https://github.com/danielmiessler/SecLists` — `Discovery/DNS/subdomains-top1million-110000.txt` |
-| **jhaddix all.txt** | `https://gist.github.com/jhaddix/86a06c5dc309d08580a018c66354a056` |
+| Source              | URL                                                                                                |
+| ------------------- | -------------------------------------------------------------------------------------------------- |
+| **Assetnote**       | `<https://wordlists.assetnote.io/`> — best-curated; per-CMS/framework                              |
+| **SecLists**        | `<https://github.com/danielmiessler/SecLists`> — `Discovery/DNS/subdomains-top1million-110000.txt` |
+| **jhaddix all.txt** | `<https://gist.github.com/jhaddix/86a06c5dc309d08580a018c66354a056`>                               |
 
 ---
 
@@ -78,6 +79,7 @@ sudo masscan -p80,443 203.0.113.0/22 --rate=1000 --banners -oX masscan.xml
 ```
 
 **IPv6 enumeration:**
+
 ```bash
 # AAAA records for every discovered subdomain
 for sub in $(cat all-subs.txt); do
@@ -89,8 +91,8 @@ whois -h whois.cymru.com " -v target.example.com"
 ```
 
 **BGP route observation:**
+
 - [RouteViews](http://archive.routeviews.org/) — historical BGP routing table snapshots.
 - [RIPE RIS](https://ris.ripe.net/) — route collectors.
 
 ---
-

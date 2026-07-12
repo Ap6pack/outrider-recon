@@ -10,7 +10,7 @@
 
 One directory per engagement. No exceptions.
 
-```
+```text
 engagements/
   acme-corp/2026-05-15/
     .engagement.json  scope.json  .env
@@ -23,11 +23,16 @@ engagements/
 
 ```json
 {
-  "engagement_id": "acme-corp-20260515", "client": "Acme Corp",
-  "scope_ref": "scope.json", "start_date": "2026-05-15", "end_date": "2026-06-15",
-  "status": "active", "operator": "jdoe",
+  "engagement_id": "acme-corp-20260515",
+  "client": "Acme Corp",
+  "scope_ref": "scope.json",
+  "start_date": "2026-05-15",
+  "end_date": "2026-06-15",
+  "status": "active",
+  "operator": "jdoe",
   "rules_of_engagement": {
-    "testing_window": "Mon-Fri 0800-1800 UTC", "no_dos": true,
+    "testing_window": "Mon-Fri 0800-1800 UTC",
+    "no_dos": true,
     "notify_on_critical": "security@acme.example"
   }
 }
@@ -45,7 +50,10 @@ Every engagement gets a `scope.json`. Nothing runs without a scope check.
     "domains": ["acme.example", "*.acme.example", "acme-corp.io"],
     "ip_ranges": ["203.0.113.0/24", "198.51.100.0/24"]
   },
-  "exclusions": { "domains": ["payments.acme.example"], "ip_ranges": ["203.0.113.200/32"] }
+  "exclusions": {
+    "domains": ["payments.acme.example"],
+    "ip_ranges": ["203.0.113.200/32"]
+  }
 }
 ```
 
@@ -114,7 +122,14 @@ nuclei -l targets.txt -jsonl -o "${ENGAGEMENT_DIR}/findings/nuclei-$(date -u +%Y
 Every JSONL record carries `engagement_id`:
 
 ```json
-{"engagement_id":"acme-corp-20260515","ts":"2026-05-16T14:30:00Z","tool":"nuclei","template":"cves/CVE-2024-3400","host":"vpn.acme.example","severity":"critical"}
+{
+  "engagement_id": "acme-corp-20260515",
+  "ts": "2026-05-16T14:30:00Z",
+  "tool": "nuclei",
+  "template": "cves/CVE-2024-3400",
+  "host": "vpn.acme.example",
+  "severity": "critical"
+}
 ```
 
 Sidecars (Shodan enrichment, screenshots, WHOIS) go to `sidecars/`. Portfolio merge (requires `portfolio_reporting: true` in ROE):

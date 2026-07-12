@@ -2,14 +2,14 @@
 
 The "what to reach for" operational arsenal for external red-team OSINT and bug-bounty reconnaissance.
 
-| Field | Value |
-|---|---|
-| Name | `offensive-osint` |
-| Version | 2.1.1 |
-| Lines | ~80 |
-| Headings | 4 (Behavioral Contract, Sub-skill map, Session start checklist, Hard rules) |
-| Role | Router — dispatches to 9 sub-skills by task type |
-| Companion skill | [`osint-methodology`](../osint-methodology/) |
+| Field           | Value                                                                       |
+| --------------- | --------------------------------------------------------------------------- |
+| Name            | `offensive-osint`                                                           |
+| Version         | 2.1.1                                                                       |
+| Lines           | ~80                                                                         |
+| Headings        | 4 (Behavioral Contract, Sub-skill map, Session start checklist, Hard rules) |
+| Role            | Router — dispatches to 9 sub-skills by task type                            |
+| Companion skill | [`osint-methodology`](../osint-methodology/)                                |
 
 ## Architecture
 
@@ -17,17 +17,17 @@ The "what to reach for" operational arsenal for external red-team OSINT and bug-
 
 ### Sub-skills dispatched to
 
-| Sub-skill | Covers |
-|---|---|
-| `recon-asset-discovery` | Subdomains, ASN/BGP, DNS, CT, WHOIS/RDAP, wordlists |
-| `web-surface` | Swagger/GraphQL paths, curl probes, Wayback, Postman, endpoint scoring |
-| `identity-fabric` | IdP fingerprinting, Entra/Okta/ADFS/SAML, M365 deep enum, LinkedIn |
-| `secrets-and-dorks` | Secret regexes, dork corpus, GitHub code-search dorks, read-only validators |
-| `post-discovery` | JWT triage, AWS IAM enum, GitHub/Slack post-credential workflows |
-| `cloud-and-infra` | Cloud-native fingerprints, K8s/container, CI/CD exposure, infra OSINT |
-| `people-breach-intel` | Username/email/phone, breach data, HudsonRock, Slack/Discord/Telegram, package registries |
-| `analysis-and-reporting` | Scoring rubrics, attack-path hints, severity matrix, AI-assisted OSINT |
-| `report-template` | Bug-bounty report scaffold |
+| Sub-skill                | Covers                                                                                    |
+| ------------------------ | ----------------------------------------------------------------------------------------- |
+| `recon-asset-discovery`  | Subdomains, ASN/BGP, DNS, CT, WHOIS/RDAP, wordlists                                       |
+| `web-surface`            | Swagger/GraphQL paths, curl probes, Wayback, Postman, endpoint scoring                    |
+| `identity-fabric`        | IdP fingerprinting, Entra/Okta/ADFS/SAML, M365 deep enum, LinkedIn                        |
+| `secrets-and-dorks`      | Secret regexes, dork corpus, GitHub code-search dorks, read-only validators               |
+| `post-discovery`         | JWT triage, AWS IAM enum, GitHub/Slack post-credential workflows                          |
+| `cloud-and-infra`        | Cloud-native fingerprints, K8s/container, CI/CD exposure, infra OSINT                     |
+| `people-breach-intel`    | Username/email/phone, breach data, HudsonRock, Slack/Discord/Telegram, package registries |
+| `analysis-and-reporting` | Scoring rubrics, attack-path hints, severity matrix, AI-assisted OSINT                    |
+| `report-template`        | Bug-bounty report scaffold                                                                |
 
 ## When this skill triggers
 

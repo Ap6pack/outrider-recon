@@ -2,34 +2,34 @@
 
 The "how to think" reference for external red-team OSINT and bug-bounty reconnaissance.
 
-| Field | Value |
-|---|---|
-| Name | `osint-methodology` |
-| Version | 2.2 |
-| Lines | ~420 |
-| Sections | 15 (Behavioral Contract + sections 0-14) |
+| Field           | Value                                    |
+| --------------- | ---------------------------------------- |
+| Name            | `osint-methodology`                      |
+| Version         | 2.2                                      |
+| Lines           | ~420                                     |
+| Sections        | 15 (Behavioral Contract + sections 0-14) |
 | Companion skill | [`offensive-osint`](../offensive-osint/) |
 
 ## What's in it
 
-| Section | Title |
-|---|---|
-| Behavioral Contract | When/how the skill activates and chains |
-| 0 | When to Use / When NOT |
-| 1 | Authorization & Legal Posture |
-| 2 | Confidence Levels |
-| 3 | Output Format |
-| 4 | Source Hygiene & Citations |
-| 5 | Do NOT |
-| 6 | OpSec (sock puppets, detectability tagging, validator discipline, detection-aware probing) |
-| 7 | External Red-Team Recon Pipeline (5-stage pipeline, priority order, time budgeting) |
-| 8 | Asset Graph Discipline (29 typed assets in 9 categories, triage rules — see docs/architecture.md for the typed-edge graph) |
-| 9 | Findings Rubric & Severity Mapping (anchors + escalation rules) |
-| 10 | Pivot Modes & Scale Tactics |
-| 11 | Implementation: Companion Skill Pointers |
-| 12 | Breach x Identity Correlation |
-| 13 | Bug Bounty Submission & Responsible Disclosure |
-| 14 | Client Deliverable Templates |
+| Section             | Title                                                                                                                      |
+| ------------------- | -------------------------------------------------------------------------------------------------------------------------- |
+| Behavioral Contract | When/how the skill activates and chains                                                                                    |
+| 0                   | When to Use / When NOT                                                                                                     |
+| 1                   | Authorization & Legal Posture                                                                                              |
+| 2                   | Confidence Levels                                                                                                          |
+| 3                   | Output Format                                                                                                              |
+| 4                   | Source Hygiene & Citations                                                                                                 |
+| 5                   | Do NOT                                                                                                                     |
+| 6                   | OpSec (sock puppets, detectability tagging, validator discipline, detection-aware probing)                                 |
+| 7                   | External Red-Team Recon Pipeline (5-stage pipeline, priority order, time budgeting)                                        |
+| 8                   | Asset Graph Discipline (29 typed assets in 9 categories, triage rules — see docs/architecture.md for the typed-edge graph) |
+| 9                   | Findings Rubric & Severity Mapping (anchors + escalation rules)                                                            |
+| 10                  | Pivot Modes & Scale Tactics                                                                                                |
+| 11                  | Implementation: Companion Skill Pointers                                                                                   |
+| 12                  | Breach x Identity Correlation                                                                                              |
+| 13                  | Bug Bounty Submission & Responsible Disclosure                                                                             |
+| 14                  | Client Deliverable Templates                                                                                               |
 
 ## When this skill triggers
 

@@ -25,6 +25,7 @@ End-to-end walkthrough from program selection through report submission.
 4. Note **excluded vulnerabilities** (clickjacking on non-sensitive pages, missing best-practices headers without exploit, etc.).
 
 **Severity inference for this program:**
+
 - HackerOne uses CVSS v3 base + program multiplier.
 - Conservative scoring → trust → repeat awards.
 
@@ -46,7 +47,7 @@ End-to-end walkthrough from program selection through report submission.
 
 After enumeration, you have:
 
-```
+```text
 Asset graph:
   - 200 subdomains
   - 80 alive webapps
@@ -88,6 +89,7 @@ Suppose you find: **Unauthenticated POST `/api/v1/users` on `api.acme.example` r
 **Claude pulls:** `analysis-and-reporting` §1 (endpoint interest score), `analysis-and-reporting` §3 (attack-path hints), `analysis-and-reporting` §4 (severity matrix).
 
 **Score evaluation:**
+
 - Unauth write → +40
 - Sensitive keyword `users` → +20
 - = 60 base
@@ -95,9 +97,11 @@ Suppose you find: **Unauthenticated POST `/api/v1/users` on `api.acme.example` r
 If verb tampering or schema leak adds → could push to ≥70 → HIGH/CRITICAL.
 
 **Attack-path hint** (`analysis-and-reporting` §3):
-> *"Unauthenticated POST `/api/v1/users` — try IDOR + privilege escalation; check whether numeric IDs are sequential or guessable."*
+
+> _"Unauthenticated POST `/api/v1/users` — try IDOR + privilege escalation; check whether numeric IDs are sequential or guessable."_
 
 **Next probes:**
+
 1. Confirm reproducibility (3 distinct test runs, different IDs).
 2. Check whether returned IDs are sequential (IDOR potential).
 3. Check role escalation: can the created user be made admin via parameter pollution?
@@ -117,6 +121,7 @@ If verb tampering or schema leak adds → could push to ≥70 → HIGH/CRITICAL.
 **Claude pulls:** `osint-methodology` §6.3 (validator discipline).
 
 **Approach:**
+
 - Create ONE user with a sock-puppet email (e.g., `bb-test-<random>@<your-private-domain>`).
 - Confirm the user appears in any public surface (e.g., GET `/api/v1/users` shows your created user).
 - DO NOT mass-create.
@@ -138,7 +143,7 @@ If the program forbids creating real records, document the request shape + respo
 
 **Output:**
 
-```
+```text
 Title: [CRITICAL] [api.acme.example] Unauthenticated user creation via POST /api/v1/users
 
 Summary
@@ -216,6 +221,7 @@ Affected component
 ## Citation
 
 This example follows:
+
 - `osint-methodology` §7.1, §7.2 (pipeline + 1-day profile)
 - `osint-methodology` §8.2 (asset triage)
 - `osint-methodology` §10 (bug-bounty pivot mode)

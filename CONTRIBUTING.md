@@ -4,17 +4,17 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
 
 ## Most-needed contributions
 
-| Priority | Type | Examples |
-|---|---|---|
-| **HIGH** | Vendor product fingerprints we missed | `Cisco Meraki`, `Palo Alto Prisma`, `Zscaler`, `Cato Networks`, `Cloudflare One`, `Tailscale Funnel`, `VPN appliances` |
-| **HIGH** | Modern secret patterns | New API key formats from any service (Linear, Loops, Resend, Anthropic Workspace, Vercel deployment tokens, etc.) |
-| **HIGH** | Real-world examples for `examples/` | End-to-end engagement walk-throughs (anonymized) |
-| **HIGH** | Bug reports | Prompts that don't trigger the right skill section, or trigger the wrong one |
-| MEDIUM | Sector-specific deep dives | Healthcare practitioners, finance practitioners, ICS specialists know their domain better than the starter notes in `docs/reference/specialty-domains.md` + `analysis-and-reporting` §5 |
-| MEDIUM | Wordlist refreshes | New paths discovered in the wild |
-| MEDIUM | Tooling install one-liners | When new tools mature |
-| LOW | Translations | Non-English versions for international red-team teams |
-| LOW | Typo / formatting fixes | Always welcome |
+| Priority | Type                                  | Examples                                                                                                                                                                                |
+| -------- | ------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **HIGH** | Vendor product fingerprints we missed | `Cisco Meraki`, `Palo Alto Prisma`, `Zscaler`, `Cato Networks`, `Cloudflare One`, `Tailscale Funnel`, `VPN appliances`                                                                  |
+| **HIGH** | Modern secret patterns                | New API key formats from any service (Linear, Loops, Resend, Anthropic Workspace, Vercel deployment tokens, etc.)                                                                       |
+| **HIGH** | Real-world examples for `examples/`   | End-to-end engagement walk-throughs (anonymized)                                                                                                                                        |
+| **HIGH** | Bug reports                           | Prompts that don't trigger the right skill section, or trigger the wrong one                                                                                                            |
+| MEDIUM   | Sector-specific deep dives            | Healthcare practitioners, finance practitioners, ICS specialists know their domain better than the starter notes in `docs/reference/specialty-domains.md` + `analysis-and-reporting` §5 |
+| MEDIUM   | Wordlist refreshes                    | New paths discovered in the wild                                                                                                                                                        |
+| MEDIUM   | Tooling install one-liners            | When new tools mature                                                                                                                                                                   |
+| LOW      | Translations                          | Non-English versions for international red-team teams                                                                                                                                   |
+| LOW      | Typo / formatting fixes               | Always welcome                                                                                                                                                                          |
 
 ## What we won't accept
 
@@ -53,7 +53,7 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
 
 - Use `##` for top-level sections (numbered: `## 1. Cloud-Native Service Fingerprints`).
 - Use `###` for subsections (numbered: `### 1.1 crt.sh Down? Fallback Chain`).
-- Code blocks must specify language: ```` ```bash ````, ```` ```python ````, ```` ```regex ```` etc.
+- Code blocks must specify language: ` ```bash `, ` ```python `, ` ```regex ` etc.
 - Tables for structured data; bulleted lists for unordered enumerations.
 - Bold for emphasis on first mention of a key concept; avoid otherwise.
 - Sentence case for headings (not Title Case).

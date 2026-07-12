@@ -10,42 +10,42 @@ Honest assessment of what these skills cover vs. what real practitioners need.
 
 ## By practitioner archetype
 
-| Archetype | Coverage of their needs | Why |
-|---|---|---|
-| **Pure OSINT analyst** | **~98%** | Skills are built for this. |
-| **External attack-surface analyst (CyCognito-style)** | **~95%** | Direct overlap with the methodology. |
-| **Bug bounty hunter** | **~75–80%** | Strong on recon; thin on exploit techniques. |
-| **Threat intel investigator** | **~70%** | RU/CN pivots, attribution discipline, malware basics — but no infrastructure-tracking-over-time. |
-| **External red teamer (recon phase)** | **~95–98%** | The OSINT phase is well-covered. |
-| **External red teamer (full engagement)** | **~35–45%** | Recon is ~30–40% of a full engagement; rest (exploitation, post-exploit, lateral, reporting) is mostly out of scope. |
-| **Internal red teamer (assumed-breach)** | **~10%** | Almost entirely out of scope. |
-| **Adversary emulation / TTP-driven** | **~25%** | Threat-actor section exists; specific TTP playbooks per APT don't. |
-| **Physical pentester** | **~25%** | Sat imagery + LinkedIn intel cover scouting; physical execution doesn't. |
-| **Social engineer** | **~50%** | Pretext development covered; payload crafting + voice tradecraft not. |
-| **Purple teamer** | **~30%** | No SOC-coordination guidance. |
+| Archetype                                             | Coverage of their needs | Why                                                                                                                  |
+| ----------------------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------- |
+| **Pure OSINT analyst**                                | **~98%**                | Skills are built for this.                                                                                           |
+| **External attack-surface analyst (CyCognito-style)** | **~95%**                | Direct overlap with the methodology.                                                                                 |
+| **Bug bounty hunter**                                 | **~75–80%**             | Strong on recon; thin on exploit techniques.                                                                         |
+| **Threat intel investigator**                         | **~70%**                | RU/CN pivots, attribution discipline, malware basics — but no infrastructure-tracking-over-time.                     |
+| **External red teamer (recon phase)**                 | **~95–98%**             | The OSINT phase is well-covered.                                                                                     |
+| **External red teamer (full engagement)**             | **~35–45%**             | Recon is ~30–40% of a full engagement; rest (exploitation, post-exploit, lateral, reporting) is mostly out of scope. |
+| **Internal red teamer (assumed-breach)**              | **~10%**                | Almost entirely out of scope.                                                                                        |
+| **Adversary emulation / TTP-driven**                  | **~25%**                | Threat-actor section exists; specific TTP playbooks per APT don't.                                                   |
+| **Physical pentester**                                | **~25%**                | Sat imagery + LinkedIn intel cover scouting; physical execution doesn't.                                             |
+| **Social engineer**                                   | **~50%**                | Pretext development covered; payload crafting + voice tradecraft not.                                                |
+| **Purple teamer**                                     | **~30%**                | No SOC-coordination guidance.                                                                                        |
 
 ## By engagement phase
 
-| Phase | Coverage |
-|---|---|
-| Pre-engagement (RoE, scoping, NDAs, SOW, pricing) | ~10% |
-| **External OSINT / passive recon** | **~95–98%** |
-| **External active recon (light probing)** | **~75–85%** |
-| Phishing payload crafting + delivery | 0% (out of scope) |
-| Initial access (exploit execution) | ~5% (we identify, don't exploit) |
-| Foothold / persistence | 0% (out of scope) |
-| Privilege escalation (local + AD) | 0% (out of scope) |
-| Lateral movement | 0% (out of scope) |
-| C2 infrastructure | 0% (out of scope) |
-| AV/EDR evasion | 0% (out of scope) |
-| Domain dominance | 0% (out of scope) |
-| Data exfiltration tradecraft | 0% (out of scope) |
-| Cleanup / artifact removal | 0% (out of scope) |
-| **Reporting (technical + exec)** | **~75%** |
-| Disclosure / vendor coordination | ~60% |
-| Re-test / continuous monitoring | ~75% |
-| Purple-team / SOC-coordination | 0% |
-| Lessons-learned / engagement retrospective | ~20% |
+| Phase                                             | Coverage                         |
+| ------------------------------------------------- | -------------------------------- |
+| Pre-engagement (RoE, scoping, NDAs, SOW, pricing) | ~10%                             |
+| **External OSINT / passive recon**                | **~95–98%**                      |
+| **External active recon (light probing)**         | **~75–85%**                      |
+| Phishing payload crafting + delivery              | 0% (out of scope)                |
+| Initial access (exploit execution)                | ~5% (we identify, don't exploit) |
+| Foothold / persistence                            | 0% (out of scope)                |
+| Privilege escalation (local + AD)                 | 0% (out of scope)                |
+| Lateral movement                                  | 0% (out of scope)                |
+| C2 infrastructure                                 | 0% (out of scope)                |
+| AV/EDR evasion                                    | 0% (out of scope)                |
+| Domain dominance                                  | 0% (out of scope)                |
+| Data exfiltration tradecraft                      | 0% (out of scope)                |
+| Cleanup / artifact removal                        | 0% (out of scope)                |
+| **Reporting (technical + exec)**                  | **~75%**                         |
+| Disclosure / vendor coordination                  | ~60%                             |
+| Re-test / continuous monitoring                   | ~75%                             |
+| Purple-team / SOC-coordination                    | 0%                               |
+| Lessons-learned / engagement retrospective        | ~20%                             |
 
 ## What's deliberately out of scope (and why)
 
@@ -60,11 +60,11 @@ Honest assessment of what these skills cover vs. what real practitioners need.
 
 The repo ships 43 self-test prompts ([`tests/smoke-test-prompts.md`](../tests/smoke-test-prompts.md)) covering the major capability areas (40 functional + 3 scope-check bonus).
 
-| Run | Prompts | PASS | PARTIAL | FAIL | Grade |
-|---|---|---|---|---|---|
-| v2.0 (initial) | 32 | 1 | 9 | 22 | C |
-| v2.1 | 32 | 31 | 1 | 0 | A |
-| v2.3 | 43 | 43 | 0 | 0 | A |
+| Run            | Prompts | PASS | PARTIAL | FAIL | Grade |
+| -------------- | ------- | ---- | ------- | ---- | ----- |
+| v2.0 (initial) | 32      | 1    | 9       | 22   | C     |
+| v2.1           | 32      | 31   | 1       | 0    | A     |
+| v2.3           | 43      | 43   | 0       | 0    | A     |
 
 Prompts #33–40 added in v2.3 cover crt.sh fallback chain, bulk ASN lookup, prefix sweep, legacy mail SSO exposure, M365 via Mimecast, DMARC vendor inference, and Wayback JS pivot. Prompts B1–B3 verify scope-check boundaries.
 
@@ -91,17 +91,17 @@ All 10 gaps identified by practitioner review are now addressed. Coverage has re
 
 ## Roadmap
 
-| Phase | Status | Description |
-|---|---|---|
-| v1.0 | ✅ Done | Original framework |
-| v2.0 | ✅ Done | External-red-team posture rewrite |
-| v2.1 | ✅ Done | Comprehensive expansion |
-| v2.2 | ✅ Done | Router + sub-skill refactor (offensive-osint split into 9 sub-skills) |
-| v2.2.1 | ✅ Done | osint-methodology trim + sub-skill polish |
-| v2.3 | ✅ Done | Cross-reference fixes, docs restructuring, content sync |
-| v2.4 | ✅ Done | Continuous-monitoring playbook + multi-tenant workflow + Burp/ZAP setup recipes |
-| v3.0 | ✅ Done | Plugin manifest, one-click install, optional MCP server companion, tool-chaining recipes, OPSEC infrastructure-as-code, adversary-emulation playbooks, report customization, tool failure recovery, sector deep-dive expansion |
-| v3.1 | 🔜 | Next iteration TBD |
+| Phase  | Status  | Description                                                                                                                                                                                                                    |
+| ------ | ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| v1.0   | ✅ Done | Original framework                                                                                                                                                                                                             |
+| v2.0   | ✅ Done | External-red-team posture rewrite                                                                                                                                                                                              |
+| v2.1   | ✅ Done | Comprehensive expansion                                                                                                                                                                                                        |
+| v2.2   | ✅ Done | Router + sub-skill refactor (offensive-osint split into 9 sub-skills)                                                                                                                                                          |
+| v2.2.1 | ✅ Done | osint-methodology trim + sub-skill polish                                                                                                                                                                                      |
+| v2.3   | ✅ Done | Cross-reference fixes, docs restructuring, content sync                                                                                                                                                                        |
+| v2.4   | ✅ Done | Continuous-monitoring playbook + multi-tenant workflow + Burp/ZAP setup recipes                                                                                                                                                |
+| v3.0   | ✅ Done | Plugin manifest, one-click install, optional MCP server companion, tool-chaining recipes, OPSEC infrastructure-as-code, adversary-emulation playbooks, report customization, tool failure recovery, sector deep-dive expansion |
+| v3.1   | 🔜      | Next iteration TBD                                                                                                                                                                                                             |
 
 ## Bottom line
 

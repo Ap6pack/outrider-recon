@@ -6,16 +6,16 @@
 
 ## What Outrider found
 
-| Category | Result |
-|---|---|
-| Target | `acme.example` |
-| Scope | `*.acme.example`, excluding `legacy.acme.example` and `*.staff-only.acme.example` |
-| Engagement type | Authorized external recon / bug-bounty style triage |
-| Boundary | Read-only recon, no destructive validation, no post-exploitation |
-| High-value leads | 3 |
-| Top priority | `https://api.acme.example` |
-| Primary reason | Exposed OpenAPI schema with user/account/order object paths |
-| Public disclosure match | IDOR, mass assignment, broken object-level authorization patterns |
+| Category                | Result                                                                            |
+| ----------------------- | --------------------------------------------------------------------------------- |
+| Target                  | `acme.example`                                                                    |
+| Scope                   | `*.acme.example`, excluding `legacy.acme.example` and `*.staff-only.acme.example` |
+| Engagement type         | Authorized external recon / bug-bounty style triage                               |
+| Boundary                | Read-only recon, no destructive validation, no post-exploitation                  |
+| High-value leads        | 3                                                                                 |
+| Top priority            | `<https://api.acme.example`>                                                      |
+| Primary reason          | Exposed OpenAPI schema with user/account/order object paths                       |
+| Public disclosure match | IDOR, mass assignment, broken object-level authorization patterns                 |
 
 ---
 
@@ -35,7 +35,7 @@ No destructive validation was performed. Recommended next steps are limited to a
 
 #### `https://api.acme.example`
 
-**What was observed**
+#### What was observed
 
 - Live API host.
 - OpenAPI schema available at `/openapi.json`.
@@ -43,11 +43,11 @@ No destructive validation was performed. Recommended next steps are limited to a
 - JavaScript bundles reference related object-shaped API routes.
 - Endpoint names resemble prior disclosed report patterns involving IDOR, mass assignment, and broken object-level authorization.
 
-**Why it matters**
+#### Why it matters
 
 An exposed API schema gives an operator a high-quality map of the application. The schema is not automatically a reportable vulnerability, but it can expose routes, object identifiers, hidden methods, admin-like paths, and request models that make authorization review much more efficient.
 
-**Public disclosure intelligence**
+#### Public disclosure intelligence
 
 Comparable public bug-bounty reports commonly map this kind of surface to:
 
@@ -57,14 +57,14 @@ Comparable public bug-bounty reports commonly map this kind of surface to:
 - unauthenticated or under-protected write methods,
 - inconsistent authorization across API versions.
 
-**Recommended handoff**
+#### Recommended handoff
 
 - API misconfiguration review.
 - IDOR / BOLA authorization testing.
 - Burp Repeater review using owned test accounts only.
 - Manual comparison of account A vs account B object access if program rules allow.
 
-**Safe next step**
+#### Safe next step
 
 Verify authentication requirements and object ownership checks using only authorized test accounts. Do not modify production data or attempt privilege changes unless explicitly allowed by the program or rules of engagement.
 
@@ -72,24 +72,24 @@ Verify authentication requirements and object ownership checks using only author
 
 #### `https://sso.acme.example`
 
-**What was observed**
+#### What was observed for SSO
 
 - Identity-provider surface discovered.
 - OIDC metadata available.
 - Tenant and federation hints found.
 - Domain and employee-pattern signals support identity-fabric mapping.
 
-**Why it matters**
+#### Why identity exposure matters
 
 Identity surfaces often define the real boundary of an external attack surface. Even when no vulnerability is present, metadata can help defenders understand exposed authentication flows, federated domains, OAuth clients, and where future review should focus.
 
-**Recommended handoff**
+#### Recommended identity handoff
 
 - SSO/OIDC configuration review.
 - OAuth redirect URI and client-id inventory.
 - Identity-fabric mapping.
 
-**Safe next step**
+#### Safe identity next step
 
 Collect metadata and document configuration exposure. Avoid password attempts, credential testing, social engineering, MFA fatigue, or user enumeration outside written authorization.
 
@@ -97,19 +97,19 @@ Collect metadata and document configuration exposure. Avoid password attempts, c
 
 ### P2 — useful, but not first
 
-#### `https://dev.acme.example`
+#### `<https://dev.acme.example`>
 
-**What was observed**
+#### What was observed
 
 - Non-production naming signal.
 - Interesting JavaScript paths.
 - No confirmed sensitive exposure yet.
 
-**Why it matters**
+#### Why it matters
 
 Development and staging hosts often have weaker controls or forgotten routes, but this host does not yet have enough signal to outrank the exposed API schema or identity surface.
 
-**Recommended handoff**
+#### Recommended handoff
 
 - JavaScript endpoint extraction.
 - Source-map checks.
@@ -119,15 +119,15 @@ Development and staging hosts often have weaker controls or forgotten routes, bu
 
 ### Kill / low priority
 
-#### `https://cdn.acme.example`
+#### `<https://cdn.acme.example`>
 
-**What was observed**
+#### What was observed
 
 - Static asset host only.
 - No dynamic endpoints found.
 - No interesting headers, forms, APIs, or JavaScript route leaks.
 
-**Why it matters**
+#### Why it matters
 
 This asset should be kept in inventory but deprioritized for manual review unless new signals appear later.
 

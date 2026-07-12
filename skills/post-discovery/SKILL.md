@@ -30,6 +30,7 @@ triggers:
 **When triggered:** A validated-live credential requires post-credential enumeration — AWS IAM scope, GitHub PAT repos, Slack workspace, JWT triage, Postman workspace, or AI API key scope.
 
 **Execute:**
+
 1. Confirm the credential was validated by `secrets-and-dorks` §4 as `verified_live`.
 2. Confirm Rules of Engagement explicitly authorize credential enumeration beyond liveness check.
 3. If either prerequisite is missing: emit `validation_skipped_by_policy`, stop, document why.

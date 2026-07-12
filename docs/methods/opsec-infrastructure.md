@@ -110,7 +110,7 @@ aws lambda invoke --function-name recon-proxy \
   --payload '{"url":"https://target.example","method":"GET"}' /dev/stdout
 ```
 
-**Tor for passive OSINT** (not active scanning -- exit nodes are widely blocked): `torsocks curl -s "https://crt.sh/?q=%.target.example&output=json" | jq '.[].name_value' | sort -u`
+**Tor for passive OSINT** (not active scanning -- exit nodes are widely blocked): `torsocks curl -s "<https://crt.sh/?q=%.target.example&output=json"> | jq '.[].name_value' | sort -u`
 
 ---
 
@@ -151,19 +151,30 @@ certbot certonly --dns-cloudflare --dns-cloudflare-credentials ~/.secrets/cf.ini
   roles: [base, proxy, scan]
 
 # roles/base/tasks/main.yml
-- apt: { name: [ufw, fail2ban, tmux, jq, git, unzip, curl], state: present, update_cache: true }
+- apt:
+    {
+      name: [ufw, fail2ban, tmux, jq, git, unzip, curl],
+      state: present,
+      update_cache: true,
+    }
 - ufw: { rule: allow, from_ip: "{{ operator_ip }}", port: "22", proto: tcp }
 - ufw: { state: enabled, default: deny }
 
 # roles/proxy/tasks/main.yml
 - apt: { name: [nginx, certbot, python3-certbot-nginx], state: present }
-- template: { src: redirector.conf.j2, dest: /etc/nginx/sites-enabled/redirector.conf }
+- template:
+    { src: redirector.conf.j2, dest: /etc/nginx/sites-enabled/redirector.conf }
   notify: reload nginx
 
 # roles/scan/tasks/main.yml
-- get_url: { url: "https://github.com/projectdiscovery/{{ item }}/releases/latest/download/{{ item }}_linux_amd64.zip", dest: "/tmp/{{ item }}.zip" }
+- get_url:
+    {
+      url: "https://github.com/projectdiscovery/{{ item }}/releases/latest/download/{{ item }}_linux_amd64.zip",
+      dest: "/tmp/{{ item }}.zip",
+    }
   loop: [subfinder, httpx, nuclei]
-- unarchive: { src: "/tmp/{{ item }}.zip", dest: /usr/local/bin/, remote_src: yes }
+- unarchive:
+    { src: "/tmp/{{ item }}.zip", dest: /usr/local/bin/, remote_src: yes }
   loop: [subfinder, httpx, nuclei]
 ```
 

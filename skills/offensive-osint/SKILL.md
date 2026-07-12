@@ -33,6 +33,7 @@ triggers:
 **When triggered:** Any external recon, bug bounty, ASM engagement, or general "where do I start" offensive OSINT request.
 
 **Execute:**
+
 1. Load `osint-methodology` — identify the pipeline stage and scope.
 2. Match the current task to a sub-skill using the sub-skill map below.
 3. Load that sub-skill and begin execution immediately.
@@ -51,17 +52,17 @@ triggers:
 
 Load the sub-skill that matches the current task. Each is self-contained and under 500 lines.
 
-| Task | Sub-skill to load |
-|---|---|
-| Subdomains, ASN/BGP, DNS, CT, WHOIS/RDAP, wordlists | `recon-asset-discovery` |
-| Web surface: Swagger/GraphQL paths, curl probes, Wayback, Postman, endpoint scoring | `web-surface` |
-| IdP fingerprinting, Entra/Okta/ADFS/SAML, M365 deep enum, LinkedIn employee enum | `identity-fabric` |
-| Secret regexes, dork corpus, GitHub code-search dorks, read-only validators | `secrets-and-dorks` |
-| Post-credential: JWT triage, AWS IAM enum, GitHub scope enum, Slack workspace enum | `post-discovery` |
-| Cloud-native fingerprints, K8s/container, CI/CD exposure, infra OSINT | `cloud-and-infra` |
-| Username/email/phone, breach data, HudsonRock, Slack/Discord/Telegram, package registries | `people-breach-intel` |
-| Scoring rubrics, attack-path hints, severity matrix, AI-assisted OSINT, archiving | `analysis-and-reporting` |
-| Report generation: bug-bounty submission, client deliverable, vulnerability report | `report-template` |
+| Task                                                                                      | Sub-skill to load        |
+| ----------------------------------------------------------------------------------------- | ------------------------ |
+| Subdomains, ASN/BGP, DNS, CT, WHOIS/RDAP, wordlists                                       | `recon-asset-discovery`  |
+| Web surface: Swagger/GraphQL paths, curl probes, Wayback, Postman, endpoint scoring       | `web-surface`            |
+| IdP fingerprinting, Entra/Okta/ADFS/SAML, M365 deep enum, LinkedIn employee enum          | `identity-fabric`        |
+| Secret regexes, dork corpus, GitHub code-search dorks, read-only validators               | `secrets-and-dorks`      |
+| Post-credential: JWT triage, AWS IAM enum, GitHub scope enum, Slack workspace enum        | `post-discovery`         |
+| Cloud-native fingerprints, K8s/container, CI/CD exposure, infra OSINT                     | `cloud-and-infra`        |
+| Username/email/phone, breach data, HudsonRock, Slack/Discord/Telegram, package registries | `people-breach-intel`    |
+| Scoring rubrics, attack-path hints, severity matrix, AI-assisted OSINT, archiving         | `analysis-and-reporting` |
+| Report generation: bug-bounty submission, client deliverable, vulnerability report        | `report-template`        |
 
 ---
 

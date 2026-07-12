@@ -1,15 +1,15 @@
 ---
 name: Bug report
 about: Report a skill behaving incorrectly (wrong section pulled, hallucinated content, missing trigger, etc.)
-title: '[BUG] '
+title: "[BUG] "
 labels: bug
-assignees: ''
+assignees: ""
 ---
 
 ## Skill version
 
-- [ ] `osint-methodology` v____
-- [ ] `offensive-osint` v____
+- [ ] `osint-methodology` v\_\_\_\_
+- [ ] `offensive-osint` v\_\_\_\_
 
 ## Claude surface
 
@@ -17,7 +17,7 @@ assignees: ''
 - [ ] Claude.ai (web)
 - [ ] Claude API
 - [ ] Cowork mode
-- [ ] Other: ___________
+- [ ] Other: \***\*\_\_\_\*\***
 
 ## Model
 
@@ -25,7 +25,7 @@ assignees: ''
 
 ## Prompt that triggered the bug
 
-```
+```text
 [paste your exact prompt here]
 ```
 

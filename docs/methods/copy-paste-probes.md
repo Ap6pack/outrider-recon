@@ -124,7 +124,7 @@ Extract code blocks with `<pre><code>([\s\S]*?)</code></pre>`, run secret catalo
 
 ## Public SaaS Collaboration Dorks
 
-```
+```text
 site:trello.com "{target}"
 site:notion.so "{target}"
 site:miro.com "{target}"
@@ -168,4 +168,3 @@ done < cves.txt | sort -t: -k2 -nr
 ```
 
 ---
-

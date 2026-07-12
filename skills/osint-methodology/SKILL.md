@@ -64,6 +64,7 @@ triggers:
 **When triggered:** Planning/executing authorized external recon, mapping an org's attack surface, investigating a person/entity, producing engagement deliverables, or methodology/framework questions about OSINT tradecraft.
 
 **Execute:**
+
 1. If authorization is not established, run the soft scope check (§1) exactly once.
 2. Identify which pipeline stage (§7) the user/engagement is in or needs to start.
 3. Propose the next concrete action from the priority order (§7.1), citing the relevant sub-skill to co-load.
@@ -96,11 +97,13 @@ triggers:
 Intended for assets the operator owns or has **written authorization** to assess.
 
 **Soft scope check** — when authorization isn't established, ask once:
-> *"Quick scope check: is this a target you own or have written authorization to assess? I want to make sure we stay on the right side of the engagement boundary."*
+
+> _"Quick scope check: is this a target you own or have written authorization to assess? I want to make sure we stay on the right side of the engagement boundary."_
 
 Once asserted, don't re-ask. If the engagement type is stated ("pentest of acme.com under contract"), proceed.
 
 **Always-on guardrails:**
+
 - Never weaken auth, rate limits, or safety controls on the target side.
 - No destructive probes (SYN scans at line-rate, masscan, fuzzing) outside explicit `--aggressive` mode.
 - Never paste real PII, credentials, session tokens, or API keys into cloud-hosted LLMs.
@@ -112,26 +115,26 @@ Once asserted, don't re-ask. If the engagement type is stated ("pentest of acme.
 
 Every assertion carries a confidence level.
 
-| Level | Meaning |
-|---|---|
+| Level         | Meaning                                                                                                                                   |
+| ------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
 | **TENTATIVE** | Plausible from indirect evidence; unverified. Snippet-only dork match, email pattern inferred from name, single passive-source subdomain. |
-| **FIRM** | Directly observed, uncorroborated. Subdomain resolves; Shodan banner returned; CT-log entry. |
-| **CONFIRMED** | Multiple independent corroborations OR directly verified. Live-validated token; bucket listable; three-source subdomain convergence. |
+| **FIRM**      | Directly observed, uncorroborated. Subdomain resolves; Shodan banner returned; CT-log entry.                                              |
+| **CONFIRMED** | Multiple independent corroborations OR directly verified. Live-validated token; bucket listable; three-source subdomain convergence.      |
 
 **Rule of three for attribution:** 3 independent weak signals, OR 1 strong + 1 weak. Never single-source attribute.
 
 ### 2.1 Confidence Upgrade Workflows
 
-| Asset type | TENTATIVE → FIRM | FIRM → CONFIRMED |
-|---|---|---|
-| Subdomain | ≥2 passive sources OR DNS resolves | Serves on a standard port AND banner/cert returned |
-| IP | ≥2 sources (passive DNS, ASN, Shodan) | TCP SYN-ACK or ICMP reply |
-| WebApp | URL extracted but not yet hit | HTTP returns 2xx/3xx/4xx AND content-length > 0 |
-| Email | Name-pattern inferred OR snippet-only | Listed in Hunter/IntelX/breach, OR SMTP 250 (abort at DATA) |
-| Bucket | Permutation candidate + HEAD returns 200/301/403 (exists) | GET listing = CONFIRMED |
-| Credential / secret | Regex match in captured text | Read-only validator returns success (scope + account-ID documented) |
-| Person | Name from single source | Confirmed by second independent source |
-| SSO tenant | OIDC discovery endpoint returns metadata | Tenant GUID extracted AND domain ties back via MX/autodiscover/SP record |
+| Asset type          | TENTATIVE → FIRM                                          | FIRM → CONFIRMED                                                         |
+| ------------------- | --------------------------------------------------------- | ------------------------------------------------------------------------ |
+| Subdomain           | ≥2 passive sources OR DNS resolves                        | Serves on a standard port AND banner/cert returned                       |
+| IP                  | ≥2 sources (passive DNS, ASN, Shodan)                     | TCP SYN-ACK or ICMP reply                                                |
+| WebApp              | URL extracted but not yet hit                             | HTTP returns 2xx/3xx/4xx AND content-length > 0                          |
+| Email               | Name-pattern inferred OR snippet-only                     | Listed in Hunter/IntelX/breach, OR SMTP 250 (abort at DATA)              |
+| Bucket              | Permutation candidate + HEAD returns 200/301/403 (exists) | GET listing = CONFIRMED                                                  |
+| Credential / secret | Regex match in captured text                              | Read-only validator returns success (scope + account-ID documented)      |
+| Person              | Name from single source                                   | Confirmed by second independent source                                   |
+| SSO tenant          | OIDC discovery endpoint returns metadata                  | Tenant GUID extracted AND domain ties back via MX/autodiscover/SP record |
 
 Default reporting posture: never claim CONFIRMED without explicit corroboration. When in doubt, downgrade.
 
@@ -141,7 +144,7 @@ Default reporting posture: never claim CONFIRMED without explicit corroboration.
 
 Each finding uses this schema (drops cleanly into asset-management tools):
 
-```
+```text
 Finding:
   id:          <stable hash or UUID>
   module:      <technique that discovered it>
@@ -197,11 +200,11 @@ Build posting history, age the account, use a separate browser profile. Persona 
 
 Tag every operation so you can reason about the trail you leave.
 
-| Tag | Examples |
-|---|---|
-| **Low** | Passive Shodan InternetDB; crt.sh; Wayback CDX; SecurityTrails PDNS; Hunter.io; HTTP HEAD on public buckets; `getuserrealm.srf`; OIDC metadata fetch. |
+| Tag        | Examples                                                                                                                                                                                |
+| ---------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Low**    | Passive Shodan InternetDB; crt.sh; Wayback CDX; SecurityTrails PDNS; Hunter.io; HTTP HEAD on public buckets; `getuserrealm.srf`; OIDC metadata fetch.                                   |
 | **Medium** | `GetCredentialType` user-enum; Okta `/api/v1/authn` user-enum; credential validation; AWS `sts:GetCallerIdentity`; Swagger/GraphQL probes; targeted favicon-hash + JARM fingerprinting. |
-| **High** | Active port scans (naabu/masscan/nmap); Nuclei full runs against production; subdomain brute-force at scale; SMTP `RCPT TO` enum; web fuzzing. |
+| **High**   | Active port scans (naabu/masscan/nmap); Nuclei full runs against production; subdomain brute-force at scale; SMTP `RCPT TO` enum; web fuzzing.                                          |
 
 Defaults: passive by default. Active probes only when (a) explicitly authorized, (b) within agreed windows, (c) operator aware of log volume.
 
@@ -214,6 +217,7 @@ When you find a credential in the wild, confirm liveness with **read-only valida
 **Signs you've been detected (escalating severity):** 429 / `Retry-After`; captcha interstitials; WAF block page; status-code drift (200→403 from your IP only); banner change; NXDOMAIN rollback; honeypot bait (credentials that don't validate); direct contact.
 
 **Back-off ladder:**
+
 1. Halve concurrency; add 2–10s jitter.
 2. Stop hitting the triggering path; pivot to a different module.
 3. New User-Agent / TLS fingerprint.
@@ -227,13 +231,13 @@ When you find a credential in the wild, confirm liveness with **read-only valida
 
 Five sequential stages; modules within a stage can run concurrently.
 
-| Stage | What you do |
-|---|---|
-| **1 — Seed Discovery** | WHOIS, ASN enum (HE BGP Toolkit, RIPEstat), DNS records (A/AAAA/MX/TXT/NS/SOA/CAA), CT history (crt.sh, Censys). |
-| **2 — Asset Expansion** | Subdomain enum (passive first → permutations → brute); cloud bucket permutation; typosquat generation; Wayback CDX; mobile app discovery; DNS walking; LinkedIn employee enum. |
-| **3 — Enrichment** | Port/service (Shodan InternetDB → naabu); TLS handshakes (cert chain, JARM, favicon mmh3); WAF/CDN inference; origin discovery; security headers; email harvest; email security audit; GitHub dorking; JS deep analysis; SSO/IdP fingerprinting; API discovery; secrets sweep (Postman, Stack Exchange); vendor product fingerprinting; container/CI-CD/cloud-native exposure; job posting harvest. |
-| **4 — Exposure Analysis** | Nuclei always-on checks; TLS deep audit; breach × identity correlation → SSO_EXPOSURE findings; targeted misconfig probes (`.git/config`, `.env`, `/actuator/env`, `/_cat/indices`, `/console`); vulnerability prioritization (CVE × EPSS × KEV × POC). |
-| **5 — Reporting** | Risk scoring per finding; asset graph export; client-facing report (exec summary + technical detail + remediation); reproduction package; bug bounty submission if applicable. |
+| Stage                     | What you do                                                                                                                                                                                                                                                                                                                                                                                         |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **1 — Seed Discovery**    | WHOIS, ASN enum (HE BGP Toolkit, RIPEstat), DNS records (A/AAAA/MX/TXT/NS/SOA/CAA), CT history (crt.sh, Censys).                                                                                                                                                                                                                                                                                    |
+| **2 — Asset Expansion**   | Subdomain enum (passive first → permutations → brute); cloud bucket permutation; typosquat generation; Wayback CDX; mobile app discovery; DNS walking; LinkedIn employee enum.                                                                                                                                                                                                                      |
+| **3 — Enrichment**        | Port/service (Shodan InternetDB → naabu); TLS handshakes (cert chain, JARM, favicon mmh3); WAF/CDN inference; origin discovery; security headers; email harvest; email security audit; GitHub dorking; JS deep analysis; SSO/IdP fingerprinting; API discovery; secrets sweep (Postman, Stack Exchange); vendor product fingerprinting; container/CI-CD/cloud-native exposure; job posting harvest. |
+| **4 — Exposure Analysis** | Nuclei always-on checks; TLS deep audit; breach × identity correlation → SSO_EXPOSURE findings; targeted misconfig probes (`.git/config`, `.env`, `/actuator/env`, `/_cat/indices`, `/console`); vulnerability prioritization (CVE × EPSS × KEV × POC).                                                                                                                                             |
+| **5 — Reporting**         | Risk scoring per finding; asset graph export; client-facing report (exec summary + technical detail + remediation); reproduction package; bug bounty submission if applicable.                                                                                                                                                                                                                      |
 
 ### 7.1 Pipeline Priority Order (highest signal density first)
 
@@ -252,13 +256,13 @@ Five sequential stages; modules within a stage can run concurrently.
 
 ### 7.2 Time Budgeting & Engagement Profiles
 
-| Stage | Small org (<100) | Medium (100–1K) | Large (1K+) |
-|---|---|---|---|
-| 1. Seed | 30 min | 30 min | 30 min |
-| 2. Asset expansion | 1–2 h | 2–4 h | 4–8 h |
-| 3. Enrichment (per 100 alive webapps) | ~1 h | ~1 h | ~1 h |
-| 4. Exposure analysis | 1–3 h | 3–6 h | 6–12 h |
-| 5. Reporting | 2–4 h | 4–8 h | 1–2 days |
+| Stage                                 | Small org (<100) | Medium (100–1K) | Large (1K+) |
+| ------------------------------------- | ---------------- | --------------- | ----------- |
+| 1. Seed                               | 30 min           | 30 min          | 30 min      |
+| 2. Asset expansion                    | 1–2 h            | 2–4 h           | 4–8 h       |
+| 3. Enrichment (per 100 alive webapps) | ~1 h             | ~1 h            | ~1 h        |
+| 4. Exposure analysis                  | 1–3 h            | 3–6 h           | 6–12 h      |
+| 5. Reporting                          | 2–4 h            | 4–8 h           | 1–2 days    |
 
 **Profiles:** 1-hour rapid (Stages 1–2 passive + breach + exec summary) · 4-hour focused (adds email harvest, SSO fingerprinting, typosquats) · 1-day standard (full Stages 1–4 in priority order) · 1-week deep (all of standard + JS deep, mobile, cloud-native, vendor product, package registry) · ongoing weekly diff (re-run Stages 1–3, diff against baseline).
 
@@ -272,17 +276,17 @@ Every discovery is a **typed asset** in a graph, not a free-floating string.
 
 ### 8.1 Asset Taxonomy
 
-| Category | Types |
-|---|---|
-| DNS / Network | `domain`, `subdomain`, `ip`, `netblock`, `asn` |
-| Service | `port`, `service`, `certificate` |
-| Identity | `email`, `person`, `credential` |
-| Code / Config | `repo`, `secret` |
-| Cloud / Storage | `bucket`, `firebase_project` |
-| Web | `webapp`, `wayback_endpoint`, `api_endpoint`, `api_spec`, `graphql_schema` |
-| Mobile | `mobile_app`, `deep_link`, `exported_component` |
-| Phishing | `typosquat_domain` |
-| SaaS | `postman_collection`, `postman_workspace`, `postman_api_key`, `stack_post`, `saas_public_surface` |
+| Category        | Types                                                                                             |
+| --------------- | ------------------------------------------------------------------------------------------------- |
+| DNS / Network   | `domain`, `subdomain`, `ip`, `netblock`, `asn`                                                    |
+| Service         | `port`, `service`, `certificate`                                                                  |
+| Identity        | `email`, `person`, `credential`                                                                   |
+| Code / Config   | `repo`, `secret`                                                                                  |
+| Cloud / Storage | `bucket`, `firebase_project`                                                                      |
+| Web             | `webapp`, `wayback_endpoint`, `api_endpoint`, `api_spec`, `graphql_schema`                        |
+| Mobile          | `mobile_app`, `deep_link`, `exported_component`                                                   |
+| Phishing        | `typosquat_domain`                                                                                |
+| SaaS            | `postman_collection`, `postman_workspace`, `postman_api_key`, `stack_post`, `saas_public_surface` |
 
 Every asset carries: `type`, `key` (typed dedup id), `value`, `sources[]`, `confidence`, `first_seen`, `last_seen`, `attrs{}`.
 
@@ -302,13 +306,13 @@ Every asset carries: `type`, `key` (typed dedup id), `value`, `sources[]`, `conf
 
 ### Severity Anchors
 
-| Severity | Anchor |
-|---|---|
+| Severity     | Anchor                                                                                                                                                                                                                                                                                     |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | **CRITICAL** | Pre-auth code execution; confirmed valid credentials; listable production data; fundamental trust violations. Examples: `.env` exposed, listable S3 bucket with PII, live-validated AWS admin key, open Kubernetes API with anon-auth, ≥10 employees in breach corpus + tenant identified. |
-| **HIGH** | Significant exposure with clear escalation path; high-value info disclosure. Examples: public secret in GitHub repo, subdomain takeover possible, reflected CORS with credentials, exposed Jenkins/phpMyAdmin admin UI, open GraphQL introspection on prod, DMARC `p=none`. |
-| **MEDIUM** | Info disclosure, hardening gaps, brute-force exposure. Examples: missing HSTS/CSP, Apache `/server-status`, internal IP/hostname in JS, schema leakage in error pages, `android:allowBackup=true`, wildcard CORS on user-data API, Slack webhook leaked. |
-| **LOW** | Cosmetic or marginal gaps. Examples: missing `X-Frame-Options`, `.DS_Store` exposed, Stripe **test** key, cert pinning missing, outdated WordPress (no known active exploit). |
-| **INFO** | Worth recording; no immediate action. Examples: `robots.txt` reveals paths, private bucket locked down, DNSSEC not enabled. |
+| **HIGH**     | Significant exposure with clear escalation path; high-value info disclosure. Examples: public secret in GitHub repo, subdomain takeover possible, reflected CORS with credentials, exposed Jenkins/phpMyAdmin admin UI, open GraphQL introspection on prod, DMARC `p=none`.                |
+| **MEDIUM**   | Info disclosure, hardening gaps, brute-force exposure. Examples: missing HSTS/CSP, Apache `/server-status`, internal IP/hostname in JS, schema leakage in error pages, `android:allowBackup=true`, wildcard CORS on user-data API, Slack webhook leaked.                                   |
+| **LOW**      | Cosmetic or marginal gaps. Examples: missing `X-Frame-Options`, `.DS_Store` exposed, Stripe **test** key, cert pinning missing, outdated WordPress (no known active exploit).                                                                                                              |
+| **INFO**     | Worth recording; no immediate action. Examples: `robots.txt` reveals paths, private bucket locked down, DNSSEC not enabled.                                                                                                                                                                |
 
 ### Severity Escalation Rules
 
@@ -322,14 +326,15 @@ Every asset carries: `type`, `key` (typed dedup id), `value`, `sources[]`, `conf
 
 ## 10. Pivot Modes & Scale Tactics
 
-| Aspect | Investigative Mode | Offensive Recon Mode |
-|---|---|---|
-| Probing rate | Slow, single-threaded, blends with traffic | Bursts, parallel, rate-limited per provider |
-| OpSec posture | Sock-puppet only; never reveal investigator | Engagement persona; team may notify SOC |
-| Evidence handling | Court-grade chain of custody | Engagement-grade; same hash/timestamp discipline |
-| Reporting format | Narrative + sourced timeline | Per-asset findings + remediation + reproduction |
+| Aspect            | Investigative Mode                          | Offensive Recon Mode                             |
+| ----------------- | ------------------------------------------- | ------------------------------------------------ |
+| Probing rate      | Slow, single-threaded, blends with traffic  | Bursts, parallel, rate-limited per provider      |
+| OpSec posture     | Sock-puppet only; never reveal investigator | Engagement persona; team may notify SOC          |
+| Evidence handling | Court-grade chain of custody                | Engagement-grade; same hash/timestamp discipline |
+| Reporting format  | Narrative + sourced timeline                | Per-asset findings + remediation + reproduction  |
 
 **Scale tactics:**
+
 - **Small (<100):** Individual-account focus. One exec/CFO compromise often hands you the keys. Deep on every email + every identity-fabric finding. Check founders' personal GitHub orgs.
 - **Medium (100–1K):** Balanced enumeration. Full pipeline at standard depth. LinkedIn priority by role. Check both app stores.
 - **Large (1K–10K):** Breadth-first; automation for asset discovery; manual triage on findings only.
@@ -339,7 +344,7 @@ Every asset carries: `type`, `key` (typed dedup id), `value`, `sources[]`, `conf
 
 ## 11. Implementation: Companion Skill Pointers
 
-The following modules have full implementation detail — probe paths, wordlists, curl one-liners, regexes, and scoring rubrics — in the specialized sub-skills. This skill defines *what to do*; those skills define *how to do it*.
+The following modules have full implementation detail — probe paths, wordlists, curl one-liners, regexes, and scoring rubrics — in the specialized sub-skills. This skill defines _what to do_; those skills define _how to do it_.
 
 **Identity Fabric Mapping** (`identity-fabric` §1) — Microsoft Entra (OIDC metadata, getuserrealm.srf, GetCredentialType), Okta (slug derivation, /api/v1/authn), ADFS, Google Workspace, generic OIDC (Auth0/Keycloak/Ping/OneLogin/Duo), SAML metadata (5 paths), AWS account-ID extraction, M365 deep surface (Teams federation, SharePoint, OneDrive, OAuth client_id, device-code phishing check, Power Platform).
 
@@ -356,11 +361,12 @@ The following modules have full implementation detail — probe paths, wordlists
 **Vulnerability Prioritization** (`people-breach-intel` §4 + `docs/reference/tool-directory.md`) — NVD, EPSS, CISA KEV, ExploitDB, Metasploit, InTheWild.io, Trickest CVE→POC; 9-signal scoring rubric → P0/P1/P2/P3 tiers.
 
 **Phishing Infrastructure** — multi-source; pointers below.
-- *Typosquat shortlists:* Generate candidates with dnstwist: `dnstwist --registered domain.com` — cross-reference live domains with `web-surface` §11 takeover fingerprints.
-- *Subdomain takeover for trusted-domain phishing:* `web-surface` §11 (27 provider fingerprints, CNAME dangling checks).
-- *Email spoof feasibility matrix (SPF × DMARC):* `web-surface` §9 (SPF strictness, DMARC policy, DKIM selector enumeration).
-- *Pretext development from OSINT:* leverage job titles, recent events, vendor relationships, and GitHub commit patterns gathered during earlier pipeline stages.
-- *Cert-SAN impersonation patterns:* query crt.sh for `%.target.com` certificates; extract SAN entries that could be mimicked on attacker-controlled infrastructure (e.g., `sso.target.com`, `vpn.target.com`, `mail.target.com`). Cross-reference with `recon-asset-discovery` §1 results — SANs that resolve to NXDOMAIN are prime candidates for registration + phishing.
+
+- _Typosquat shortlists:_ Generate candidates with dnstwist: `dnstwist --registered domain.com` — cross-reference live domains with `web-surface` §11 takeover fingerprints.
+- _Subdomain takeover for trusted-domain phishing:_ `web-surface` §11 (27 provider fingerprints, CNAME dangling checks).
+- _Email spoof feasibility matrix (SPF × DMARC):_ `web-surface` §9 (SPF strictness, DMARC policy, DKIM selector enumeration).
+- _Pretext development from OSINT:_ leverage job titles, recent events, vendor relationships, and GitHub commit patterns gathered during earlier pipeline stages.
+- _Cert-SAN impersonation patterns:_ query crt.sh for `%.target.com` certificates; extract SAN entries that could be mimicked on attacker-controlled infrastructure (e.g., `sso.target.com`, `vpn.target.com`, `mail.target.com`). Cross-reference with `recon-asset-discovery` §1 results — SANs that resolve to NXDOMAIN are prime candidates for registration + phishing.
 - Combine all five vectors into a single phishing-readiness summary per target domain: (1) registered typosquats, (2) available typosquat candidates, (3) cert-SAN impersonation patterns, (4) dangling CNAME takeover targets, (5) spoof feasibility matrix.
 
 ---
@@ -369,12 +375,12 @@ The following modules have full implementation detail — probe paths, wordlists
 
 Highest-ROI single technique for external red teams. Run on every engagement.
 
-| Source | Tier | Notes |
-|---|---|---|
-| Hudson Rock Cavalier | FREE | Infostealer-log corpus; very high signal for corp SSO creds. |
-| Have I Been Pwned | Free + paid | Domain-wide existence + Pwned Passwords (k-anonymity). |
-| DeHashed | Paid | Per-record searchable API. |
-| IntelX | Free + paid | Aggregator; phonebook search. |
+| Source               | Tier        | Notes                                                        |
+| -------------------- | ----------- | ------------------------------------------------------------ |
+| Hudson Rock Cavalier | FREE        | Infostealer-log corpus; very high signal for corp SSO creds. |
+| Have I Been Pwned    | Free + paid | Domain-wide existence + Pwned Passwords (k-anonymity).       |
+| DeHashed             | Paid        | Per-record searchable API.                                   |
+| IntelX               | Free + paid | Aggregator; phonebook search.                                |
 
 **Domain-level severity:** ≥10 employees compromised → CRITICAL; 1–9 → HIGH; ≥1 end-user → MEDIUM; domain seen with 0 named accounts → INFO.
 
@@ -389,7 +395,8 @@ Highest-ROI single technique for external red teams. Run on every engagement.
 **Platforms:** HackerOne (CVSS-based) · Bugcrowd (VRT: P1–P5) · Intigriti · YesWeHack · HackenProof (crypto-focused) · Open Bug Bounty (XSS/SSRF only) · `/.well-known/security.txt` for unprogrammed targets.
 
 **Report structure:**
-```
+
+```text
 Title: [Severity] [Component] Brief description
 Summary: 2-3 sentences — what and why it matters.
 Steps to Reproduce: numbered, copy-pasteable, URL + payload + expected vs actual.
@@ -411,16 +418,15 @@ Remediation: concrete, actionable recommendation.
 
 **Risk translation (sample):**
 
-| Technical | Business language |
-|---|---|
-| Listable S3 bucket with PII | Customer records publicly downloadable. Potential GDPR/CCPA notification trigger. |
-| Exposed `.env` with DB credentials | Full database access; pivots to backups, billing, employee PII. |
-| Live AWS admin key | Complete cloud compromise; cryptominer spin-up, full data exfiltration, lateral movement. |
-| DMARC `p=none` | Anyone on the internet can send email appearing to be from your domain. |
-| ≥10 employees in breach corpus | Stolen corp SSO credentials circulating; active credential-stuffing risk. |
-| Vendor appliance on CISA KEV | Attackers are actively scanning the internet for this exact issue. Patch now. |
+| Technical                          | Business language                                                                         |
+| ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| Listable S3 bucket with PII        | Customer records publicly downloadable. Potential GDPR/CCPA notification trigger.         |
+| Exposed `.env` with DB credentials | Full database access; pivots to backups, billing, employee PII.                           |
+| Live AWS admin key                 | Complete cloud compromise; cryptominer spin-up, full data exfiltration, lateral movement. |
+| DMARC `p=none`                     | Anyone on the internet can send email appearing to be from your domain.                   |
+| ≥10 employees in breach corpus     | Stolen corp SSO credentials circulating; active credential-stuffing risk.                 |
+| Vendor appliance on CISA KEV       | Attackers are actively scanning the internet for this exact issue. Patch now.             |
 
 **Reporting cadence:** Day 1 EOD kickoff summary → mid-engagement heads-up on first CRITICAL → end-of-engagement preliminary (top 5 findings) → final report within agreed SLA → re-test offer for CRITICAL/HIGH findings post-remediation.
 
 **Reproduction package:** `run-log.jsonl` + `assets.db` + `findings.db` + `evidence/` (screenshots, HTTP captures, downloads with `.sha256`) + `re-test-script.sh` + engagement metadata.
-

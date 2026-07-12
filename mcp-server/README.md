@@ -35,13 +35,13 @@ Add to your `.claude/settings.json` (or use the project `.mcp.json` which is aut
 
 ## Available Tools
 
-| Tool | Description | Input |
-|---|---|---|
-| `crtsh_lookup` | Query crt.sh certificate transparency logs | `domain` (string) |
-| `hudsonrock_lookup` | Query HudsonRock Cavalier API for infostealer exposure | `domain` (string) |
-| `epss_score` | Get EPSS exploitation probability for a CVE | `cve_id` (string, e.g. "CVE-2024-3400") |
-| `wayback_urls` | Query Wayback Machine CDX for archived URLs | `domain` (string), `limit` (int, default 100) |
-| `dns_records` | Fetch A, AAAA, MX, TXT, NS, SOA, CAA, CNAME records | `domain` (string) |
+| Tool                | Description                                            | Input                                         |
+| ------------------- | ------------------------------------------------------ | --------------------------------------------- |
+| `crtsh_lookup`      | Query crt.sh certificate transparency logs             | `domain` (string)                             |
+| `hudsonrock_lookup` | Query HudsonRock Cavalier API for infostealer exposure | `domain` (string)                             |
+| `epss_score`        | Get EPSS exploitation probability for a CVE            | `cve_id` (string, e.g. "CVE-2024-3400")       |
+| `wayback_urls`      | Query Wayback Machine CDX for archived URLs            | `domain` (string), `limit` (int, default 100) |
+| `dns_records`       | Fetch A, AAAA, MX, TXT, NS, SOA, CAA, CNAME records    | `domain` (string)                             |
 
 ## Architecture
 

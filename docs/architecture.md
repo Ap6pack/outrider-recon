@@ -4,12 +4,12 @@
 
 This document describes both implemented behavior and architectural design intent. The current implementation is intentionally split across separate domains:
 
-| Domain | Current status | Version source | Notes |
-|---|---|---|---|
-| Claude plugin/content release | Implemented as the skill bundle, plugin manifest, docs, examples, install scripts, and optional MCP companion listed in the changelog. | `CHANGELOG.md` and `.claude-plugin/plugin.json` | This release domain tracks the packaged Claude-facing content. |
-| Python CLI package | Implemented as run-folder scaffolding, deterministic scope validation, stable run manifests, append-only workflow-state events, and validated state transitions. | `pyproject.toml` and `outrider/__init__.py` | The CLI validates local scope and workflow state; it does not implement approvals, evidence integrity, MCP enforcement, recon execution, or a web UI. |
-| Individual skill frontmatter | Implemented per `skills/*/SKILL.md`. | Each skill's YAML `version:` field | Skill versions may differ from the plugin/content release and from the Python package version. |
-| MCP server | Implemented as optional live enrichment. | MCP server files and dependency metadata | The MCP server provides live lookup tools but does not currently enforce scope. |
+| Domain                        | Current status                                                                                                                                                   | Version source                                  | Notes                                                                                                                                                 |
+| ----------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Claude plugin/content release | Implemented as the skill bundle, plugin manifest, docs, examples, install scripts, and optional MCP companion listed in the changelog.                           | `CHANGELOG.md` and `.claude-plugin/plugin.json` | This release domain tracks the packaged Claude-facing content.                                                                                        |
+| Python CLI package            | Implemented as run-folder scaffolding, deterministic scope validation, stable run manifests, append-only workflow-state events, and validated state transitions. | `pyproject.toml` and `outrider/__init__.py`     | The CLI validates local scope and workflow state; it does not implement approvals, evidence integrity, MCP enforcement, recon execution, or a web UI. |
+| Individual skill frontmatter  | Implemented per `skills/*/SKILL.md`.                                                                                                                             | Each skill's YAML `version:` field              | Skill versions may differ from the plugin/content release and from the Python package version.                                                        |
+| MCP server                    | Implemented as optional live enrichment.                                                                                                                         | MCP server files and dependency metadata        | The MCP server provides live lookup tools but does not currently enforce scope.                                                                       |
 
 These version domains do not have to use the same number. A plugin/content release can advance independently from the Python CLI package, individual skill frontmatter, or MCP implementation.
 
@@ -142,22 +142,22 @@ Findings are structured for ingestion by asset-management tools:
 
 ```yaml
 Finding:
-  id:           <stable hash or UUID>
-  module:       <which technique discovered it>
-  asset_key:    <typed asset key, e.g., sub:api.example.com>
-  category:     <e.g., SECRET_LEAK, OPEN_GRAPHQL_API, SSO_EXPOSURE>
-  severity:     critical | high | medium | low | info
-  confidence:   confirmed | firm | tentative
-  title:        <one-line summary>
-  description:  <2-5 sentences>
+  id: <stable hash or UUID>
+  module: <which technique discovered it>
+  asset_key: <typed asset key, e.g., sub:api.example.com>
+  category: <e.g., SECRET_LEAK, OPEN_GRAPHQL_API, SSO_EXPOSURE>
+  severity: critical | high | medium | low | info
+  confidence: confirmed | firm | tentative
+  title: <one-line summary>
+  description: <2-5 sentences>
   evidence:
-    url:        <where it was found>
-    timestamp:  <UTC ISO8601>
-    sha256:     <hash of any artifact>
-    raw:        <truncated to 2 KiB>
+    url: <where it was found>
+    timestamp: <UTC ISO8601>
+    sha256: <hash of any artifact>
+    raw: <truncated to 2 KiB>
   references:
     - <CVE-ID, advisory URL, vendor doc>
-  remediation:  <action the asset owner can take>
+  remediation: <action the asset owner can take>
 ```
 
 This shape is portable to any asset / findings store (ASM platforms, ticketing systems, custom DBs). It is not yet enforced by a Python schema validator.
@@ -209,12 +209,12 @@ Each skill declares ~50–110 trigger phrases in YAML frontmatter. Triggers are:
 
 Semantic versioning applies within each release domain rather than requiring all version numbers to match.
 
-| Version domain | Authoritative location | What it describes |
-|---|---|---|
-| Plugin/content release | `CHANGELOG.md` and `.claude-plugin/plugin.json` | The Claude-facing content bundle, documentation, examples, install scripts, and optional companion components. |
-| Python CLI package | `pyproject.toml` and `outrider/__init__.py` | The installable Python package and `outrider` console script. |
-| Individual skill versions | YAML frontmatter in each `skills/*/SKILL.md` | Skill-specific trigger/content changes. |
-| MCP server implementation | `mcp-server/` source and dependency files | Optional live enrichment server behavior and dependencies. |
+| Version domain            | Authoritative location                          | What it describes                                                                                              |
+| ------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
+| Plugin/content release    | `CHANGELOG.md` and `.claude-plugin/plugin.json` | The Claude-facing content bundle, documentation, examples, install scripts, and optional companion components. |
+| Python CLI package        | `pyproject.toml` and `outrider/__init__.py`     | The installable Python package and `outrider` console script.                                                  |
+| Individual skill versions | YAML frontmatter in each `skills/*/SKILL.md`    | Skill-specific trigger/content changes.                                                                        |
+| MCP server implementation | `mcp-server/` source and dependency files       | Optional live enrichment server behavior and dependencies.                                                     |
 
 For individual skills:
 
