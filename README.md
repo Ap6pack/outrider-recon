@@ -16,6 +16,12 @@ Outrider is not another subdomain-enum wrapper. It is an agentic recon workflow 
 
 ---
 
+## Optional MCP policy enforcement
+
+The optional MCP server exposes five bounded enrichment tools and now requires an explicit Outrider `run_dir` for every call. Before any HTTP request or DNS resolution, each MCP tool evaluates the current run manifest, workflow state, scope, and approval policy through the existing Python control layer.
+
+Passive public-source lookups require current scope and a workflow state that permits `public_source_lookup`. `dns_records` additionally requires an active exact matching `target_enumeration` approval for the normalized domain. MCP discoveries are observations only: they do not expand `scope.yaml`, do not automatically register evidence, and do not modify run-control files. No MCP tool executes intrusive or prohibited actions.
+
 ## Why Outrider exists
 
 Most recon tooling tells you what exists: subdomains, ports, URLs, technologies, leaked files, and maybe a few nuclei hits.
@@ -43,7 +49,7 @@ Use Outrider to:
 - Produce finding cards, report-ready evidence, and recommended handoffs.
 - Stay inside an authorized, read-only recon boundary until the operator chooses the next step.
 
-The current bundle includes **11 implemented Claude skills**, **90 capabilities**, **48 secret patterns**, **70 dorks**, **9 read-only validator procedures**, **35 attack-path templates**, and an optional MCP server for live enrichment. The skills are the implemented capability layer; deterministic Python enforcement for scope, approvals, schemas, and evidence verification is planned but not yet implemented.
+The current bundle includes **11 implemented Claude skills**, **90 capabilities**, **48 secret patterns**, **70 dorks**, **9 read-only validator procedures**, **35 attack-path templates**, and an optional MCP server for live enrichment. The skills are the implemented capability layer; deterministic Python enforcement now covers run manifests, workflow state, scope, approvals, evidence integrity, and MCP tool-boundary policy for the existing enrichment tools.
 
 ---
 
@@ -280,7 +286,7 @@ Outrider currently has four separate implementation domains:
 
 - **Implemented Claude skill layer:** the `skills/` directory is the primary capability layer. The skills provide methodology, routing, recon procedures, scoring guidance, report templates, and operator-facing safety rules.
 - **Python CLI scaffolding:** the `outrider` command currently initializes and inspects run folders. It creates files such as `scope.yaml`, `run.jsonl`, placeholder JSON sidecars, finding cards, technique cards, and report templates. It does not execute recon, record approvals, or verify evidence hashes; it now includes offline deterministic scope-file validation and `outrider scope-check`.
-- **Optional MCP enrichment:** the MCP server provides live enrichment tools for crt.sh, HudsonRock, EPSS, Wayback CDX, and DNS lookups. It does not currently enforce scope at the tool boundary.
+- **Optional MCP enrichment:** the MCP server provides policy-gated live enrichment tools for crt.sh, HudsonRock, EPSS, Wayback CDX, and DNS lookups. Every lookup requires an explicit run context and an allow decision before network or DNS activity.
 - **Future web UI:** a web UI is intended as a shared control and review plane for scope, approvals, evidence, triage, and handoff. It is not implemented in this repository today.
 
 ## Roadmap
@@ -360,3 +366,26 @@ outrider evidence verify runs/example.com
 Evidence files must be beneath `artifacts/`. Absolute paths, traversal, symlinks, symlinked parent directories, directories, missing files, and Outrider control files are rejected. Duplicate paths are rejected; save updated artifacts under a new filename and register the new path. Registration does not grant authorization or approval, does not perform scope checks, and does not change run state. Verification is deterministic local file I/O, performs no network activity, and does not modify the registry or artifacts.
 
 Run folders and evidence artifacts must never be committed.
+
+## Offline approval records and action checks
+
+Outrider run folders include an append-only `approvals.jsonl` registry for explicit, time-bounded operator approvals. Approval records are exact-candidate and action-specific: an approval for `example.com` does not approve `api.example.com`, and an approval for `target_read_only_request` does not approve `target_enumeration`. The command examples below show granting, checking, listing, and revoking an approval.
+
+```bash
+outrider approval grant \
+  runs/example.com \
+  target_read_only_request \
+  api.example.com \
+  --actor authorized-operator \
+  --reason "Approved bounded read-only review" \
+  --duration-minutes 60 \
+  --conditions "No authentication attempts"
+
+outrider action-check runs/example.com target_read_only_request --candidate api.example.com
+outrider approval list runs/example.com
+outrider approval revoke runs/example.com APPROVAL_UUID --actor authorized-operator --reason "Approval withdrawn"
+```
+
+Approvals expire and can be revoked by appending revocation records; grant records are not edited or deleted. Scope always overrides approval, so a current scope-file change can deny an otherwise approved candidate. Workflow state can also deny an otherwise approved action. Prohibited action categories such as credential abuse, destructive validation, persistence, malware, evasion, and uncontrolled exploitation cannot be approved.
+
+The `actor` value is an operator-provided attribution string only. It is not authenticated identity, a digital signature, proof of written authorization, a substitute for `authorization_reference`, or a replacement for client rules of engagement. `outrider action-check` is an offline decision helper only: it executes no target action and performs no network activity. Run folders, including approval records, are local operational data and must not be committed.
