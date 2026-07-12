@@ -207,7 +207,7 @@ The optional MCP server adds live enrichment tools: crt.sh lookup, HudsonRock qu
 pip install -r ~/.local/share/outrider-recon/mcp-server/requirements.txt
 ```
 
-The `.mcp.json` config is included in the repo. All skills work without the MCP server; MCP just adds live data enrichment. The current MCP server does **not** enforce scope by itself, so operators must apply the same authorization boundary before invoking live lookups.
+The `.mcp.json` config is included in the repo. All skills work without the MCP server; MCP just adds live data enrichment. The current MCP server enforces explicit `run_dir`, fixed action mappings, current scope, workflow state, and exact approval checks before any HTTP or DNS activity.
 
 ### Manual Claude Code install
 
@@ -285,7 +285,7 @@ outrider-recon/
 Outrider currently has four separate implementation domains:
 
 - **Implemented Claude skill layer:** the `skills/` directory is the primary capability layer. The skills provide methodology, routing, recon procedures, scoring guidance, report templates, and operator-facing safety rules.
-- **Python CLI scaffolding:** the `outrider` command currently initializes and inspects run folders. It creates files such as `scope.yaml`, `run.jsonl`, placeholder JSON sidecars, finding cards, technique cards, and report templates. It does not execute recon, record approvals, or verify evidence hashes; it now includes offline deterministic scope-file validation and `outrider scope-check`.
+- **Python CLI scaffolding:** the `outrider` command currently initializes and inspects run folders. It creates files such as `scope.yaml`, `run.jsonl`, placeholder JSON sidecars, finding cards, technique cards, and report templates. It does not execute recon; it includes offline deterministic scope-file validation, durable state, evidence hash verification, approval records, and action-policy checks.
 - **Optional MCP enrichment:** the MCP server provides policy-gated live enrichment tools for crt.sh, HudsonRock, EPSS, Wayback CDX, and DNS lookups. Every lookup requires an explicit run context and an allow decision before network or DNS activity.
 - **Future web UI:** a web UI is intended as a shared control and review plane for scope, approvals, evidence, triage, and handoff. It is not implemented in this repository today.
 
@@ -316,7 +316,7 @@ The goal is not to turn Outrider into an exploitation framework. The goal is to 
 
 These skills are intended for assets you **own** or have **written authorization to assess**: red-team rules of engagement, bug-bounty in-scope assets, ASM contracts, or internal security assessments.
 
-All skills include a soft scope check when you ask Claude to act against an unverified third-party target. These controls are currently skill-level and operator-enforced; deterministic Python scope checks are available through `outrider scope-check`, while MCP scope enforcement is planned but not currently implemented. The skills explicitly exclude active exploitation, post-exploitation, malware development, persistence, evasion, and other activities beyond OSINT-driven reconnaissance. See [`SECURITY.md`](SECURITY.md) for the full posture.
+All skills include a soft scope check when you ask Claude to act against an unverified third-party target. These controls are currently skill-level and operator-enforced; deterministic Python scope checks are available through `outrider scope-check`, and MCP scope/state/approval enforcement is implemented for the optional enrichment tools. The skills explicitly exclude active exploitation, post-exploitation, malware development, persistence, evasion, and other activities beyond OSINT-driven reconnaissance. See [`SECURITY.md`](SECURITY.md) for the full posture.
 
 ---
 

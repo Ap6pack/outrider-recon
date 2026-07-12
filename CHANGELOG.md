@@ -9,6 +9,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Restored append-only approval records and bounded action-policy evaluation after the approval-layer revert.
+- Reconciled MCP tool-boundary enforcement with the restored approval layer and exact active DNS approval checks.
+- Restored approval and MCP regression coverage for policy decisions, CLI exits, and denied zero-network paths.
+- Updated CI to install declared Python dependencies before compiling and running the complete unittest suite.
+
 ### Added
 
 - Enforce explicit MCP run context with fixed action mappings, pre-request scope/state/approval policy checks, exact DNS approval enforcement, structured policy response envelopes, and zero network or DNS activity for denied calls.

@@ -18,7 +18,9 @@ class NormalizeRunNameTests(unittest.TestCase):
         self.assertEqual(cli.normalize_run_name("https://example.com"), "example.com")
 
     def test_removes_trailing_slashes(self):
-        self.assertEqual(cli.normalize_run_name("https://example.com///"), "example.com")
+        self.assertEqual(
+            cli.normalize_run_name("https://example.com///"), "example.com"
+        )
 
     def test_preserves_normal_domain_or_run_name(self):
         self.assertEqual(cli.normalize_run_name("example.com"), "example.com")
@@ -38,6 +40,7 @@ class CliCommandTests(unittest.TestCase):
         "scope.yaml",
         "run.jsonl",
         "evidence.jsonl",
+        "approvals.jsonl",
         "artifacts",
         *expected_json_sidecars,
         *expected_markdown_templates,
@@ -76,14 +79,16 @@ class CliCommandTests(unittest.TestCase):
 
             scope_yaml = (run_dir / "scope.yaml").read_text(encoding="utf-8")
             self.assertIn("target: example.com", scope_yaml)
-            self.assertIn("  - example.com", scope_yaml)
-            self.assertIn("  - *.example.com", scope_yaml)
-            self.assertIn("  - admin.example.com", scope_yaml)
-            self.assertIn("  - legacy.example.com", scope_yaml)
+            self.assertIn('  - "example.com"', scope_yaml)
+            self.assertIn('  - "*.example.com"', scope_yaml)
+            self.assertIn('  - "admin.example.com"', scope_yaml)
+            self.assertIn('  - "legacy.example.com"', scope_yaml)
 
             events = [
                 json.loads(line)
-                for line in (run_dir / "run.jsonl").read_text(encoding="utf-8").splitlines()
+                for line in (run_dir / "run.jsonl")
+                .read_text(encoding="utf-8")
+                .splitlines()
             ]
             self.assertEqual(len(events), 1)
             self.assertEqual(events[0]["event_type"], "run_initialized")
@@ -103,8 +108,12 @@ class CliCommandTests(unittest.TestCase):
 
             self.assertEqual(rerun_status, 0)
             self.assertIn("No files created; run folder already existed.", rerun_output)
-            self.assertEqual((run_dir / "report.md").read_text(encoding="utf-8"), edited_report)
-            rerun_events = (run_dir / "run.jsonl").read_text(encoding="utf-8").splitlines()
+            self.assertEqual(
+                (run_dir / "report.md").read_text(encoding="utf-8"), edited_report
+            )
+            rerun_events = (
+                (run_dir / "run.jsonl").read_text(encoding="utf-8").splitlines()
+            )
             self.assertEqual(len(rerun_events), 1)
 
     def test_init_uses_empty_out_of_scope_list_and_preserves_scope(self):
@@ -117,7 +126,9 @@ class CliCommandTests(unittest.TestCase):
             self.assertIn("out_of_scope: []", scope_yaml)
             edited_scope = "in_scope:\n  - edited.example.com\nout_of_scope: []\n"
             scope_path.write_text(edited_scope, encoding="utf-8")
-            rerun_status, _ = self.run_cli("init", "example.com", "--output-dir", tmpdir)
+            rerun_status, _ = self.run_cli(
+                "init", "example.com", "--output-dir", tmpdir
+            )
             self.assertEqual(rerun_status, 0)
             self.assertEqual(scope_path.read_text(encoding="utf-8"), edited_scope)
 
@@ -129,16 +140,24 @@ class CliCommandTests(unittest.TestCase):
                 "in_scope:\n  - example.com\n  - '*.example.com'\nout_of_scope:\n  - blocked.example.com\n",
                 encoding="utf-8",
             )
-            allow_status, allow_output = self.run_cli("scope-check", str(run_dir), "example.com")
+            allow_status, allow_output = self.run_cli(
+                "scope-check", str(run_dir), "example.com"
+            )
             self.assertEqual(allow_status, 0)
             self.assertIn("ALLOW", allow_output)
-            deny_status, deny_output = self.run_cli("scope-check", str(run_dir), "other.example.net")
+            deny_status, deny_output = self.run_cli(
+                "scope-check", str(run_dir), "other.example.net"
+            )
             self.assertEqual(deny_status, 1)
             self.assertIn("DENY", deny_output)
-            excluded_status, excluded_output = self.run_cli("scope-check", str(run_dir), "blocked.example.com")
+            excluded_status, excluded_output = self.run_cli(
+                "scope-check", str(run_dir), "blocked.example.com"
+            )
             self.assertEqual(excluded_status, 1)
             self.assertIn("DENY", excluded_output)
-            json_status, json_output = self.run_cli("scope-check", str(run_dir), "https://api.example.com/path", "--json")
+            json_status, json_output = self.run_cli(
+                "scope-check", str(run_dir), "https://api.example.com/path", "--json"
+            )
             self.assertEqual(json_status, 0)
             payload = json.loads(json_output)
             self.assertEqual(payload["decision"], "allow")
@@ -146,11 +165,15 @@ class CliCommandTests(unittest.TestCase):
             self.assertEqual(payload["matched_rule"], "*.example.com")
             self.assertEqual(payload["matched_rule_source"], "in_scope")
             self.assertIn("reason", payload)
-            missing_status, missing_output = self.run_cli("scope-check", str(Path(tmpdir) / "missing"), "example.com")
+            missing_status, missing_output = self.run_cli(
+                "scope-check", str(Path(tmpdir) / "missing"), "example.com"
+            )
             self.assertEqual(missing_status, 2)
             self.assertIn("ERROR", missing_output)
             (run_dir / "scope.yaml").write_text("in_scope: []\n", encoding="utf-8")
-            invalid_status, invalid_output = self.run_cli("scope-check", str(run_dir), "example.com")
+            invalid_status, invalid_output = self.run_cli(
+                "scope-check", str(run_dir), "example.com"
+            )
             self.assertEqual(invalid_status, 2)
             self.assertIn("ERROR", invalid_output)
 
