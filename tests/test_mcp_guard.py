@@ -13,7 +13,9 @@ from outrider.state import initialize_state, transition_state
 def make_run(root, target="example.com", scopes=("example.com",), exclusions=()):
     run = Path(root) / target.replace("*", "wild")
     run.mkdir()
-    (run / "scope.yaml").write_text("in_scope:\n" + "".join(f"  - {s}\n" for s in scopes) + "out_of_scope:\n" + ("".join(f"  - {s}\n" for s in exclusions) or " []\n"), encoding="utf-8")
+    in_scope = "".join(f"  - {json.dumps(item)}\n" for item in scopes)
+    out_scope = "".join(f"  - {json.dumps(item)}\n" for item in exclusions) or " []\n"
+    (run / "scope.yaml").write_text(f"in_scope:\n{in_scope}out_of_scope:\n{out_scope}", encoding="utf-8")
     initialize_state(run, target, actor="authorized-operator", authorization_reference="EXAMPLE-ROE-001")
     return run
 

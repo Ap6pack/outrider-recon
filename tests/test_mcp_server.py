@@ -11,6 +11,36 @@ from unittest import mock
 from outrider.approval import grant_approval, revoke_approval
 from outrider.state import initialize_state, transition_state
 
+try:
+    import httpx  # noqa: F401
+except ModuleNotFoundError:
+    import types
+
+    httpx_stub = types.ModuleType("httpx")
+
+    class TimeoutException(Exception):
+        pass
+
+    class HTTPStatusError(Exception):
+        def __init__(self, message="", request=None, response=None):
+            super().__init__(message)
+            self.request = request
+            self.response = response
+
+    class Timeout:
+        def __init__(self, *_args, **_kwargs):
+            pass
+
+    class AsyncClient:
+        def __init__(self, *_args, **_kwargs):
+            raise AssertionError("httpx.AsyncClient must be mocked in MCP server tests")
+
+    httpx_stub.TimeoutException = TimeoutException
+    httpx_stub.HTTPStatusError = HTTPStatusError
+    httpx_stub.Timeout = Timeout
+    httpx_stub.AsyncClient = AsyncClient
+    sys.modules["httpx"] = httpx_stub
+
 SERVER_PATH = Path(__file__).resolve().parents[1] / "mcp-server" / "server.py"
 spec = importlib.util.spec_from_file_location("outrider_mcp_server_test", SERVER_PATH)
 server = importlib.util.module_from_spec(spec)
@@ -25,7 +55,9 @@ def run_async(coro):
 def make_run(root, target="example.com", scopes=("example.com",), exclusions=()):
     run = Path(root) / target.replace(".", "_")
     run.mkdir()
-    (run / "scope.yaml").write_text("in_scope:\n" + "".join(f"  - {s}\n" for s in scopes) + "out_of_scope:\n" + ("".join(f"  - {s}\n" for s in exclusions) or " []\n"), encoding="utf-8")
+    in_scope = "".join(f"  - {json.dumps(item)}\n" for item in scopes)
+    out_scope = "".join(f"  - {json.dumps(item)}\n" for item in exclusions) or " []\n"
+    (run / "scope.yaml").write_text(f"in_scope:\n{in_scope}out_of_scope:\n{out_scope}", encoding="utf-8")
     initialize_state(run, target, actor="authorized-operator", authorization_reference="EXAMPLE-ROE-001")
     return run
 

@@ -369,7 +369,7 @@ Run folders and evidence artifacts must never be committed.
 
 ## Offline approval records and action checks
 
-Outrider run folders include an append-only `approvals.jsonl` registry for explicit, time-bounded operator approvals. Approval records are exact-candidate and action-specific: an approval for `example.com` does not approve `api.example.com`, and an approval for `target_read_only_request` does not approve `target_enumeration`.
+Outrider run folders include an append-only `approvals.jsonl` registry for explicit, time-bounded operator approvals. Approval records are exact-candidate and action-specific: an approval for `example.com` does not approve `api.example.com`, and an approval for `target_read_only_request` does not approve `target_enumeration`. The command examples below show granting, checking, listing, and revoking an approval.
 
 ```bash
 outrider approval grant \
