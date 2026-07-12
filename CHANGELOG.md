@@ -18,7 +18,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Repair Markdown lint by using a real configuration file and update installer skill counting to avoid `ls` while passing ShellCheck.
+- Repair Markdown lint by using a real configuration file compatible with the existing Markdown baseline, update the action for Node 24, and update installer skill counting to avoid `ls` while passing ShellCheck.
 
 ### Documentation
 
