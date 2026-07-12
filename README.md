@@ -314,6 +314,26 @@ All skills include a soft scope check when you ask Claude to act against an unve
 
 ---
 
+## About
+
+Operational tradecraft accumulated across external attack-surface engagements, codified into Claude skills. Engagement-platform agnostic: slot into any ASM, ticketing, asset-graph, bug-bounty, or pentest workflow you already use.
+
+**Author:** [Ap6pack](https://github.com/Ap6pack)
+
+**Forked from:** [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT)
+
+**Original framework:** [SnailSploit/offensive-checklist](https://github.com/SnailSploit/offensive-checklist) (v1.x)
+
+**Inspired by:** [Bellingcat's Online Investigations Toolkit](https://www.bellingcat.com/resources/2024/09/24/bellingcat-online-investigations-toolkit/) · [IntelTechniques](https://inteltechniques.com/tools/) · [OSINT Framework](https://osintframework.com/)
+
+**Tool inventory:** [ProjectDiscovery](https://github.com/projectdiscovery) · [Six2dez reconftw](https://github.com/six2dez/reconftw) · [SecLists](https://github.com/danielmiessler/SecLists) · [Assetnote Wordlists](https://wordlists.assetnote.io/)
+
+**License:** [MIT](LICENSE) — use freely, attribution appreciated.
+
+---
+
+> _Raw recon tells you what exists. Outrider helps decide what matters first._
+
 ## Evidence registry and artifact verification
 
 Outrider run folders include an append-only `evidence.jsonl` registry and an `artifacts/` directory for local evidence files. Artifact contents remain under `artifacts/`; the registry stores only metadata, provenance, relative paths, sizes, and SHA-256 hashes.
@@ -340,47 +360,3 @@ outrider evidence verify runs/example.com
 Evidence files must be beneath `artifacts/`. Absolute paths, traversal, symlinks, symlinked parent directories, directories, missing files, and Outrider control files are rejected. Duplicate paths are rejected; save updated artifacts under a new filename and register the new path. Registration does not grant authorization or approval, does not perform scope checks, and does not change run state. Verification is deterministic local file I/O, performs no network activity, and does not modify the registry or artifacts.
 
 Run folders and evidence artifacts must never be committed.
-
-## Offline approval records and action checks
-
-Outrider run folders include an append-only `approvals.jsonl` registry for explicit, time-bounded operator approvals. Approval records are exact-candidate and action-specific: an approval for `example.com` does not approve `api.example.com`, and an approval for `target_read_only_request` does not approve `target_enumeration`.
-
-```bash
-outrider approval grant \
-  runs/example.com \
-  target_read_only_request \
-  api.example.com \
-  --actor authorized-operator \
-  --reason "Approved bounded read-only review" \
-  --duration-minutes 60 \
-  --conditions "No authentication attempts"
-
-outrider action-check runs/example.com target_read_only_request --candidate api.example.com
-outrider approval list runs/example.com
-outrider approval revoke runs/example.com APPROVAL_UUID --actor authorized-operator --reason "Approval withdrawn"
-```
-
-Approvals expire and can be revoked by appending revocation records; grant records are not edited or deleted. Scope always overrides approval, so a current scope-file change can deny an otherwise approved candidate. Workflow state can also deny an otherwise approved action. Prohibited action categories such as credential abuse, destructive validation, persistence, malware, evasion, and uncontrolled exploitation cannot be approved.
-
-The `actor` value is an operator-provided attribution string only. It is not authenticated identity, a digital signature, proof of written authorization, a substitute for `authorization_reference`, or a replacement for client rules of engagement. `outrider action-check` is an offline decision helper only: it executes no target action and performs no network activity. Run folders, including approval records, are local operational data and must not be committed.
-
-
-## About
-
-Operational tradecraft accumulated across external attack-surface engagements, codified into Claude skills. Engagement-platform agnostic: slot into any ASM, ticketing, asset-graph, bug-bounty, or pentest workflow you already use.
-
-**Author:** [Ap6pack](https://github.com/Ap6pack)
-
-**Forked from:** [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT)
-
-**Original framework:** [SnailSploit/offensive-checklist](https://github.com/SnailSploit/offensive-checklist) (v1.x)
-
-**Inspired by:** [Bellingcat's Online Investigations Toolkit](https://www.bellingcat.com/resources/2024/09/24/bellingcat-online-investigations-toolkit/) · [IntelTechniques](https://inteltechniques.com/tools/) · [OSINT Framework](https://osintframework.com/)
-
-**Tool inventory:** [ProjectDiscovery](https://github.com/projectdiscovery) · [Six2dez reconftw](https://github.com/six2dez/reconftw) · [SecLists](https://github.com/danielmiessler/SecLists) · [Assetnote Wordlists](https://wordlists.assetnote.io/)
-
-**License:** [MIT](LICENSE) — use freely, attribution appreciated.
-
----
-
-> _Raw recon tells you what exists. Outrider helps decide what matters first._
