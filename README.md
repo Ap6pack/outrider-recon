@@ -171,6 +171,29 @@ Scope rules are deterministic:
 - domain rules never authorize the IP addresses that a domain may resolve to because no DNS resolution occurs;
 - `outrider scope-check` only parses local scope configuration and candidate values, and performs no network activity.
 
+
+### Run manifests and workflow state
+
+Initialize a run with a stable manifest and optional opaque authorization reference:
+
+```bash
+outrider init example.com \
+  --actor authorized-operator \
+  --authorization-reference EXAMPLE-ROE-001
+```
+
+Show and move local workflow state without network activity:
+
+```bash
+outrider state show runs/example.com
+outrider state transition runs/example.com scoped \
+  --actor authorized-operator
+outrider state transition runs/example.com collecting \
+  --actor authorized-operator
+```
+
+`manifest.json` contains stable run identity, including a UUID run ID. `run.jsonl` is the append-only source of workflow state; current state is derived from validated events rather than stored as mutable manifest data. Actor attribution is required for state transitions. Scope must validate before entering `scoped`. State transitions do not grant authorization, and `authorization_reference` is only an opaque metadata reference, not an approval record. Run folders and engagement data must not be committed. These state commands operate only on local files and perform no network activity.
+
 ### MCP Server (optional)
 
 The optional MCP server adds live enrichment tools: crt.sh lookup, HudsonRock query, EPSS scoring, Wayback CDX, and DNS records.

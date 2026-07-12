@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Iterable
 
 from outrider.scope import evaluate_scope_path
+from outrider.state import InvalidTransitionError, StateValidationError, bootstrap_legacy_run, initialize_state, load_state, transition_state
 
 
 DEFAULT_FILES = {
@@ -200,7 +201,14 @@ def init_run(args: argparse.Namespace) -> int:
         run_jsonl.touch()
         created.append("run.jsonl")
 
-    append_jsonl(run_jsonl, {"event": "run_initialized", "target": target, "created_at": utc_now(), "run_dir": str(run_dir)})
+    manifest_path = run_dir / "manifest.json"
+    if not manifest_path.exists():
+        if run_jsonl.read_text(encoding="utf-8").strip():
+            print("Legacy run folder detected without manifest.json; use `outrider state bootstrap` to create state tracking.")
+        else:
+            initialize_state(run_dir, target, args.actor, args.authorization_reference)
+            created.append("manifest.json")
+
 
     for filename, payload in DEFAULT_FILES.items():
         if write_if_missing(run_dir / filename, json.dumps(payload, indent=2, sort_keys=True) + "\n"):
@@ -232,12 +240,84 @@ def show_run(args: argparse.Namespace) -> int:
     if not run_dir.exists():
         print(f"Run folder not found: {run_dir}")
         return 1
-    expected = ["scope.yaml", "run.jsonl", "assets.json", "web_surface.json", "identity_fabric.json", "bb_intel.json", "findings.md", "technique_cards.md", "surface.md", "report.md"]
+    expected = ["manifest.json", "scope.yaml", "run.jsonl", "assets.json", "web_surface.json", "identity_fabric.json", "bb_intel.json", "findings.md", "technique_cards.md", "surface.md", "report.md"]
     print(f"Outrider run: {run_dir}")
     for filename in expected:
         marker = "ok" if (run_dir / filename).exists() else "missing"
         print(f"  [{marker}] {filename}")
+    try:
+        print(f"State: {load_state(run_dir).current_state}")
+    except StateValidationError as exc:
+        if not (run_dir / "manifest.json").exists():
+            print("State: unavailable (legacy run folder without manifest.json)")
+        else:
+            print(f"State: invalid ({exc})")
     return 0
+
+
+def _print_state_summary(summary, as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(summary.to_dict(), sort_keys=True))
+        return
+    print(f"Run ID: {summary.run_id}")
+    print(f"Target: {summary.target}")
+    print(f"Current state: {summary.current_state}")
+    print(f"Event count: {summary.event_count}")
+    print(f"Created time: {summary.created_at}")
+    print(f"Last transition time: {summary.last_transition_at or 'n/a'}")
+    print(f"Last actor: {summary.last_actor or 'n/a'}")
+    print(f"Legacy events detected: {summary.legacy_events_detected}")
+    if summary.legacy_events_detected:
+        print(f"Legacy event count: {summary.legacy_event_count}")
+
+
+def state_show(args: argparse.Namespace) -> int:
+    run_dir = Path(args.run_dir)
+    if not run_dir.exists():
+        print(f"ERROR: run folder not found: {run_dir}")
+        return 2
+    if not (run_dir / "manifest.json").exists():
+        if args.json:
+            print(json.dumps({"state_available": False, "message": "legacy run folder without manifest.json", "run_dir": str(run_dir)}, sort_keys=True))
+        else:
+            print("State tracking unavailable: legacy run folder without manifest.json. Use `outrider state bootstrap`.")
+        return 0
+    try:
+        _print_state_summary(load_state(run_dir), args.json)
+        return 0
+    except StateValidationError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+
+
+def state_transition(args: argparse.Namespace) -> int:
+    try:
+        _print_state_summary(transition_state(args.run_dir, args.new_state, args.actor, args.reason), args.json)
+        return 0
+    except InvalidTransitionError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    except StateValidationError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+
+
+def state_bootstrap(args: argparse.Namespace) -> int:
+    try:
+        summary = bootstrap_legacy_run(args.run_dir, args.target, args.actor, args.authorization_reference)
+        if args.json:
+            payload = summary.to_dict(); payload["legacy_lines_preserved"] = True
+            print(json.dumps(payload, sort_keys=True))
+        else:
+            _print_state_summary(summary, False)
+            print("Legacy run.jsonl lines preserved.")
+        return 0
+    except InvalidTransitionError as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    except StateValidationError as exc:
+        print(f"ERROR: {exc}")
+        return 2
 
 
 def scope_check(args: argparse.Namespace) -> int:
@@ -266,6 +346,8 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument("--scope", action="append", help="Authorized in-scope domain or pattern. Repeat for multiple values.")
     init_parser.add_argument("--exclude", action="append", help="Out-of-scope domain or pattern. Repeat for multiple values.")
     init_parser.add_argument("--output-dir", default="runs", help="Base output directory. Defaults to ./runs.")
+    init_parser.add_argument("--actor", help="Operator creating the run manifest.")
+    init_parser.add_argument("--authorization-reference", help="Opaque authorization reference metadata.")
     init_parser.set_defaults(func=init_run)
 
     show_parser = subcommands.add_parser("show", help="Show expected files for a run folder.")
@@ -277,6 +359,27 @@ def build_parser() -> argparse.ArgumentParser:
     scope_parser.add_argument("candidate", help="Domain, IP address, or URL to evaluate.")
     scope_parser.add_argument("--json", action="store_true", help="Emit the structured scope decision as JSON.")
     scope_parser.set_defaults(func=scope_check)
+
+    state_parser = subcommands.add_parser("state", help="Show or transition durable run workflow state.")
+    state_sub = state_parser.add_subparsers(dest="state_command", required=True)
+    state_show_parser = state_sub.add_parser("show", help="Show durable run state.")
+    state_show_parser.add_argument("run_dir")
+    state_show_parser.add_argument("--json", action="store_true")
+    state_show_parser.set_defaults(func=state_show)
+    transition_parser = state_sub.add_parser("transition", help="Append a validated state transition.")
+    transition_parser.add_argument("run_dir")
+    transition_parser.add_argument("new_state")
+    transition_parser.add_argument("--actor", required=True)
+    transition_parser.add_argument("--reason")
+    transition_parser.add_argument("--json", action="store_true")
+    transition_parser.set_defaults(func=state_transition)
+    bootstrap_parser = state_sub.add_parser("bootstrap", help="Bootstrap state tracking for a legacy run folder.")
+    bootstrap_parser.add_argument("run_dir")
+    bootstrap_parser.add_argument("--target", required=True)
+    bootstrap_parser.add_argument("--actor", required=True)
+    bootstrap_parser.add_argument("--authorization-reference")
+    bootstrap_parser.add_argument("--json", action="store_true")
+    bootstrap_parser.set_defaults(func=state_bootstrap)
 
     return parser
 
