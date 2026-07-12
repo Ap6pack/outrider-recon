@@ -331,3 +331,9 @@ flowchart TD
 These skills are extracted from operational tradecraft accumulated across external attack-surface engagements. The 81 capabilities generalize to any OSINT engagement and slot into any ASM / ticketing / asset-graph platform you already use -- or none.
 
 Use the skills standalone (paste a SKILL.md into a Claude Project) or wired into your own pipeline.
+
+## Implemented deterministic control layer
+
+Outrider currently implements deterministic scope validation, stable run identity with durable workflow state, evidence integrity checks, approval records with action-policy evaluation, MCP tool-boundary enforcement, and versioned skill request/result contracts. The contracts let Claude skills exchange structured task and result records with the Python control layer while Python remains authoritative for scope, state, approval, and evidence integrity.
+
+The contract layer does not implement automatic skill execution, automatic evidence capture, finding validation or promotion, concurrent orchestration, authenticated actors, or a web UI.

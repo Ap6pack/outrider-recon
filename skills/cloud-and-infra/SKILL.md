@@ -205,3 +205,15 @@ shodan search "http.favicon.hash:<hash>" --fields ip_str,port,org
 ---
 
 > **Note:** For ASN/BGP and internet measurement, see `recon-asset-discovery`. For reverse DNS sweep and IPv6 enumeration scripts, see `docs/methods/active-sweep-scripts.md`.
+
+## Structured Outrider run contract
+
+Follow the shared run-contract instructions in `../_shared/run-contract.md`.
+
+- Contract skill identifier: `cloud-and-infra`.
+- Consume `skill_request` version 1 and produce `skill_result` version 1 when participating in an Outrider run.
+- Use evidence IDs for all claims; do not cite unregistered local paths as claim evidence.
+- Discoveries are observations and do not expand scope or approval.
+- Do not claim final finding validation; use `finding_candidate` only when a human-reviewed candidate should be handed off.
+- Do not directly edit `manifest.json`, `scope.yaml`, `run.jsonl`, `evidence.jsonl`, or `approvals.jsonl`.
+- Use policy-gated MCP with the explicit `run_dir`; the Python control layer and MCP boundary must reevaluate current controls.

@@ -389,3 +389,45 @@ outrider approval revoke runs/example.com APPROVAL_UUID --actor authorized-opera
 Approvals expire and can be revoked by appending revocation records; grant records are not edited or deleted. Scope always overrides approval, so a current scope-file change can deny an otherwise approved candidate. Workflow state can also deny an otherwise approved action. Prohibited action categories such as credential abuse, destructive validation, persistence, malware, evasion, and uncontrolled exploitation cannot be approved.
 
 The `actor` value is an operator-provided attribution string only. It is not authenticated identity, a digital signature, proof of written authorization, a substitute for `authorization_reference`, or a replacement for client rules of engagement. `outrider action-check` is an offline decision helper only: it executes no target action and performs no network activity. Run folders, including approval records, are local operational data and must not be committed.
+
+## Structured skill interchange contracts
+
+Outrider runs now include a local contract layout for versioned skill/Python interchange:
+
+```text
+contracts/
+  requests/
+  results/
+```
+
+Claude skills provide reasoning, methodology, routing, prioritization, and reporting guidance. Python remains the deterministic authority for run identity, workflow state, scope, approval policy, evidence integrity, and durable artifacts. Contract files are task context only: they are not permanent authorization, authenticated actor proof, scope expansion, approval records, evidence records, or validated findings.
+
+Create a request without executing a skill:
+
+```bash
+outrider contract request create \
+  runs/example.com \
+  recon-asset-discovery \
+  --actor authorized-operator \
+  --objective "Identify authorized external assets related to example.com" \
+  --action-type public_source_lookup \
+  --candidate example.com
+```
+
+Validate a request with current scope, state, approval, and evidence controls:
+
+```bash
+outrider contract request validate \
+  runs/example.com \
+  runs/example.com/contracts/requests/REQUEST_UUID.json
+```
+
+Validate a skill result and its evidence-backed claims:
+
+```bash
+outrider contract result validate \
+  runs/example.com \
+  runs/example.com/contracts/results/RESULT_UUID.json
+```
+
+Skill results must cite registered evidence IDs for claims rather than raw paths. Discovered candidates are observations only and do not expand `scope.yaml`. The `finding_candidate` classification is not a validated finding and is not promoted by these commands. The contract commands do not execute Claude skills, invoke MCP automatically, perform network activity, capture evidence automatically, or promote findings.
