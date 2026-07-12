@@ -144,9 +144,24 @@ All 11 skills together are ~3,000 lines. This fits comfortably in modern Claude 
 
 Edit `skills/<skill-name>/SKILL.md` directly. All files are plain Markdown. You can comment out sections you don't need or split them into multiple smaller skills.
 
-## Verifying skill version
+## Installing skills vs. the Python CLI
 
-All SKILL.md files declare `version:` in the YAML frontmatter. Current project release: v2.3. Individual skill versions in YAML frontmatter. Check via:
+The Claude skill/plugin bundle and the Python CLI package are separate installation concerns:
+
+- The one-click and manual Claude Code flows install the skill bundle into `~/.claude/skills/` so Claude can load the methodology and sub-skills.
+- The Python package exposes the `outrider` console script for run-folder scaffolding. The current CLI initializes and inspects run folders; it does not currently execute recon or enforce scope.
+- The optional MCP server is installed separately from `mcp-server/requirements.txt` and adds live enrichment tools. It does not currently enforce scope by itself.
+
+## Verifying versions
+
+Version numbers are tracked by domain rather than forced to match:
+
+- Plugin/content release: see `CHANGELOG.md` and `.claude-plugin/plugin.json`.
+- Python CLI package: see `pyproject.toml` and `outrider/__init__.py`.
+- Individual skills: see each SKILL.md YAML frontmatter.
+- MCP implementation: see `mcp-server/` source and dependencies.
+
+Check individual skill versions with:
 
 ```bash
 grep "^version:" skills/*/SKILL.md

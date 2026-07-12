@@ -43,7 +43,7 @@ Use Outrider to:
 - Produce finding cards, report-ready evidence, and recommended handoffs.
 - Stay inside an authorized, read-only recon boundary until the operator chooses the next step.
 
-The current bundle includes **11 Claude skills**, **90 capabilities**, **48 secret patterns**, **70 dorks**, **9 read-only validators**, **35 attack-path templates**, and an optional MCP server for live enrichment.
+The current bundle includes **11 implemented Claude skills**, **90 capabilities**, **48 secret patterns**, **70 dorks**, **9 read-only validator procedures**, **35 attack-path templates**, and an optional MCP server for live enrichment. The skills are the implemented capability layer; deterministic Python enforcement for scope, approvals, schemas, and evidence verification is planned but not yet implemented.
 
 ---
 
@@ -160,7 +160,7 @@ The optional MCP server adds live enrichment tools: crt.sh lookup, HudsonRock qu
 pip install -r ~/.local/share/outrider-recon/mcp-server/requirements.txt
 ```
 
-The `.mcp.json` config is included in the repo. All skills work without the MCP server; MCP just adds live data enrichment.
+The `.mcp.json` config is included in the repo. All skills work without the MCP server; MCP just adds live data enrichment. The current MCP server does **not** enforce scope by itself, so operators must apply the same authorization boundary before invoking live lookups.
 
 ### Manual Claude Code install
 
@@ -206,7 +206,8 @@ outrider-recon/
 ├── skills/offensive-osint/scripts/
 │   ├── h1_reference.py                 # HackerOne disclosed-reports reference agent, no API key
 │   └── secret_scan.py                  # stdlib-only secret scanner, JSONL output
-├── mcp-server/                         # optional live enrichment tools
+├── mcp-server/                         # optional live enrichment tools; no scope enforcement yet
+├── outrider/                           # Python CLI run-folder scaffolding
 ├── docs/                               # architecture, coverage, install, methods, reference docs
 ├── examples/                           # end-to-end walkthroughs and sample output
 ├── tests/smoke-test-prompts.md         # 43-prompt self-evaluation
@@ -232,18 +233,33 @@ outrider-recon/
 
 ---
 
+## Implementation status
+
+Outrider currently has four separate implementation domains:
+
+- **Implemented Claude skill layer:** the `skills/` directory is the primary capability layer. The skills provide methodology, routing, recon procedures, scoring guidance, report templates, and operator-facing safety rules.
+- **Python CLI scaffolding:** the `outrider` command currently initializes and inspects run folders. It creates files such as `scope.yaml`, `run.jsonl`, placeholder JSON sidecars, finding cards, technique cards, and report templates. It does not currently execute recon, validate schemas, enforce scope, record approvals, or verify evidence hashes.
+- **Optional MCP enrichment:** the MCP server provides live enrichment tools for crt.sh, HudsonRock, EPSS, Wayback CDX, and DNS lookups. It does not currently enforce scope at the tool boundary.
+- **Future web UI:** a web UI is intended as a shared control and review plane for scope, approvals, evidence, triage, and handoff. It is not implemented in this repository today.
+
 ## Roadmap
 
-Near-term productization work:
+Existing scaffolding:
 
-- `outrider` CLI harness for repeatable recon runs,
-- `scope.yaml` and run-folder state management,
-- machine-readable recon manifest,
-- finding cards and technique cards,
+- `outrider init` creates a run folder, `scope.yaml`, `run.jsonl`, placeholder JSON files, finding cards, technique cards, surface notes, and a report scaffold.
+- `outrider show` checks whether expected run-folder files exist.
+
+Planned deterministic controls and productization work:
+
+- machine-readable recon manifest and schema validation,
+- deterministic scope checks at CLI and MCP tool boundaries,
+- explicit approval records for higher-risk or post-discovery actions,
+- evidence artifact registration and hash verification,
 - first-class `outrider intel` for public disclosure intelligence,
 - report export for external recon / ASM / bug-bounty workflows,
 - handoff export for proxy-assisted testing, manual validation, ASM ticketing, and remediation workflows,
-- delta mode for continuous exposure monitoring.
+- delta mode for continuous exposure monitoring,
+- future web UI for shared control and review.
 
 The goal is not to turn Outrider into an exploitation framework. The goal is to make it the best Claude-native harness for **authorized external recon and attack-path prioritization**.
 
@@ -253,7 +269,7 @@ The goal is not to turn Outrider into an exploitation framework. The goal is to 
 
 These skills are intended for assets you **own** or have **written authorization to assess**: red-team rules of engagement, bug-bounty in-scope assets, ASM contracts, or internal security assessments.
 
-All skills include a soft scope check when you ask Claude to act against an unverified third-party target. They explicitly exclude active exploitation, post-exploitation, malware development, persistence, evasion, and other activities beyond OSINT-driven reconnaissance. See [`SECURITY.md`](SECURITY.md) for the full posture.
+All skills include a soft scope check when you ask Claude to act against an unverified third-party target. These controls are currently skill-level and operator-enforced; deterministic Python and MCP scope enforcement is planned but not currently implemented. The skills explicitly exclude active exploitation, post-exploitation, malware development, persistence, evasion, and other activities beyond OSINT-driven reconnaissance. See [`SECURITY.md`](SECURITY.md) for the full posture.
 
 ---
 
