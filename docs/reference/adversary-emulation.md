@@ -11,33 +11,33 @@ Map each emulation to [MITRE ATT&CK Reconnaissance (TA0043)](https://attack.mitr
 
 ### ATT&CK Reconnaissance Technique Mapping
 
-| ATT&CK ID | Technique Name | outrider-recon Skill / Section |
-|------------|---------------|-------------------------------|
-| T1595.001 | Active Scanning: IP Blocks | `recon-asset-discovery` (port/service enumeration) |
-| T1595.002 | Active Scanning: Vulnerability Scanning | `web-surface` (service fingerprinting) |
-| T1595.003 | Active Scanning: Wordlist Scanning | `web-surface` (content discovery, directory brute-force) |
-| T1592.001 | Gather Victim Host Info: Hardware | `web-surface` (banner grabbing, device fingerprints) |
-| T1592.002 | Gather Victim Host Info: Software | `web-surface` (technology profiling via Wappalyzer, BuiltWith) |
-| T1592.004 | Gather Victim Host Info: Client Configs | `identity-fabric` (Entra/M365 tenant discovery) |
-| T1589.001 | Gather Victim Identity Info: Credentials | `people-breach-intel` (breach database lookups) |
-| T1589.002 | Gather Victim Identity Info: Email Addresses | `people-breach-intel` (email harvesting) |
-| T1589.003 | Gather Victim Identity Info: Employee Names | `people-breach-intel` (LinkedIn enumeration) |
-| T1590.001 | Gather Victim Network Info: Domain Properties | `recon-asset-discovery` (DNS, WHOIS, CT logs) |
-| T1590.002 | Gather Victim Network Info: DNS | `recon-asset-discovery` (subdomain enumeration) |
-| T1590.004 | Gather Victim Network Info: Network Topology | `cloud-and-infra` (ASN mapping, BGP analysis) |
-| T1591.001 | Gather Victim Org Info: Physical Locations | `osint-methodology` (geospatial OSINT) |
-| T1591.002 | Gather Victim Org Info: Business Relationships | `people-breach-intel` (supply chain, vendor mapping) |
-| T1591.004 | Gather Victim Org Info: Roles | `identity-fabric` (org chart reconstruction) |
-| T1593.001 | Search Open Websites/Domains: Social Media | `people-breach-intel` (social media profiling) |
-| T1593.002 | Search Open Websites/Domains: Search Engines | `secrets-and-dorks` (Google dorking, GitHub code search) |
-| T1593.003 | Search Open Websites/Domains: Code Repos | `secrets-and-dorks` (secret scanning, repo analysis) |
-| T1594 | Search Victim-Owned Websites | `web-surface` (crawling, JS analysis, endpoint extraction) |
-| T1596.001 | Search Open Tech Databases: DNS/Passive DNS | `recon-asset-discovery` (passive DNS pivots) |
-| T1596.002 | Search Open Tech Databases: WHOIS | `recon-asset-discovery` (historical WHOIS, reverse WHOIS) |
-| T1596.003 | Search Open Tech Databases: Digital Certs | `recon-asset-discovery` (CT log enumeration, cert pivots) |
-| T1596.005 | Search Open Tech Databases: Scan Databases | `recon-asset-discovery` (Shodan, Censys, BinaryEdge) |
-| T1597.001 | Search Closed Sources: Threat Intel Vendors | `analysis-and-reporting` (threat-intel correlation) |
-| T1598 | Phishing for Information | `osint-methodology` (phishing infrastructure assessment) |
+| ATT&CK ID | Technique Name                                 | outrider-recon Skill / Section                                 |
+| --------- | ---------------------------------------------- | -------------------------------------------------------------- |
+| T1595.001 | Active Scanning: IP Blocks                     | `recon-asset-discovery` (port/service enumeration)             |
+| T1595.002 | Active Scanning: Vulnerability Scanning        | `web-surface` (service fingerprinting)                         |
+| T1595.003 | Active Scanning: Wordlist Scanning             | `web-surface` (content discovery, directory brute-force)       |
+| T1592.001 | Gather Victim Host Info: Hardware              | `web-surface` (banner grabbing, device fingerprints)           |
+| T1592.002 | Gather Victim Host Info: Software              | `web-surface` (technology profiling via Wappalyzer, BuiltWith) |
+| T1592.004 | Gather Victim Host Info: Client Configs        | `identity-fabric` (Entra/M365 tenant discovery)                |
+| T1589.001 | Gather Victim Identity Info: Credentials       | `people-breach-intel` (breach database lookups)                |
+| T1589.002 | Gather Victim Identity Info: Email Addresses   | `people-breach-intel` (email harvesting)                       |
+| T1589.003 | Gather Victim Identity Info: Employee Names    | `people-breach-intel` (LinkedIn enumeration)                   |
+| T1590.001 | Gather Victim Network Info: Domain Properties  | `recon-asset-discovery` (DNS, WHOIS, CT logs)                  |
+| T1590.002 | Gather Victim Network Info: DNS                | `recon-asset-discovery` (subdomain enumeration)                |
+| T1590.004 | Gather Victim Network Info: Network Topology   | `cloud-and-infra` (ASN mapping, BGP analysis)                  |
+| T1591.001 | Gather Victim Org Info: Physical Locations     | `osint-methodology` (geospatial OSINT)                         |
+| T1591.002 | Gather Victim Org Info: Business Relationships | `people-breach-intel` (supply chain, vendor mapping)           |
+| T1591.004 | Gather Victim Org Info: Roles                  | `identity-fabric` (org chart reconstruction)                   |
+| T1593.001 | Search Open Websites/Domains: Social Media     | `people-breach-intel` (social media profiling)                 |
+| T1593.002 | Search Open Websites/Domains: Search Engines   | `secrets-and-dorks` (Google dorking, GitHub code search)       |
+| T1593.003 | Search Open Websites/Domains: Code Repos       | `secrets-and-dorks` (secret scanning, repo analysis)           |
+| T1594     | Search Victim-Owned Websites                   | `web-surface` (crawling, JS analysis, endpoint extraction)     |
+| T1596.001 | Search Open Tech Databases: DNS/Passive DNS    | `recon-asset-discovery` (passive DNS pivots)                   |
+| T1596.002 | Search Open Tech Databases: WHOIS              | `recon-asset-discovery` (historical WHOIS, reverse WHOIS)      |
+| T1596.003 | Search Open Tech Databases: Digital Certs      | `recon-asset-discovery` (CT log enumeration, cert pivots)      |
+| T1596.005 | Search Open Tech Databases: Scan Databases     | `recon-asset-discovery` (Shodan, Censys, BinaryEdge)           |
+| T1597.001 | Search Closed Sources: Threat Intel Vendors    | `analysis-and-reporting` (threat-intel correlation)            |
+| T1598     | Phishing for Information                       | `osint-methodology` (phishing infrastructure assessment)       |
 
 ---
 
@@ -54,12 +54,12 @@ Map each emulation to [MITRE ATT&CK Reconnaissance (TA0043)](https://attack.mitr
 
 ### Emulation with outrider-recon
 
-| Phase | Skill | Specific Actions |
-|-------|-------|-----------------|
-| Identity surface | `identity-fabric` | Entra ID tenant discovery, federation endpoint enumeration, OAuth app registration analysis, MFA policy inference |
-| Web surface | `web-surface` | OAuth/OIDC endpoint discovery (`.well-known/openid-configuration`), ADFS metadata enumeration, service principal login pages |
-| Secret hunting | `secrets-and-dorks` | GitHub code search for Azure client secrets, tenant IDs in public repos, cloud credential patterns (`AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`) |
-| Vendor mapping | `people-breach-intel` | LinkedIn employee enumeration for cloud-admin roles, vendor relationship mapping |
+| Phase            | Skill                 | Specific Actions                                                                                                                              |
+| ---------------- | --------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- |
+| Identity surface | `identity-fabric`     | Entra ID tenant discovery, federation endpoint enumeration, OAuth app registration analysis, MFA policy inference                             |
+| Web surface      | `web-surface`         | OAuth/OIDC endpoint discovery (`.well-known/openid-configuration`), ADFS metadata enumeration, service principal login pages                  |
+| Secret hunting   | `secrets-and-dorks`   | GitHub code search for Azure client secrets, tenant IDs in public repos, cloud credential patterns (`AZURE_CLIENT_SECRET`, `AZURE_TENANT_ID`) |
+| Vendor mapping   | `people-breach-intel` | LinkedIn employee enumeration for cloud-admin roles, vendor relationship mapping                                                              |
 
 ### Priority Targets
 
@@ -83,12 +83,12 @@ Map each emulation to [MITRE ATT&CK Reconnaissance (TA0043)](https://attack.mitr
 
 ### Emulation with outrider-recon
 
-| Phase | Skill | Specific Actions |
-|-------|-------|-----------------|
-| Email harvest | `people-breach-intel` | Hunter.io domain search, LinkedIn employee enumeration via CrossLinked, email-pattern generation, Holehe registration checks |
-| Breach correlation | `people-breach-intel` | Breach database lookups for harvested emails, credential-exposure timeline analysis |
-| Edge infrastructure | `web-surface` | Vendor fingerprinting for VPN concentrators (Cisco AnyConnect, Fortinet, Pulse Secure), webmail portal discovery (OWA, Zimbra, Roundcube) |
-| Phishing infra recon | `osint-methodology` | Look-alike domain enumeration (dnstwist), MX/SPF/DMARC posture analysis for email-security bypass assessment |
+| Phase                | Skill                 | Specific Actions                                                                                                                          |
+| -------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
+| Email harvest        | `people-breach-intel` | Hunter.io domain search, LinkedIn employee enumeration via CrossLinked, email-pattern generation, Holehe registration checks              |
+| Breach correlation   | `people-breach-intel` | Breach database lookups for harvested emails, credential-exposure timeline analysis                                                       |
+| Edge infrastructure  | `web-surface`         | Vendor fingerprinting for VPN concentrators (Cisco AnyConnect, Fortinet, Pulse Secure), webmail portal discovery (OWA, Zimbra, Roundcube) |
+| Phishing infra recon | `osint-methodology`   | Look-alike domain enumeration (dnstwist), MX/SPF/DMARC posture analysis for email-security bypass assessment                              |
 
 ### Priority Targets
 
@@ -112,12 +112,12 @@ Map each emulation to [MITRE ATT&CK Reconnaissance (TA0043)](https://attack.mitr
 
 ### Emulation with outrider-recon
 
-| Phase | Skill | Specific Actions |
-|-------|-------|-----------------|
-| Supply chain | `people-breach-intel` | ATS/job posting analysis (Lever, Greenhouse, Workable), vendor relationship extraction from LinkedIn profiles and press releases |
-| Vendor surfaces | `web-surface` | Vendor portal fingerprinting (POS management, payment gateways), third-party login surface enumeration |
-| Secret hunting | `secrets-and-dorks` | Package registry scanning (npm, PyPI) for internal package names, Google dorks for exposed PCI-scoped infrastructure |
-| Asset discovery | `recon-asset-discovery` | Subdomain enumeration focused on payment-processing subdomains, merchant portal discovery |
+| Phase           | Skill                   | Specific Actions                                                                                                                 |
+| --------------- | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| Supply chain    | `people-breach-intel`   | ATS/job posting analysis (Lever, Greenhouse, Workable), vendor relationship extraction from LinkedIn profiles and press releases |
+| Vendor surfaces | `web-surface`           | Vendor portal fingerprinting (POS management, payment gateways), third-party login surface enumeration                           |
+| Secret hunting  | `secrets-and-dorks`     | Package registry scanning (npm, PyPI) for internal package names, Google dorks for exposed PCI-scoped infrastructure             |
+| Asset discovery | `recon-asset-discovery` | Subdomain enumeration focused on payment-processing subdomains, merchant portal discovery                                        |
 
 ### Priority Targets
 
@@ -141,13 +141,13 @@ Map each emulation to [MITRE ATT&CK Reconnaissance (TA0043)](https://attack.mitr
 
 ### Emulation with outrider-recon
 
-| Phase | Skill | Specific Actions |
-|-------|-------|-----------------|
-| Developer targeting | `people-breach-intel` | LinkedIn employee enumeration for developer/SRE roles at crypto firms, GitHub contributor profiling |
-| Supply chain recon | `secrets-and-dorks` | npm/PyPI typosquat discovery, package registry leak hunting, GitHub code search for internal package names and crypto wallet patterns |
-| Identity fabric | `identity-fabric` | Org chart reconstruction for crypto firms, key-person identification (CTO, lead devs, DevOps) |
-| Infrastructure | `web-surface` | API endpoint discovery for exchange platforms, CI/CD pipeline surface enumeration (Jenkins, GitLab, GitHub Actions) |
-| Crypto-specific | `secrets-and-dorks` | Wallet address patterns in public repos, smart contract deployment keys, RPC endpoint exposure |
+| Phase               | Skill                 | Specific Actions                                                                                                                      |
+| ------------------- | --------------------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Developer targeting | `people-breach-intel` | LinkedIn employee enumeration for developer/SRE roles at crypto firms, GitHub contributor profiling                                   |
+| Supply chain recon  | `secrets-and-dorks`   | npm/PyPI typosquat discovery, package registry leak hunting, GitHub code search for internal package names and crypto wallet patterns |
+| Identity fabric     | `identity-fabric`     | Org chart reconstruction for crypto firms, key-person identification (CTO, lead devs, DevOps)                                         |
+| Infrastructure      | `web-surface`         | API endpoint discovery for exchange platforms, CI/CD pipeline surface enumeration (Jenkins, GitLab, GitHub Actions)                   |
+| Crypto-specific     | `secrets-and-dorks`   | Wallet address patterns in public repos, smart contract deployment keys, RPC endpoint exposure                                        |
 
 ### Priority Targets
 
@@ -166,39 +166,39 @@ Use this template when emulating any threat actor's external recon phase, or whe
 
 **Goal.** Build the target's digital footprint without any direct interaction.
 
-| Activity | Skill | ATT&CK Mapping |
-|----------|-------|----------------|
-| CT log enumeration | `recon-asset-discovery` | T1596.003 |
-| Passive DNS collection | `recon-asset-discovery` | T1596.001 |
-| WHOIS / reverse WHOIS | `recon-asset-discovery` | T1596.002 |
-| Breach data correlation | `people-breach-intel` | T1589.001 |
-| Google dorking | `secrets-and-dorks` | T1593.002 |
-| Social media profiling | `people-breach-intel` | T1593.001 |
-| Scan database queries (Shodan, Censys) | `recon-asset-discovery` | T1596.005 |
+| Activity                               | Skill                   | ATT&CK Mapping |
+| -------------------------------------- | ----------------------- | -------------- |
+| CT log enumeration                     | `recon-asset-discovery` | T1596.003      |
+| Passive DNS collection                 | `recon-asset-discovery` | T1596.001      |
+| WHOIS / reverse WHOIS                  | `recon-asset-discovery` | T1596.002      |
+| Breach data correlation                | `people-breach-intel`   | T1589.001      |
+| Google dorking                         | `secrets-and-dorks`     | T1593.002      |
+| Social media profiling                 | `people-breach-intel`   | T1593.001      |
+| Scan database queries (Shodan, Censys) | `recon-asset-discovery` | T1596.005      |
 
 ### Phase 2: Light Active Probing
 
 **Goal.** Validate passive findings with low-noise active techniques.
 
-| Activity | Skill | ATT&CK Mapping |
-|----------|-------|----------------|
-| Port scanning (top ports) | `recon-asset-discovery` | T1595.001 |
-| Service fingerprinting | `web-surface` | T1595.002 |
-| Email security posture (SPF/DMARC/DKIM) | `osint-methodology` | T1598 |
-| Technology profiling | `web-surface` | T1592.002 |
-| Subdomain validation (DNS resolution) | `recon-asset-discovery` | T1590.002 |
+| Activity                                | Skill                   | ATT&CK Mapping |
+| --------------------------------------- | ----------------------- | -------------- |
+| Port scanning (top ports)               | `recon-asset-discovery` | T1595.001      |
+| Service fingerprinting                  | `web-surface`           | T1595.002      |
+| Email security posture (SPF/DMARC/DKIM) | `osint-methodology`     | T1598          |
+| Technology profiling                    | `web-surface`           | T1592.002      |
+| Subdomain validation (DNS resolution)   | `recon-asset-discovery` | T1590.002      |
 
 ### Phase 3: Targeted Deep-Dive
 
 **Goal.** Focused enumeration against high-value surfaces identified in Phases 1-2.
 
-| Activity | Skill | ATT&CK Mapping |
-|----------|-------|----------------|
-| Identity fabric enumeration (Entra/Okta/SSO) | `identity-fabric` | T1592.004 |
-| Secret hunting (GitHub, registries) | `secrets-and-dorks` | T1593.003 |
-| Vendor/technology fingerprinting | `web-surface` | T1592.002 |
-| Cloud infrastructure mapping | `cloud-and-infra` | T1590.004 |
-| Supply chain / vendor relationship analysis | `people-breach-intel` | T1591.002 |
+| Activity                                     | Skill                 | ATT&CK Mapping |
+| -------------------------------------------- | --------------------- | -------------- |
+| Identity fabric enumeration (Entra/Okta/SSO) | `identity-fabric`     | T1592.004      |
+| Secret hunting (GitHub, registries)          | `secrets-and-dorks`   | T1593.003      |
+| Vendor/technology fingerprinting             | `web-surface`         | T1592.002      |
+| Cloud infrastructure mapping                 | `cloud-and-infra`     | T1590.004      |
+| Supply chain / vendor relationship analysis  | `people-breach-intel` | T1591.002      |
 
 ### Reporting: ATT&CK-Mapped Purple-Team Handoff
 

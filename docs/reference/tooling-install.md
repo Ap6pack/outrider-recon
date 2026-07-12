@@ -76,4 +76,3 @@ git clone https://github.com/pry0cc/axiom && cd axiom && ./interact/axiom-config
 **Full PD toolkit:** `go install -v github.com/projectdiscovery/pdtm/cmd/pdtm@latest && pdtm -install-all`
 
 ---
-

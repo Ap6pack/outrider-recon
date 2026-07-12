@@ -54,7 +54,7 @@ Then `git -C ~/.local/share/outrider-recon pull` periodically to stay current.
 
 Start a new Claude Code session and type:
 
-```
+```text
 What ports should I probe to find Swagger or OpenAPI specs on a webapp?
 ```
 
@@ -62,7 +62,7 @@ Claude should pull the Swagger wordlist from the `web-surface` skill. If it does
 
 ## Claude.ai (Pro / Team / Enterprise)
 
-1. Open https://claude.ai
+1. Open <https://claude.ai>
 2. Create a new Project (or open an existing one).
 3. Click **Add knowledge** → **Files**.
 4. Upload the router skill (`skills/offensive-osint/SKILL.md`) and the methodology skill (`skills/osint-methodology/SKILL.md`) at minimum. For full coverage, upload all 11 `skills/*/SKILL.md` files.
@@ -122,7 +122,7 @@ Most AI IDEs allow custom system-prompt injection. Use the API method above as a
 
 1. Verify the file is at `~/.claude/skills/<skill-name>/SKILL.md` (not `~/.claude/skills/<skill-name>.md`).
 2. Restart Claude Code.
-3. In a fresh session, ask: *"Do you have access to a skill named offensive-osint?"* — Claude should confirm.
+3. In a fresh session, ask: _"Do you have access to a skill named offensive-osint?"_ — Claude should confirm.
 4. Check the YAML frontmatter is intact (begins with `---` and ends with `---`).
 
 ### "The skill loads but doesn't trigger on my prompt"

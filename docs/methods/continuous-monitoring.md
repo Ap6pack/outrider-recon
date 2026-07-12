@@ -138,7 +138,7 @@ done
 ```yaml
 name: Recon Monitor
 on:
-  schedule: [{cron: '0 6 * * *'}, {cron: '0 8 * * 1'}]
+  schedule: [{ cron: "0 6 * * *" }, { cron: "0 8 * * 1" }]
   workflow_dispatch: {}
 jobs:
   daily:
@@ -148,7 +148,12 @@ jobs:
       - run: bash scripts/daily-subdomain-diff.sh
       - if: hashFiles('new_findings.txt') != ''
         uses: peter-evans/create-issue-from-file@v5
-        with: {title: "New subdomains - ${{ github.run_id }}", content-filepath: new_findings.txt, labels: "recon,triage"}
+        with:
+          {
+            title: "New subdomains - ${{ github.run_id }}",
+            content-filepath: new_findings.txt,
+            labels: "recon,triage",
+          }
 ```
 
 ---
@@ -158,10 +163,17 @@ jobs:
 Maintain a suppressions file (JSON). Review quarterly -- context changes make old FPs real findings.
 
 ```json
-{"suppressions": [
-  {"template_id": "tech-detect:waf-detect:cloudflare", "host_pattern": "*.target.example",
-   "reason": "Known CDN", "added": "2026-01-15", "review_by": "2026-04-15"}
-]}
+{
+  "suppressions": [
+    {
+      "template_id": "tech-detect:waf-detect:cloudflare",
+      "host_pattern": "*.target.example",
+      "reason": "Known CDN",
+      "added": "2026-01-15",
+      "review_by": "2026-04-15"
+    }
+  ]
+}
 ```
 
 Filter suppressed findings from alert output:
@@ -175,11 +187,11 @@ jq -c --slurpfile s "$SUPP" '
 ' "$INPUT" > "${INPUT%.jsonl}_filtered.jsonl"
 ```
 
-| Practice | Cadence |
-|---|---|
-| Review suppressions for stale entries | Quarterly |
-| Track FP count per template ID | Every scan cycle |
-| Deprioritize templates with >80% FP rate | Monthly |
+| Practice                                 | Cadence                |
+| ---------------------------------------- | ---------------------- |
+| Review suppressions for stale entries    | Quarterly              |
+| Track FP count per template ID           | Every scan cycle       |
+| Deprioritize templates with >80% FP rate | Monthly                |
 | Re-enable suppressed after infra changes | On change notification |
 
 ---
@@ -199,20 +211,26 @@ sha256sum "$BASE/${TS}_"* > "$BASE/${TS}.sha256"
 ### Record Schema
 
 ```json
-{"domain":"target.example","captured_at":"2026-05-29T06:00:00Z","version":3,
- "subdomain_count":147,"open_ports":[80,443,8443,8080],
- "dns_records":{"A":["203.0.113.10"],"MX":["10 mail.target.example."]},
- "cert_names":["target.example","*.target.example"],"sha256":"a1b2c3d4..."}
+{
+  "domain": "target.example",
+  "captured_at": "2026-05-29T06:00:00Z",
+  "version": 3,
+  "subdomain_count": 147,
+  "open_ports": [80, 443, 8443, 8080],
+  "dns_records": { "A": ["203.0.113.10"], "MX": ["10 mail.target.example."] },
+  "cert_names": ["target.example", "*.target.example"],
+  "sha256": "a1b2c3d4..."
+}
 ```
 
 ### Refresh Cadence
 
-| Target profile | Subdomains | DNS | Ports |
-|---|---|---|---|
-| Stable enterprise | Monthly | Monthly | Monthly |
-| Fast-moving SaaS | Weekly | Weekly | Weekly |
-| Active bug bounty | Weekly | Daily | Weekly |
-| M&A due diligence | Start only | Daily | Start + end |
+| Target profile    | Subdomains | DNS     | Ports       |
+| ----------------- | ---------- | ------- | ----------- |
+| Stable enterprise | Monthly    | Monthly | Monthly     |
+| Fast-moving SaaS  | Weekly     | Weekly  | Weekly      |
+| Active bug bounty | Weekly     | Daily   | Weekly      |
+| M&A due diligence | Start only | Daily   | Start + end |
 
 Version in git: `git init && git add . && git commit -m "baseline v1"`. Tag refreshes: `git tag baseline-v2-20260529`.
 
@@ -222,12 +240,12 @@ Version in git: `git init && git add . && git commit -m "baseline v1"`. Tag refr
 
 ### ASM Contract (Continuous)
 
-| Frequency | Activity |
-|---|---|
-| Daily | Subdomain diff, CT log poll, DNS record diff |
-| Weekly | Full Nuclei sweep, port diff, Wayback new-URL check |
-| Monthly | Manual finding review, baseline refresh, suppressions audit |
-| Quarterly | Scope review with stakeholder, update target list |
+| Frequency | Activity                                                    |
+| --------- | ----------------------------------------------------------- |
+| Daily     | Subdomain diff, CT log poll, DNS record diff                |
+| Weekly    | Full Nuclei sweep, port diff, Wayback new-URL check         |
+| Monthly   | Manual finding review, baseline refresh, suppressions audit |
+| Quarterly | Scope review with stakeholder, update target list           |
 
 ### Bug Bounty (Ongoing)
 
@@ -239,10 +257,10 @@ New-asset detection with fast triage -- every 4h, not daily. Probe new assets wi
 
 ### Retainer-Based (Tiered)
 
-| Tier | Scope | Cadence | Deliverable |
-|---|---|---|---|
-| **Tier 1 -- Passive** | Subdomain + cert + DNS | Daily | Weekly summary email |
-| **Tier 2 -- Active** | Tier 1 + Nuclei + ports + Wayback | Weekly | Findings report w/ CVSS/EPSS |
+| Tier                        | Scope                                    | Cadence | Deliverable                     |
+| --------------------------- | ---------------------------------------- | ------- | ------------------------------- |
+| **Tier 1 -- Passive**       | Subdomain + cert + DNS                   | Daily   | Weekly summary email            |
+| **Tier 2 -- Active**        | Tier 1 + Nuclei + ports + Wayback        | Weekly  | Findings report w/ CVSS/EPSS    |
 | **Tier 3 -- Comprehensive** | Tier 2 + manual triage + cloud + secrets | Monthly | Full ASM report + risk register |
 
 Tier upgrades triggered by: M&A activity, breach at peer org, new product launch, regulatory audit.

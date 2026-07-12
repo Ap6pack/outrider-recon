@@ -20,6 +20,7 @@
 ## Sector-Specific Recon Notes
 
 ### Healthcare
+
 - **DICOM** (medical imaging) — port 11112, sometimes 4242.
 - **HL7 v2** — port 2575 (TCP, often plaintext). Legacy but still widespread; carries ADT, ORM, ORU messages with patient demographics in the clear.
 - **HL7 FHIR** — `/fhir/R4/<resource>` paths; OAuth / SMART-on-FHIR posture varies widely.
@@ -54,8 +55,8 @@ FHIR (Fast Healthcare Interoperability Resources) R4 servers expose a discoverab
 
 SMART-on-FHIR uses a well-known discovery endpoint for OAuth configuration:
 
-- Fetch `https://{fhir-server}/.well-known/smart-configuration` — returns JSON with `authorization_endpoint`, `token_endpoint`, `registration_endpoint`, and supported scopes.
-- Also check `https://{fhir-server}/metadata` for the `security` extension containing OAuth URIs.
+- Fetch `<https://{fhir-server}/.well-known/smart-configuration`> — returns JSON with `authorization_endpoint`, `token_endpoint`, `registration_endpoint`, and supported scopes.
+- Also check `<https://{fhir-server}/metadata`> for the `security` extension containing OAuth URIs.
 - Look for `registration_endpoint` — if dynamic client registration is enabled, an attacker can register their own OAuth client.
 - Scope enumeration: check for overly broad scopes like `patient/*.read` or `user/*.*`.
 
@@ -82,6 +83,7 @@ Targeted search dorks for identifying exposed PHI:
 - `site:{domain} "HIPAA" "breach" filetype:pdf` — breach notification documents revealing infrastructure details.
 
 ### Finance
+
 - **SWIFT terminals** — internal-only; if external-facing → **CRITICAL**.
 - **FIX protocol** (electronic trading) — port 9876; cleartext.
 - **Bloomberg terminals** — typically VDI-delivered; check for `bloomberg.com`-related auth surfaces exposed on the target's perimeter.
@@ -122,7 +124,7 @@ SWIFT Alliance Lite2 provides browser-based access to the SWIFT network for smal
 
 Modern banking exposes significant API attack surface through open banking mandates:
 
-- **Open Banking (UK):** regulated by OBIE. Endpoints at `https://{bank}/open-banking/v3.1/`. Resource types: `/accounts`, `/balances`, `/transactions`, `/beneficiaries`. Discovery via Open Banking Directory (directory.openbanking.org.uk).
+- **Open Banking (UK):** regulated by OBIE. Endpoints at `<https://{bank}/open-banking/v3.1/`>. Resource types: `/accounts`, `/balances`, `/transactions`, `/beneficiaries`. Discovery via Open Banking Directory (directory.openbanking.org.uk).
 - **PSD2 (EU):** mandates payment initiation (PISP) and account information (AISP) APIs. Berlin Group NextGenPSD2 standard: `/v1/accounts`, `/v1/payments`. Discovery via national registries (e.g., FCA register for UK TPPs).
 - **Plaid endpoints:** `/link/token/create`, `/transactions/get`, `/auth/get`. Look for exposed Plaid `client_id` values in JavaScript bundles or mobile app decompilation.
 - **Yodlee/Envestnet:** `/v1/user`, `/v1/accounts`. Legacy integrations sometimes use Basic auth with hardcoded credentials in mobile apps.
@@ -196,6 +198,7 @@ ICS/OT environments demand a fundamentally different approach to recon:
 - **ICS-CERT advisories.** Cross-reference discovered device models against CISA ICS-CERT advisories (cisa.gov/uscert/ics) for known vulnerabilities. Report CVEs without testing exploits in OT environments.
 
 ### IoT / Consumer / SOHO
+
 - **MQTT** — port 1883 (cleartext), 8883 (TLS). Topics often readable without auth.
 - **CoAP** — port 5683 (UDP). Lightweight IoT protocol; may expose device resources without authentication.
 - **UPnP / SSDP** — port 1900 (UDP); often discloses internal device map and service endpoints.
@@ -242,6 +245,7 @@ IP cameras and DVRs are among the most commonly exposed IoT devices:
 - **Generic DVR/NVR:** look for `XMEye`, `CMS`, `NetSurveillance` in page titles — these indicate white-label Chinese DVRs (XiongMai/HiSilicon SoC) with well-known backdoors and default passwords (`admin/` with empty password, or `admin/xmhdipc`).
 
 ### Government
+
 - **FedRAMP / FISMA / DoD CMMC** — defensive posture generally above baseline.
 - `.gov` and `.mil` domains require special engagement-scope discipline; verify authorization explicitly before any active interaction.
 - **OSINT data sources:** USAspending.gov, SAM.gov (System for Award Management), FBO.gov / sam.gov (procurement).
@@ -287,6 +291,7 @@ Understanding authorization boundaries is critical for government engagement sco
 - **Continuous monitoring (ConMon):** FedRAMP requires ongoing vulnerability scanning (monthly OS, annual pen test). Scan results feed into agency dashboards (e.g., DHS CDM program). Active scanning during recon may trigger CDM alerts and SOC response faster than in commercial environments.
 
 ### Maritime / Aviation / Automotive
+
 - **Maritime:** AIS (Automatic Identification System) broadcasts vessel positions; tools: MarineTraffic, VesselFinder. Engine telemetry sometimes exposed via VSAT terminals.
 - **Aviation:** ADS-B (Automatic Dependent Surveillance-Broadcast) — see flight OSINT tools (FlightRadar24, ADS-B Exchange). Operator/airline-specific OPS data sometimes exposed on misconfigured portals.
 - **Automotive:** OEM telematics backends (Tesla, GM OnStar, etc.) — typically authenticated, but APIs leak via mobile-app reverse engineering. Connected-vehicle platforms may expose VIN-linked telemetry or remote-command endpoints.
@@ -298,4 +303,3 @@ Understanding authorization boundaries is critical for government engagement sco
 > Most external recon techniques apply universally. Sector-specific protocols add attack surface; sector-specific compliance regimes add reporting requirements. Don't assume "healthcare/finance/etc. has different OSINT" — the OSINT is the same; the targeted services differ.
 
 ---
-

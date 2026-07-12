@@ -1,9 +1,9 @@
 ---
 name: New technique / vendor / pattern
 about: Add a new vendor product fingerprint, secret pattern, dork, or wordlist entry
-title: '[NEW] '
+title: "[NEW] "
 labels: enhancement, technique
-assignees: ''
+assignees: ""
 ---
 
 ## Type of addition
@@ -17,26 +17,29 @@ assignees: ''
 - [ ] Validator (target: secrets-and-dorks §4)
 - [ ] Attack-path hint template (target: analysis-and-reporting §3)
 - [ ] Severity-matrix worked example (target: analysis-and-reporting §4)
-- [ ] Other: ___________
+- [ ] Other: \***\*\_\_\_\*\***
 
 ## Concrete addition
 
 Paste the exact content to add. Examples:
 
 **For a vendor fingerprint:**
-```
+
+```text
 | Vendor | Fingerprint paths | Notes |
-|---|---|---|
+| --- | --- | --- |
 | **<Product Name>** | `/path/to/version-disclosure`, `/api/v1/info` | CVE-XXXX-XXXX (KEV-listed). |
 ```
 
 **For a secret pattern:**
-```
+
+```text
 | <#> | <Pattern Name> | `<regex>` | <SEVERITY> | <category> |
 ```
 
 **For a dork:**
-```
+
+```text
 site:{domain} <dork-content>
 ```
 

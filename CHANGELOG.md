@@ -18,7 +18,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
-- Repair Markdown lint by using a real configuration file compatible with the existing Markdown baseline, update the action for Node 24, and update installer skill counting to avoid `ls` while passing ShellCheck.
+- Repair Markdown lint by using a real configuration file, update the action for Node 24, format Markdown content for lint, and update installer skill counting to avoid `ls` while passing ShellCheck.
 
 ### Documentation
 
@@ -112,18 +112,18 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - **Skill line counts:**
 
-| Skill | Before | After |
-|---|---|---|
-| `web-surface` | 364 | 417 |
-| `identity-fabric` | 426 | 450 |
-| `analysis-and-reporting` | 303 | 279 |
-| `people-breach-intel` | 313 | 247 |
-| `recon-asset-discovery` | 286 | 188 |
-| `osint-methodology` | 455 | 420 |
-| Total (11 skills) | ~3,224 | ~2,997 |
-| `docs/methods/` | — | 380 |
-| `docs/reference/` | — | 551 |
-| **Grand total** | ~3,224 | ~3,928 |
+| Skill                    | Before | After  |
+| ------------------------ | ------ | ------ |
+| `web-surface`            | 364    | 417    |
+| `identity-fabric`        | 426    | 450    |
+| `analysis-and-reporting` | 303    | 279    |
+| `people-breach-intel`    | 313    | 247    |
+| `recon-asset-discovery`  | 286    | 188    |
+| `osint-methodology`      | 455    | 420    |
+| Total (11 skills)        | ~3,224 | ~2,997 |
+| `docs/methods/`          | —      | 380    |
+| `docs/reference/`        | —      | 551    |
+| **Grand total**          | ~3,224 | ~3,928 |
 
 ---
 
@@ -248,11 +248,11 @@ Comprehensive expansion based on a 32-prompt smoke-test gap analysis. PASS rate 
 
 ### File-size delta
 
-| File | v2.0 | v2.1 |
-|---|---|---|
+| File                         | v2.0        | v2.1            |
+| ---------------------------- | ----------- | --------------- |
 | `osint-methodology.SKILL.md` | 1,181 lines | **1,694 lines** |
-| `offensive-osint.SKILL.md` | 1,698 lines | **3,828 lines** |
-| Combined | 2,879 lines | **5,522 lines** |
+| `offensive-osint.SKILL.md`   | 1,698 lines | **3,828 lines** |
+| Combined                     | 2,879 lines | **5,522 lines** |
 
 ### Smoke-test re-grade
 

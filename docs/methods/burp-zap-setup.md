@@ -36,18 +36,18 @@ Project Options > Sessions > Session Handling Rules > Add
 
 Install via `Extender > BApp Store` unless noted.
 
-| Extension | Source | Purpose |
-|---|---|---|
-| **Autorize** | BApp Store | Detect broken access control -- replay with low-priv session |
-| **Logger++** | BApp Store | Full traffic logging with regex filters, export to CSV/ES |
-| **Param Miner** | BApp Store | Discover hidden params, headers, web cache poisoning vectors |
-| **GAP** | [GitHub](https://github.com/xnl-h4ck3r/GAP-Burp-Extension) | Extract params/paths/links from JS/HTML responses |
-| **JS Link Finder** | BApp Store | Extract endpoints and paths from JavaScript files |
-| **Turbo Intruder** | BApp Store | Python-scriptable HTTP fuzzer, 10-100x faster than Intruder |
-| **Hackvertor** | BApp Store | Tag-based encoding/decoding for WAF bypass payloads |
-| **ActiveScan++** | BApp Store | Host header injection, cache poisoning, additional active checks |
-| **Retire.js** | BApp Store | Identify vulnerable front-end JavaScript libraries |
-| **HTTP Request Smuggler** | BApp Store | Detect CL.TE / TE.CL request smuggling variants |
+| Extension                 | Source                                                     | Purpose                                                          |
+| ------------------------- | ---------------------------------------------------------- | ---------------------------------------------------------------- |
+| **Autorize**              | BApp Store                                                 | Detect broken access control -- replay with low-priv session     |
+| **Logger++**              | BApp Store                                                 | Full traffic logging with regex filters, export to CSV/ES        |
+| **Param Miner**           | BApp Store                                                 | Discover hidden params, headers, web cache poisoning vectors     |
+| **GAP**                   | [GitHub](https://github.com/xnl-h4ck3r/GAP-Burp-Extension) | Extract params/paths/links from JS/HTML responses                |
+| **JS Link Finder**        | BApp Store                                                 | Extract endpoints and paths from JavaScript files                |
+| **Turbo Intruder**        | BApp Store                                                 | Python-scriptable HTTP fuzzer, 10-100x faster than Intruder      |
+| **Hackvertor**            | BApp Store                                                 | Tag-based encoding/decoding for WAF bypass payloads              |
+| **ActiveScan++**          | BApp Store                                                 | Host header injection, cache poisoning, additional active checks |
+| **Retire.js**             | BApp Store                                                 | Identify vulnerable front-end JavaScript libraries               |
+| **HTTP Request Smuggler** | BApp Store                                                 | Detect CL.TE / TE.CL request smuggling variants                  |
 
 ---
 

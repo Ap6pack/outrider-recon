@@ -35,4 +35,3 @@ sha256sum "evidence/$(date -u +%Y%m%d)/${TS}_${SAFE_NAME}".* > "evidence/$(date 
 ```
 
 ---
-

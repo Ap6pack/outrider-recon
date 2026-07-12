@@ -21,4 +21,4 @@ When you use the optional MCP server, requests are made directly from your machi
 
 ## Contact
 
-For questions, open an issue at https://github.com/Ap6pack/outrider-recon/issues.
+For questions, open an issue at <https://github.com/Ap6pack/outrider-recon/issues>.

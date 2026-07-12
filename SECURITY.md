@@ -15,7 +15,7 @@ This pipeline is intended for **external OSINT-driven reconnaissance against aut
 
 The current pipeline includes a **soft scope-check** at the Claude skill/operator layer that triggers when a user asks Claude to act against an unverified third-party target:
 
-> *"Quick scope check: is this a target you own or have written authorization to assess (e.g., a red-team engagement, in-scope bug-bounty asset, or your own infrastructure)?"*
+> _"Quick scope check: is this a target you own or have written authorization to assess (e.g., a red-team engagement, in-scope bug-bounty asset, or your own infrastructure)?"_
 
 Pipeline content also includes:
 
@@ -38,7 +38,7 @@ If you find:
 **Please report it privately:**
 
 1. Open a GitHub issue with title `SECURITY:` (no details) AND request privacy.
-2. Or email the maintainer directly: adamslinuxemail@gmail.com
+2. Or email the maintainer directly: <adamslinuxemail@gmail.com>
 3. Do **not** post the details in a public issue / PR / discussion.
 
 We aim to respond within **5 business days** and resolve within **30 days** for substantive issues.
@@ -53,13 +53,13 @@ If you used these skills during an authorized engagement and found a vulnerabili
 
 ## Supported versions
 
-| Version domain | Support status |
-|---|---|
-| Plugin/content v3.0 | ✅ Active |
-| Python CLI package | Early scaffolding; support follows the package metadata in `pyproject.toml` |
-| Individual skills | Supported according to each skill's YAML frontmatter and the active plugin/content release |
-| 2.x plugin/content lines | ⚠️ Superseded by v3.0 content |
-| 1.x plugin/content lines | ❌ End of life |
+| Version domain           | Support status                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------ |
+| Plugin/content v3.0      | ✅ Active                                                                                  |
+| Python CLI package       | Early scaffolding; support follows the package metadata in `pyproject.toml`                |
+| Individual skills        | Supported according to each skill's YAML frontmatter and the active plugin/content release |
+| 2.x plugin/content lines | ⚠️ Superseded by v3.0 content                                                              |
+| 1.x plugin/content lines | ❌ End of life                                                                             |
 
 ## Security best practices for users
 

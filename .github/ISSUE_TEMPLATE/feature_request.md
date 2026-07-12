@@ -1,9 +1,9 @@
 ---
 name: Feature request
 about: Propose a new section, technique, vendor fingerprint, or capability for either skill
-title: '[FEAT] '
+title: "[FEAT] "
 labels: enhancement
-assignees: ''
+assignees: ""
 ---
 
 ## Which skill?
@@ -31,8 +31,8 @@ Why this matters for external red-team OSINT work. Real-world example helps.
 
 ## Proposed location
 
-- New section in skill: __________?
-- New subsection (e.g., §1.x) in skill: __________?
+- New section in skill: \***\*\_\_\*\***?
+- New subsection (e.g., §1.x) in skill: \***\*\_\_\*\***?
 - Expansion to existing section (which skill and section)?
 
 ## Sketch of content

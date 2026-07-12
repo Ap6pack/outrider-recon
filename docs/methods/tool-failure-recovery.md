@@ -9,12 +9,12 @@
 
 **Chain:** subfinder -> amass passive -> manual crt.sh API -> SecurityTrails API
 
-| Priority | Tool / Source         | Type    | Notes                                         |
-|----------|-----------------------|---------|-----------------------------------------------|
-| Primary  | subfinder             | Passive | Fast, multi-source. First choice always.      |
-| Fall 1   | amass enum -passive   | Passive | Slower but deeper. Uses more data sources.    |
-| Fall 2   | crt.sh API (manual)   | Passive | Direct CT log query. Free, no key needed.     |
-| Fall 3   | SecurityTrails API    | Passive | Requires API key. Reliable but rate-limited.  |
+| Priority | Tool / Source       | Type    | Notes                                        |
+| -------- | ------------------- | ------- | -------------------------------------------- |
+| Primary  | subfinder           | Passive | Fast, multi-source. First choice always.     |
+| Fall 1   | amass enum -passive | Passive | Slower but deeper. Uses more data sources.   |
+| Fall 2   | crt.sh API (manual) | Passive | Direct CT log query. Free, no key needed.    |
+| Fall 3   | SecurityTrails API  | Passive | Requires API key. Reliable but rate-limited. |
 
 **When crt.sh returns 502:**
 
@@ -34,12 +34,12 @@ curl -sf "https://crt.sh/?q=%25.example.com&output=json" | jq -r '.[].name_value
 
 **Chain:** Shodan InternetDB -> Censys -> naabu -> masscan
 
-| Priority | Tool              | Type    | Noise Level | Auth Required       |
-|----------|-------------------|---------|-------------|---------------------|
-| Primary  | Shodan InternetDB | Passive | None        | No (free endpoint)  |
-| Fall 1   | Censys Search     | Passive | None        | Free tier API key   |
-| Fall 2   | naabu             | Active  | Moderate    | No                  |
-| Fall 3   | masscan           | Active  | Very High   | No (root required)  |
+| Priority | Tool              | Type    | Noise Level | Auth Required      |
+| -------- | ----------------- | ------- | ----------- | ------------------ |
+| Primary  | Shodan InternetDB | Passive | None        | No (free endpoint) |
+| Fall 1   | Censys Search     | Passive | None        | Free tier API key  |
+| Fall 2   | naabu             | Active  | Moderate    | No                 |
+| Fall 3   | masscan           | Active  | Very High   | No (root required) |
 
 Always prefer passive sources. Active scanning is a last resort and must be
 within the engagement's rules of engagement.
@@ -60,12 +60,12 @@ switch to the next key before backing off.
 
 **Chain:** HudsonRock Cavalier -> HIBP -> DeHashed -> IntelX
 
-| Priority | Source             | Auth           | Rate Limit              |
-|----------|--------------------|----------------|-------------------------|
-| Primary  | HudsonRock Cavalier| API key        | ~100 req/min            |
-| Fall 1   | HIBP               | API key (paid) | 10 req/min (free)       |
-| Fall 2   | DeHashed           | API key (paid) | Varies by plan          |
-| Fall 3   | IntelX             | API key        | Varies by plan          |
+| Priority | Source              | Auth           | Rate Limit        |
+| -------- | ------------------- | -------------- | ----------------- |
+| Primary  | HudsonRock Cavalier | API key        | ~100 req/min      |
+| Fall 1   | HIBP                | API key (paid) | 10 req/min (free) |
+| Fall 2   | DeHashed            | API key (paid) | Varies by plan    |
+| Fall 3   | IntelX              | API key        | Varies by plan    |
 
 **When HudsonRock rate-limits (HTTP 429):**
 
@@ -95,11 +95,11 @@ done
 
 **Chain:** dig -> nslookup -> dnsx
 
-| Priority | Tool      | Best for                              |
-|----------|-----------|---------------------------------------|
-| Primary  | dig       | Single lookups, detailed output       |
-| Fall 1   | nslookup  | Quick checks when dig unavailable     |
-| Fall 2   | dnsx      | Bulk resolution of large subdomain lists |
+| Priority | Tool     | Best for                                 |
+| -------- | -------- | ---------------------------------------- |
+| Primary  | dig      | Single lookups, detailed output          |
+| Fall 1   | nslookup | Quick checks when dig unavailable        |
+| Fall 2   | dnsx     | Bulk resolution of large subdomain lists |
 
 **When DNS resolvers rate-limit:** rotate through public resolvers:
 
@@ -113,11 +113,11 @@ Pass resolver lists to dnsx with `-r resolvers.txt` for automatic rotation.
 
 **Chain:** whois CLI -> RDAP API -> SecurityTrails historical API
 
-| Priority | Tool / Source            | Notes                                    |
-|----------|--------------------------|------------------------------------------|
-| Primary  | `whois` CLI              | Works for most TLDs. May be slow.        |
-| Fall 1   | RDAP API                 | Structured JSON. Use rdap.org bootstrap. |
-| Fall 2   | SecurityTrails historical| Requires API key. Shows historical data. |
+| Priority | Tool / Source             | Notes                                    |
+| -------- | ------------------------- | ---------------------------------------- |
+| Primary  | `whois` CLI               | Works for most TLDs. May be slow.        |
+| Fall 1   | RDAP API                  | Structured JSON. Use rdap.org bootstrap. |
+| Fall 2   | SecurityTrails historical | Requires API key. Shows historical data. |
 
 ---
 
@@ -125,11 +125,11 @@ Pass resolver lists to dnsx with `-r resolvers.txt` for automatic rotation.
 
 **Chain:** httpx -> curl loop -> wget
 
-| Priority | Tool   | Best for                                   |
-|----------|--------|--------------------------------------------|
-| Primary  | httpx  | Bulk probing, status codes, tech detection |
-| Fall 1   | curl   | Single-target checks, custom headers       |
-| Fall 2   | wget   | Fallback when curl unavailable             |
+| Priority | Tool  | Best for                                   |
+| -------- | ----- | ------------------------------------------ |
+| Primary  | httpx | Bulk probing, status codes, tech detection |
+| Fall 1   | curl  | Single-target checks, custom headers       |
+| Fall 2   | wget  | Fallback when curl unavailable             |
 
 ### When WAF Blocks Probes
 
@@ -145,6 +145,7 @@ Pass resolver lists to dnsx with `-r resolvers.txt` for automatic rotation.
 - **Stale templates:** run `nuclei -update-templates` before the engagement.
 - **Isolate failures:** run the failing template individually with `-v` for
   verbose output: `nuclei -t specific-template.yaml -u target -v`
+
 - **Template version mismatch:** check that the nuclei binary version matches
   the template pack version.
 
@@ -154,16 +155,16 @@ Pass resolver lists to dnsx with `-r resolvers.txt` for automatic rotation.
 
 ### Exponential Backoff
 
-```
+```text
 delay = min(base * 2^attempt, max_delay) + random_jitter
 ```
 
-| Parameter      | Recommended Value |
-|----------------|-------------------|
-| `base`         | 2 seconds         |
-| `max_delay`    | 300 seconds       |
-| `random_jitter`| 0-1 seconds       |
-| `max_attempts` | 5                 |
+| Parameter       | Recommended Value |
+| --------------- | ----------------- |
+| `base`          | 2 seconds         |
+| `max_delay`     | 300 seconds       |
+| `random_jitter` | 0-1 seconds       |
+| `max_attempts`  | 5                 |
 
 ### API Key Rotation
 
@@ -176,8 +177,10 @@ delay = min(base * 2^attempt, max_delay) + random_jitter
 
 - **SSH SOCKS proxy:** `ssh -D 1080 user@backup-vps` then route tools through
   the SOCKS proxy.
+
 - **Axiom fleet:** spin up disposable VPS instances for distributed scanning.
   Use `axiom-scan` to fan out work across the fleet.
+
 - **Residential proxies:** last resort for heavily geo-restricted or
   reputation-filtered targets. Ensure this is within the rules of engagement.
 

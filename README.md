@@ -53,16 +53,16 @@ The current bundle includes **11 implemented Claude skills**, **90 capabilities*
 Scope → Recon → Enrich → Bug Bounty Intel → Score → Finding Cards → Handoff → Report
 ```
 
-| Phase | What Outrider does |
-|---|---|
-| **Scope** | Establish authorized assets, exclusions, platform rules, and safe boundaries. |
-| **Recon** | Discover subdomains, DNS records, web apps, APIs, JS endpoints, Swagger/OpenAPI, GraphQL, buckets, vendor surfaces, and exposed docs. |
-| **Enrich** | Add identity-fabric, breach, cloud, SaaS, CI/CD, package-registry, EPSS/KEV, and technology context. |
-| **Bug Bounty Intel** | Search public disclosed reports and writeups for comparable attack patterns, severity framing, and likely next probes. |
-| **Score** | Rank surfaces using confidence, severity, detectability, and attack-path value. |
-| **Finding Cards** | Convert interesting signals into evidence-backed cards with confidence, impact, safe next steps, and handoff recommendations. |
-| **Handoff** | Recommend where to continue: proxy-assisted testing, manual validation, ASM ticketing, client remediation, or a separate active-testing workflow. |
-| **Report** | Produce recon/ASM summaries, bug-bounty report scaffolds, and executive-ready notes. |
+| Phase                | What Outrider does                                                                                                                                |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Scope**            | Establish authorized assets, exclusions, platform rules, and safe boundaries.                                                                     |
+| **Recon**            | Discover subdomains, DNS records, web apps, APIs, JS endpoints, Swagger/OpenAPI, GraphQL, buckets, vendor surfaces, and exposed docs.             |
+| **Enrich**           | Add identity-fabric, breach, cloud, SaaS, CI/CD, package-registry, EPSS/KEV, and technology context.                                              |
+| **Bug Bounty Intel** | Search public disclosed reports and writeups for comparable attack patterns, severity framing, and likely next probes.                            |
+| **Score**            | Rank surfaces using confidence, severity, detectability, and attack-path value.                                                                   |
+| **Finding Cards**    | Convert interesting signals into evidence-backed cards with confidence, impact, safe next steps, and handoff recommendations.                     |
+| **Handoff**          | Recommend where to continue: proxy-assisted testing, manual validation, ASM ticketing, client remediation, or a separate active-testing workflow. |
+| **Report**           | Produce recon/ASM summaries, bug-bounty report scaffolds, and executive-ready notes.                                                              |
 
 ---
 
@@ -171,7 +171,6 @@ Scope rules are deterministic:
 - domain rules never authorize the IP addresses that a domain may resolve to because no DNS resolution occurs;
 - `outrider scope-check` only parses local scope configuration and candidate values, and performs no network activity.
 
-
 ### Run manifests and workflow state
 
 Initialize a run with a stable manifest and optional opaque authorization reference:
@@ -261,17 +260,17 @@ outrider-recon/
 
 ## Documentation
 
-| Doc | Contents |
-|---|---|
-| [`docs/capabilities.md`](docs/capabilities.md) | Full capability index: 90 capabilities across 15 domains. |
-| [`docs/architecture.md`](docs/architecture.md) | Design philosophy, asset graph, confidence/severity/detectability models, sidecar coordination. |
-| [`docs/coverage.md`](docs/coverage.md) | Practitioner-coverage breakdown by archetype and engagement phase. |
-| [`docs/installation.md`](docs/installation.md) | Symlink installs and multi-environment install patterns. |
-| [`docs/usage.md`](docs/usage.md) | Trigger phrases and prompt templates. |
-| [`docs/methods/`](docs/methods/) | Techniques and procedures: probes, CDN bypass, sweeps, monitoring, multi-tenant workflow, Burp/ZAP setup. |
-| [`docs/reference/`](docs/reference/) | Tool directory, install commands, and specialty domain guides. |
-| [`examples/`](examples/) | Engagement walkthroughs and sanitized sample outputs. |
-| [`tests/smoke-test-prompts.md`](tests/smoke-test-prompts.md) | 43-prompt self-evaluation suite. |
+| Doc                                                          | Contents                                                                                                  |
+| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------- |
+| [`docs/capabilities.md`](docs/capabilities.md)               | Full capability index: 90 capabilities across 15 domains.                                                 |
+| [`docs/architecture.md`](docs/architecture.md)               | Design philosophy, asset graph, confidence/severity/detectability models, sidecar coordination.           |
+| [`docs/coverage.md`](docs/coverage.md)                       | Practitioner-coverage breakdown by archetype and engagement phase.                                        |
+| [`docs/installation.md`](docs/installation.md)               | Symlink installs and multi-environment install patterns.                                                  |
+| [`docs/usage.md`](docs/usage.md)                             | Trigger phrases and prompt templates.                                                                     |
+| [`docs/methods/`](docs/methods/)                             | Techniques and procedures: probes, CDN bypass, sweeps, monitoring, multi-tenant workflow, Burp/ZAP setup. |
+| [`docs/reference/`](docs/reference/)                         | Tool directory, install commands, and specialty domain guides.                                            |
+| [`examples/`](examples/)                                     | Engagement walkthroughs and sanitized sample outputs.                                                     |
+| [`tests/smoke-test-prompts.md`](tests/smoke-test-prompts.md) | 43-prompt self-evaluation suite.                                                                          |
 
 ---
 
@@ -333,4 +332,4 @@ Operational tradecraft accumulated across external attack-surface engagements, c
 
 ---
 
-> *Raw recon tells you what exists. Outrider helps decide what matters first.*
+> _Raw recon tells you what exists. Outrider helps decide what matters first._
