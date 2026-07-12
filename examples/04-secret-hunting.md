@@ -211,7 +211,7 @@ aws iam get-account-summary | jq '.SummaryMap.AccountMFAEnabled'
 aws cloudtrail describe-trails
 ```
 
-#### Document each command + output. Don't run anything destructive.
+### Document each command + output; do not run anything destructive
 
 ---
 
@@ -223,7 +223,7 @@ Score the finding using `analysis-and-reporting` §4 + impact context:
 - **Scope: deploy-bot user with attached ManagedDevOpsPolicy** (via `iam:ListAttachedUserPolicies`) → likely write access to S3, Lambda, ECR, CodeBuild → **CRITICAL** (escalated).
 - **MFA not enforced on user** → CRITICAL holds.
 
-#### Final severity: CRITICAL.
+### Final severity: CRITICAL
 
 ---
 

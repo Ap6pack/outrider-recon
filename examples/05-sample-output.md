@@ -33,7 +33,7 @@ No destructive validation was performed. Recommended next steps are limited to a
 
 ### P1 — investigate first
 
-#### `<https://api.acme.example`>
+#### `https://api.acme.example`
 
 #### What was observed
 
@@ -70,26 +70,26 @@ Verify authentication requirements and object ownership checks using only author
 
 ---
 
-#### `<https://sso.acme.example`>
+#### `https://sso.acme.example`
 
-#### What was observed
+#### What was observed for SSO
 
 - Identity-provider surface discovered.
 - OIDC metadata available.
 - Tenant and federation hints found.
 - Domain and employee-pattern signals support identity-fabric mapping.
 
-#### Why it matters
+#### Why identity exposure matters
 
 Identity surfaces often define the real boundary of an external attack surface. Even when no vulnerability is present, metadata can help defenders understand exposed authentication flows, federated domains, OAuth clients, and where future review should focus.
 
-#### Recommended handoff
+#### Recommended identity handoff
 
 - SSO/OIDC configuration review.
 - OAuth redirect URI and client-id inventory.
 - Identity-fabric mapping.
 
-#### Safe next step
+#### Safe identity next step
 
 Collect metadata and document configuration exposure. Avoid password attempts, credential testing, social engineering, MFA fatigue, or user enumeration outside written authorization.
 

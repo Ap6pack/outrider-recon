@@ -43,7 +43,7 @@ This Code of Conduct applies within all community spaces, and also applies when 
 
 ## Enforcement
 
-Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainer at adamslinuxemail@gmail.com. All complaints will be reviewed and investigated promptly and fairly.
+Instances of abusive, harassing, or otherwise unacceptable behavior may be reported to the project maintainer at <adamslinuxemail@gmail.com>. All complaints will be reviewed and investigated promptly and fairly.
 
 ## Attribution
 

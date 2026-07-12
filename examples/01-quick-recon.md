@@ -146,7 +146,7 @@ done > evidence/hibp.jsonl 2>/dev/null
 **Prompt to Claude:**
 
 > Write a 1-page executive summary for an authorized 1-hour quick-recon engagement on acme.example. Findings:
-
+>
 > - 47 subdomains discovered
 > - 3 open Elasticsearch instances on standard port (CRITICAL)
 > - 1 leaked GitHub PAT in public gist (validated live, scope: repo) (CRITICAL)
