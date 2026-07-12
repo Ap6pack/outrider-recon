@@ -6,6 +6,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+from outrider.approval import ApprovalPolicyError, ApprovalValidationError, evaluate_action, grant_approval, list_approvals, revoke_approval
 from outrider.evidence import EvidenceRefusalError, EvidenceRegistrationError, EvidenceValidationError, load_evidence_registry, register_evidence, verify_all_evidence
 from outrider.scope import evaluate_scope_path
 from outrider.state import InvalidTransitionError, StateValidationError, bootstrap_legacy_run, initialize_state, load_state, transition_state
@@ -40,10 +41,10 @@ def append_jsonl(path: Path, event: dict) -> None:
 
 
 def render_scope_yaml(target: str, scopes: Iterable[str], exclusions: Iterable[str]) -> str:
-    scope_lines = "\n".join(f"  - {item}" for item in scopes) or "  - TODO"
+    scope_lines = "\n".join(f"  - {json.dumps(item)}" for item in scopes) or "  - TODO"
     exclusion_items = list(exclusions)
     if exclusion_items:
-        exclusion_block = "out_of_scope:\n" + "\n".join(f"  - {item}" for item in exclusion_items)
+        exclusion_block = "out_of_scope:\n" + "\n".join(f"  - {json.dumps(item)}" for item in exclusion_items)
     else:
         exclusion_block = "out_of_scope: []"
     return f"""target: {target}
@@ -217,6 +218,8 @@ def init_run(args: argparse.Namespace) -> int:
 
     if write_if_missing(run_dir / "evidence.jsonl", ""):
         created.append("evidence.jsonl")
+    if write_if_missing(run_dir / "approvals.jsonl", ""):
+        created.append("approvals.jsonl")
     artifacts_dir = run_dir / "artifacts"
     if not artifacts_dir.exists():
         artifacts_dir.mkdir()
@@ -248,7 +251,7 @@ def show_run(args: argparse.Namespace) -> int:
     if not run_dir.exists():
         print(f"Run folder not found: {run_dir}")
         return 1
-    expected = ["manifest.json", "scope.yaml", "run.jsonl", "evidence.jsonl", "artifacts/", "assets.json", "web_surface.json", "identity_fabric.json", "bb_intel.json", "findings.md", "technique_cards.md", "surface.md", "report.md"]
+    expected = ["manifest.json", "scope.yaml", "run.jsonl", "evidence.jsonl", "approvals.jsonl", "artifacts/", "assets.json", "web_surface.json", "identity_fabric.json", "bb_intel.json", "findings.md", "technique_cards.md", "surface.md", "report.md"]
     print(f"Outrider run: {run_dir}")
     for filename in expected:
         marker = "ok" if (run_dir / filename.rstrip("/")).exists() else "missing"
@@ -406,6 +409,83 @@ def evidence_verify(args: argparse.Namespace) -> int:
         return 2
 
 
+
+def _print_approval_grant(grant, as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(grant.to_dict(), sort_keys=True)); return
+    print(f"Approval ID: {grant.approval_id}")
+    print(f"Run ID: {grant.run_id}")
+    print(f"Action type: {grant.action_type}")
+    print(f"Normalized candidate: {grant.candidate}")
+    print(f"Actor: {grant.actor}")
+    print(f"Granted at: {grant.occurred_at}")
+    print(f"Expires at: {grant.expires_at}")
+    print(f"Reason: {grant.reason}")
+    if grant.conditions:
+        print(f"Conditions: {grant.conditions}")
+    print(f"Status: {grant.status}")
+
+
+def approval_grant(args: argparse.Namespace) -> int:
+    try:
+        grant = grant_approval(args.run_dir, args.action_type, args.candidate, args.actor, args.reason, duration_minutes=args.duration_minutes, expires_at=args.expires_at, conditions=args.conditions)
+        _print_approval_grant(grant, args.json); return 0
+    except ApprovalPolicyError as exc:
+        print(f"ERROR: {exc}"); return 1
+    except (ApprovalValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}"); return 2
+
+
+def approval_revoke(args: argparse.Namespace) -> int:
+    try:
+        event = revoke_approval(args.run_dir, args.approval_id, args.actor, args.reason)
+        if args.json: print(json.dumps(event.to_dict(), sort_keys=True))
+        else:
+            print(f"Revoked approval: {event.approval_id}")
+            print(f"Run ID: {event.run_id}")
+            print(f"Actor: {event.actor}")
+            print(f"Revoked at: {event.occurred_at}")
+            print(f"Reason: {event.reason}")
+        return 0
+    except ApprovalPolicyError as exc:
+        print(f"ERROR: {exc}"); return 1
+    except (ApprovalValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}"); return 2
+
+
+def approval_list(args: argparse.Namespace) -> int:
+    try:
+        summary = list_approvals(args.run_dir)
+        if args.json: print(json.dumps(summary.to_dict(), sort_keys=True))
+        else:
+            print(f"Run ID: {summary.run_id}")
+            print(f"Approval count: {summary.approval_count}")
+            print(f"Active: {summary.active_count} Expired: {summary.expired_count} Revoked: {summary.revoked_count}")
+            for a in summary.approvals:
+                rev = f" revoked_at={a.revoked_at} revoked_by={a.revoked_by} revocation_reason={a.revocation_reason}" if a.status == "revoked" else ""
+                print(f"{a.sequence} {a.approval_id} {a.action_type} {a.candidate} {a.actor} {a.occurred_at} {a.expires_at} {a.status}{rev}")
+        return 0
+    except (ApprovalValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}"); return 2
+
+
+def action_check(args: argparse.Namespace) -> int:
+    decision = evaluate_action(args.run_dir, args.action_type, args.candidate)
+    if args.json:
+        print(json.dumps(decision.to_dict(), sort_keys=True))
+    else:
+        print(decision.decision.upper())
+        print(f"Action type: {decision.action_type}")
+        print(f"Action class: {decision.action_class or 'n/a'}")
+        print(f"Workflow state: {decision.workflow_state or 'n/a'}")
+        print(f"Normalized candidate: {decision.normalized_candidate or 'n/a'}")
+        print(f"Scope result: {decision.scope_decision or 'n/a'}")
+        print(f"Matched scope rule: {decision.matched_scope_rule or 'none'}")
+        print(f"Approval required: {decision.approval_required}")
+        print(f"Matched approval ID: {decision.matched_approval_id or 'none'}")
+        print(f"Reason: {decision.reason}")
+    return 0 if decision.decision == "allow" else 1 if decision.decision == "deny" else 2
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="outrider", description="Outrider Recon CLI harness for run-folder creation and evidence-backed handoff.")
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -449,6 +529,40 @@ def build_parser() -> argparse.ArgumentParser:
     bootstrap_parser.add_argument("--authorization-reference")
     bootstrap_parser.add_argument("--json", action="store_true")
     bootstrap_parser.set_defaults(func=state_bootstrap)
+
+
+    approval_parser = subcommands.add_parser("approval", help="Grant, revoke, and list offline human approvals.")
+    approval_sub = approval_parser.add_subparsers(dest="approval_command", required=True)
+    approval_grant_parser = approval_sub.add_parser("grant", help="Append a time-bounded approval grant.")
+    approval_grant_parser.add_argument("run_dir")
+    approval_grant_parser.add_argument("action_type")
+    approval_grant_parser.add_argument("candidate")
+    approval_grant_parser.add_argument("--actor", required=True)
+    approval_grant_parser.add_argument("--reason", required=True)
+    expiry = approval_grant_parser.add_mutually_exclusive_group(required=True)
+    expiry.add_argument("--duration-minutes", type=int)
+    expiry.add_argument("--expires-at")
+    approval_grant_parser.add_argument("--conditions")
+    approval_grant_parser.add_argument("--json", action="store_true")
+    approval_grant_parser.set_defaults(func=approval_grant)
+    approval_revoke_parser = approval_sub.add_parser("revoke", help="Append an approval revocation.")
+    approval_revoke_parser.add_argument("run_dir")
+    approval_revoke_parser.add_argument("approval_id")
+    approval_revoke_parser.add_argument("--actor", required=True)
+    approval_revoke_parser.add_argument("--reason", required=True)
+    approval_revoke_parser.add_argument("--json", action="store_true")
+    approval_revoke_parser.set_defaults(func=approval_revoke)
+    approval_list_parser = approval_sub.add_parser("list", help="List derived approval status.")
+    approval_list_parser.add_argument("run_dir")
+    approval_list_parser.add_argument("--json", action="store_true")
+    approval_list_parser.set_defaults(func=approval_list)
+
+    action_parser = subcommands.add_parser("action-check", help="Evaluate an offline action policy decision.")
+    action_parser.add_argument("run_dir")
+    action_parser.add_argument("action_type")
+    action_parser.add_argument("--candidate")
+    action_parser.add_argument("--json", action="store_true")
+    action_parser.set_defaults(func=action_check)
 
     evidence_parser = subcommands.add_parser("evidence", help="Register, list, and verify local run evidence.")
     evidence_sub = evidence_parser.add_subparsers(dest="evidence_command", required=True)

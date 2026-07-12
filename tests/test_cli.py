@@ -38,6 +38,7 @@ class CliCommandTests(unittest.TestCase):
         "scope.yaml",
         "run.jsonl",
         "evidence.jsonl",
+        "approvals.jsonl",
         "artifacts",
         *expected_json_sidecars,
         *expected_markdown_templates,
@@ -76,10 +77,10 @@ class CliCommandTests(unittest.TestCase):
 
             scope_yaml = (run_dir / "scope.yaml").read_text(encoding="utf-8")
             self.assertIn("target: example.com", scope_yaml)
-            self.assertIn("  - example.com", scope_yaml)
-            self.assertIn("  - *.example.com", scope_yaml)
-            self.assertIn("  - admin.example.com", scope_yaml)
-            self.assertIn("  - legacy.example.com", scope_yaml)
+            self.assertIn("  - \"example.com\"", scope_yaml)
+            self.assertIn("  - \"*.example.com\"", scope_yaml)
+            self.assertIn("  - \"admin.example.com\"", scope_yaml)
+            self.assertIn("  - \"legacy.example.com\"", scope_yaml)
 
             events = [
                 json.loads(line)
@@ -183,3 +184,23 @@ class CliCommandTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+class ApprovalCliTests(unittest.TestCase):
+    def run_cli(self, *argv):
+        stdout = StringIO()
+        with patch.object(sys, "argv", ["outrider", *argv]), redirect_stdout(stdout):
+            status = cli.main()
+        return status, stdout.getvalue()
+    def test_approval_and_action_check_cli(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(self.run_cli('init','example.com','--scope','example.com','--scope','*.example.com','--output-dir',tmp,'--actor','authorized-operator','--authorization-reference','EXAMPLE-ROE-001')[0],0)
+            run=str(Path(tmp)/'example.com')
+            self.assertEqual(self.run_cli('state','transition',run,'scoped','--actor','authorized-operator')[0],0)
+            st,out=self.run_cli('approval','grant',run,'target_read_only_request','api.example.com','--actor','authorized-operator','--reason','Approved bounded read-only review','--duration-minutes','60','--json')
+            self.assertEqual(st,0); grant=json.loads(out); aid=grant['approval_id']; self.assertEqual(grant['status'],'active')
+            st,out=self.run_cli('approval','list',run,'--json'); self.assertEqual(st,0); self.assertEqual(json.loads(out)['active_count'],1)
+            st,out=self.run_cli('action-check',run,'target_read_only_request','--candidate','api.example.com','--json'); self.assertEqual(st,0); self.assertEqual(json.loads(out)['decision'],'allow')
+            st,out=self.run_cli('action-check',run,'target_enumeration','--candidate','api.example.com'); self.assertEqual(st,1); self.assertIn('DENY',out)
+            st,out=self.run_cli('approval','revoke',run,aid,'--actor','authorized-operator','--reason','Approval withdrawn','--json'); self.assertEqual(st,0); self.assertEqual(json.loads(out)['event_type'],'approval_revoked')
+            st,out=self.run_cli('action-check',run,'target_read_only_request','--candidate','api.example.com'); self.assertEqual(st,1); self.assertNotIn('Traceback',out)
+            st,out=self.run_cli('approval','grant',run,'public_source_lookup','api.example.com','--actor','authorized-operator','--reason','x','--duration-minutes','60'); self.assertEqual(st,1); self.assertNotIn('Traceback',out)
