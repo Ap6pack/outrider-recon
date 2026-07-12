@@ -152,6 +152,25 @@ curl -fsSL https://raw.githubusercontent.com/Ap6pack/outrider-recon/main/install
 
 This clones the repo, symlinks all 11 skills into `~/.claude/skills/`, and prepares Claude Code to auto-load the relevant skills. Re-run the same command to update.
 
+### Offline scope checks
+
+Run folders contain a `scope.yaml` file that can be evaluated without DNS resolution, hostname resolution, or network activity:
+
+```bash
+outrider scope-check runs/example.com api.example.com
+outrider scope-check runs/example.com https://api.example.com/path --json
+```
+
+Scope rules are deterministic:
+
+- exact domains such as `example.com` match only that exact domain and do not include subdomains;
+- wildcard subdomains such as `*.example.com` match `api.example.com` and deeper subdomains, but do not include the apex `example.com`;
+- exact IPv4/IPv6 addresses and IPv4/IPv6 CIDR networks are supported;
+- `out_of_scope` exclusions override `in_scope` inclusions;
+- unmatched candidates are denied by default;
+- domain rules never authorize the IP addresses that a domain may resolve to because no DNS resolution occurs;
+- `outrider scope-check` only parses local scope configuration and candidate values, and performs no network activity.
+
 ### MCP Server (optional)
 
 The optional MCP server adds live enrichment tools: crt.sh lookup, HudsonRock query, EPSS scoring, Wayback CDX, and DNS records.
@@ -238,7 +257,7 @@ outrider-recon/
 Outrider currently has four separate implementation domains:
 
 - **Implemented Claude skill layer:** the `skills/` directory is the primary capability layer. The skills provide methodology, routing, recon procedures, scoring guidance, report templates, and operator-facing safety rules.
-- **Python CLI scaffolding:** the `outrider` command currently initializes and inspects run folders. It creates files such as `scope.yaml`, `run.jsonl`, placeholder JSON sidecars, finding cards, technique cards, and report templates. It does not currently execute recon, validate schemas, enforce scope, record approvals, or verify evidence hashes.
+- **Python CLI scaffolding:** the `outrider` command currently initializes and inspects run folders. It creates files such as `scope.yaml`, `run.jsonl`, placeholder JSON sidecars, finding cards, technique cards, and report templates. It does not execute recon, record approvals, or verify evidence hashes; it now includes offline deterministic scope-file validation and `outrider scope-check`.
 - **Optional MCP enrichment:** the MCP server provides live enrichment tools for crt.sh, HudsonRock, EPSS, Wayback CDX, and DNS lookups. It does not currently enforce scope at the tool boundary.
 - **Future web UI:** a web UI is intended as a shared control and review plane for scope, approvals, evidence, triage, and handoff. It is not implemented in this repository today.
 
@@ -269,7 +288,7 @@ The goal is not to turn Outrider into an exploitation framework. The goal is to 
 
 These skills are intended for assets you **own** or have **written authorization to assess**: red-team rules of engagement, bug-bounty in-scope assets, ASM contracts, or internal security assessments.
 
-All skills include a soft scope check when you ask Claude to act against an unverified third-party target. These controls are currently skill-level and operator-enforced; deterministic Python and MCP scope enforcement is planned but not currently implemented. The skills explicitly exclude active exploitation, post-exploitation, malware development, persistence, evasion, and other activities beyond OSINT-driven reconnaissance. See [`SECURITY.md`](SECURITY.md) for the full posture.
+All skills include a soft scope check when you ask Claude to act against an unverified third-party target. These controls are currently skill-level and operator-enforced; deterministic Python scope checks are available through `outrider scope-check`, while MCP scope enforcement is planned but not currently implemented. The skills explicitly exclude active exploitation, post-exploitation, malware development, persistence, evasion, and other activities beyond OSINT-driven reconnaissance. See [`SECURITY.md`](SECURITY.md) for the full posture.
 
 ---
 

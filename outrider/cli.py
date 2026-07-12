@@ -6,6 +6,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
 
+from outrider.scope import evaluate_scope_path
+
 
 DEFAULT_FILES = {
     "assets.json": {"assets": [], "notes": "Discovered assets will be stored here."},
@@ -37,7 +39,11 @@ def append_jsonl(path: Path, event: dict) -> None:
 
 def render_scope_yaml(target: str, scopes: Iterable[str], exclusions: Iterable[str]) -> str:
     scope_lines = "\n".join(f"  - {item}" for item in scopes) or "  - TODO"
-    exclusion_lines = "\n".join(f"  - {item}" for item in exclusions) or "  - none"
+    exclusion_items = list(exclusions)
+    if exclusion_items:
+        exclusion_block = "out_of_scope:\n" + "\n".join(f"  - {item}" for item in exclusion_items)
+    else:
+        exclusion_block = "out_of_scope: []"
     return f"""target: {target}
 created_at: {utc_now()}
 engagement_type: authorized_external_recon
@@ -47,8 +53,7 @@ boundary:
   - no_destructive_validation_without_written_authorization
 in_scope:
 {scope_lines}
-out_of_scope:
-{exclusion_lines}
+{exclusion_block}
 traffic_tagging:
   user_agent: TODO
   source_ip: TODO
@@ -235,6 +240,23 @@ def show_run(args: argparse.Namespace) -> int:
     return 0
 
 
+def scope_check(args: argparse.Namespace) -> int:
+    decision = evaluate_scope_path(args.run_dir, args.candidate)
+    if args.json:
+        print(json.dumps(decision.to_dict(), sort_keys=True))
+    else:
+        print(decision.decision.upper())
+        print(f"Normalized candidate: {decision.normalized_candidate or 'n/a'}")
+        print(f"Matched rule: {decision.matched_rule or 'none'}")
+        print(f"Matched rule source: {decision.matched_rule_source}")
+        print(f"Reason: {decision.reason}")
+    if decision.decision == "allow":
+        return 0
+    if decision.decision == "deny":
+        return 1
+    return 2
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog="outrider", description="Outrider Recon CLI harness for run-folder creation and evidence-backed handoff.")
     subcommands = parser.add_subparsers(dest="command", required=True)
@@ -249,6 +271,12 @@ def build_parser() -> argparse.ArgumentParser:
     show_parser = subcommands.add_parser("show", help="Show expected files for a run folder.")
     show_parser.add_argument("run_dir", help="Run folder path, for example runs/acme.example.")
     show_parser.set_defaults(func=show_run)
+
+    scope_parser = subcommands.add_parser("scope-check", help="Evaluate a candidate against a run folder's scope.yaml.")
+    scope_parser.add_argument("run_dir", help="Run folder path containing scope.yaml.")
+    scope_parser.add_argument("candidate", help="Domain, IP address, or URL to evaluate.")
+    scope_parser.add_argument("--json", action="store_true", help="Emit the structured scope decision as JSON.")
+    scope_parser.set_defaults(func=scope_check)
 
     return parser
 

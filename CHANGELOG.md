@@ -9,6 +9,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Add deterministic scope-file validation with exact-domain, wildcard-subdomain, exact-IP, and CIDR matching.
+- Add out-of-scope precedence, default-deny scope decisions, and the offline `outrider scope-check` CLI command.
+
 ### Documentation
 
 - Add automated CLI tests and pull-request CI coverage.
