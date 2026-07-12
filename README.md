@@ -333,3 +333,30 @@ Operational tradecraft accumulated across external attack-surface engagements, c
 ---
 
 > _Raw recon tells you what exists. Outrider helps decide what matters first._
+
+## Evidence registry and artifact verification
+
+Outrider run folders include an append-only `evidence.jsonl` registry and an `artifacts/` directory for local evidence files. Artifact contents remain under `artifacts/`; the registry stores only metadata, provenance, relative paths, sizes, and SHA-256 hashes.
+
+```bash
+mkdir -p runs/example.com/artifacts/http
+
+printf 'HTTP/1.1 200 OK\n' \
+  > runs/example.com/artifacts/http/homepage-response.txt
+
+outrider evidence register \
+  runs/example.com \
+  artifacts/http/homepage-response.txt \
+  --actor authorized-operator \
+  --type http-response \
+  --media-type text/plain \
+  --source manual-capture
+
+outrider evidence list runs/example.com
+
+outrider evidence verify runs/example.com
+```
+
+Evidence files must be beneath `artifacts/`. Absolute paths, traversal, symlinks, symlinked parent directories, directories, missing files, and Outrider control files are rejected. Duplicate paths are rejected; save updated artifacts under a new filename and register the new path. Registration does not grant authorization or approval, does not perform scope checks, and does not change run state. Verification is deterministic local file I/O, performs no network activity, and does not modify the registry or artifacts.
+
+Run folders and evidence artifacts must never be committed.

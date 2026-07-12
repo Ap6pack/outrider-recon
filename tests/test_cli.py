@@ -37,6 +37,8 @@ class CliCommandTests(unittest.TestCase):
         "manifest.json",
         "scope.yaml",
         "run.jsonl",
+        "evidence.jsonl",
+        "artifacts",
         *expected_json_sidecars,
         *expected_markdown_templates,
     }
