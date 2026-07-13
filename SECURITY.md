@@ -24,7 +24,7 @@ Pipeline content also includes:
 - Detection-aware guidance encouraging back-off rather than evasion when active defenses are detected.
 - Validator discipline — only read-only credential verification; never destructive.
 
-These controls are currently primarily skill-level and operator-enforced. Deterministic Python/MCP scope enforcement, approval records, and tool-boundary checks are planned, but they are not currently implemented.
+These controls are enforced in two layers: Claude skills provide methodology and operator guardrails, while the Python package provides deterministic run manifests, workflow state, scope decisions, evidence integrity checks, approval records, skill-contract validation, finding promotion, and MCP tool-boundary policy for the optional server. The optional web review plane is local, loopback-only, and read-only.
 
 ## Reporting a security issue with the skills themselves
 
@@ -53,13 +53,13 @@ If you used these skills during an authorized engagement and found a vulnerabili
 
 ## Supported versions
 
-| Version domain           | Support status                                                                             |
-| ------------------------ | ------------------------------------------------------------------------------------------ |
-| Plugin/content v3.0      | ✅ Active                                                                                  |
-| Python CLI package       | Early scaffolding; support follows the package metadata in `pyproject.toml`                |
-| Individual skills        | Supported according to each skill's YAML frontmatter and the active plugin/content release |
-| 2.x plugin/content lines | ⚠️ Superseded by v3.0 content                                                              |
-| 1.x plugin/content lines | ❌ End of life                                                                             |
+| Version domain              | Support status                                                                             |
+| --------------------------- | ------------------------------------------------------------------------------------------ |
+| Claude plugin/content 3.0.0 | ✅ Active                                                                                  |
+| Python package 0.1.0        | Active pre-release deterministic CLI controls; support follows `pyproject.toml`            |
+| Individual skills           | Supported according to each skill's YAML frontmatter and the active plugin/content release |
+| 2.x plugin/content lines    | ⚠️ Superseded by v3.0 content                                                              |
+| 1.x plugin/content lines    | ❌ End of life                                                                             |
 
 ## Security best practices for users
 

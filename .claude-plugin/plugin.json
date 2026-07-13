@@ -1,7 +1,7 @@
 {
   "name": "outrider-recon",
   "version": "3.0.0",
-  "description": "Autonomous agentic recon pipeline for authorized external red-team and bug-bounty. 90 capabilities across 11 skills covering subdomain enumeration, secret hunting, identity/SSO mapping, breach correlation, vulnerability prioritization, and attack-surface reporting.",
+  "description": "Claude-native authorized external recon and ASM methodology bundle with 90 documented capabilities across 11 skills, plus deterministic Python controls for run state, scope, evidence, approvals, skill contracts, finding promotion, optional guarded MCP enrichment, and optional local read-only web review. It does not provide unrestricted autonomous exploitation.",
   "author": {
     "name": "Ap6pack",
     "url": "https://github.com/Ap6pack"

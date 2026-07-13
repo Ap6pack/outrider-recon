@@ -31,4 +31,4 @@ where = ["."]
 include = ["outrider*"]
 
 [tool.setuptools.package-data]
-outrider = ["web_static/*"]
+outrider = ["web_static/*", "skill_catalog.json", "schemas/*.json"]

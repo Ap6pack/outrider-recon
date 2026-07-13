@@ -21,6 +21,28 @@ The project includes an optional MCP server that adds live API tools (crt.sh loo
 
 The MCP server is optional -- all skills work without it.
 
+## Python package installation
+
+The Python package version is `0.1.0` and is independent of the Claude plugin/content version `3.0.0`. Install the base CLI from a source checkout with:
+
+```bash
+python -m pip install .
+```
+
+The base installation provides deterministic local controls and does not install FastAPI, Uvicorn, httpx, or the MCP SDK. To install the optional local read-only web review plane, use:
+
+```bash
+python -m pip install ".[web]"
+```
+
+To use the optional MCP server from a source checkout, install its dependencies separately:
+
+```bash
+python -m pip install -r mcp-server/requirements.txt
+```
+
+Re-running `install.sh` updates the Claude skill symlinks from the current repository content. The `_shared` directory is support material and is not installed as a twelfth skill.
+
 ## Claude Code (CLI)
 
 Claude Code looks for skills in `~/.claude/skills/` by default.

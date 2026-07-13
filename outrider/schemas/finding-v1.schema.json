@@ -1,0 +1,57 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outrider.local/contracts/finding-v1.schema.json",
+  "title": "Outrider finding v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "sequence", "event_type", "event_id", "finding_id", "run_id", "promoted_at", "promoted_by", "classification", "title", "affected_candidate", "candidate_type", "location", "severity", "confidence", "validation_basis", "validation_reason", "impact", "remediation", "source", "evidence_ids", "notes"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "sequence": {"type": "integer", "minimum": 1},
+    "event_type": {"const": "finding_promoted"},
+    "event_id": {"type": "string", "format": "uuid"},
+    "finding_id": {"type": "string", "format": "uuid"},
+    "run_id": {"type": "string", "format": "uuid"},
+    "promoted_at": {"type": "string", "format": "date-time"},
+    "promoted_by": {"type": "string", "minLength": 1},
+    "classification": {"const": "validated_finding"},
+    "title": {"type": "string", "minLength": 1},
+    "affected_candidate": {"type": "string", "minLength": 1},
+    "candidate_type": {"enum": ["domain", "ip"]},
+    "location": {"type": ["string", "null"], "minLength": 1},
+    "severity": {"enum": ["informational", "low", "medium", "high", "critical"]},
+    "confidence": {"enum": ["medium", "high"]},
+    "validation_basis": {"enum": ["evidence_review", "response_evidence", "configuration_evidence", "owner_confirmation"]},
+    "validation_reason": {"type": "string", "minLength": 1},
+    "impact": {"type": "string", "minLength": 1},
+    "remediation": {"type": "string", "minLength": 1},
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["result_id", "request_id", "skill", "result_path", "result_sha256", "claim_id", "claim"],
+      "properties": {
+        "result_id": {"type": "string", "format": "uuid"},
+        "request_id": {"type": "string", "format": "uuid"},
+        "skill": {"type": "string", "minLength": 1},
+        "result_path": {"type": "string", "pattern": "^contracts/results/[^/]+$"},
+        "result_sha256": {"type": "string", "pattern": "^[0-9a-f]{64}$"},
+        "claim_id": {"type": "string", "format": "uuid"},
+        "claim": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["classification", "subject", "statement", "confidence", "suggested_severity", "evidence_ids"],
+          "properties": {
+            "classification": {"const": "finding_candidate"},
+            "subject": {"type": "string", "minLength": 1},
+            "statement": {"type": "string", "minLength": 1},
+            "confidence": {"enum": ["low", "medium", "high"]},
+            "suggested_severity": {"enum": ["informational", "low", "medium", "high", "critical", null]},
+            "evidence_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}}
+          }
+        }
+      }
+    },
+    "evidence_ids": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "format": "uuid"}},
+    "notes": {"type": ["string", "null"], "minLength": 1}
+  }
+}

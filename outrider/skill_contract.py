@@ -61,7 +61,10 @@ class ContractValidationReport:
 def utc_now(): return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
 def list_known_skills(repo_root: str|Path|None=None) -> tuple[str,...]:
-    root = Path(repo_root) if repo_root else Path(__file__).resolve().parents[1]
+    if repo_root is None:
+        from outrider.package_resources import packaged_skill_catalog
+        return packaged_skill_catalog()
+    root = Path(repo_root)
     return tuple(sorted(p.parent.name for p in (root/"skills").glob("*/SKILL.md")))
 
 def _uuid4(v:Any, field:str)->str:
