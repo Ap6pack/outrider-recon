@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_FILES = ['pyproject.toml','README.md','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','LICENSE','install.sh','uninstall.sh','.gitignore','.mcp.json','.claude-plugin/plugin.json','.github/workflows/lint.yml','.github/workflows/release-candidate.yml','tools/build_release_bundle.py','docs/releases/README.md','docs/releases/python-0.2.0.md','docs/releases/plugin-3.0.1.md','docs/releases/release-checklist.md']
 SCHEMAS = ['skill-request-v1.schema.json','skill-result-v1.schema.json','finding-v1.schema.json']
 WEB_STATIC = ['index.html','app.css','app.js']
-ADRS = [f'docs/adr/{i:04d}-{name}.md' for i,name in [(1,'run-manifest-and-state-log'),(2,'evidence-registry-and-integrity'),(3,'approval-registry-and-action-policy'),(4,'mcp-tool-boundary-enforcement'),(5,'skill-python-interchange-contracts'),(6,'deterministic-finding-promotion'),(7,'local-web-review-plane')]]
+ADRS = [f'docs/adr/{i:04d}-{name}.md' for i,name in [(1,'run-manifest-and-state-log'),(2,'evidence-registry-and-integrity'),(3,'approval-registry-and-action-policy'),(4,'mcp-tool-boundary-enforcement'),(5,'skill-python-interchange-contracts'),(6,'deterministic-finding-promotion'),(7,'local-web-review-plane'),(8,'guarded-web-state-transitions')]]
 
 def load_pyproject(path: Path) -> dict[str, object]:
     """Parse the small pyproject subset this audit needs using only stdlib."""
@@ -159,7 +159,7 @@ class Audit:
         self.ok('web static-resource presence','index.html, app.css, and app.js are present') if not miss else self.fail('web static-resource presence','missing '+', '.join(miss))
     def check_adrs(self):
         miss=[a for a in ADRS if not (self.root/a).exists()]
-        self.ok('required ADR sequence','ADR 0001 through 0007 are present') if not miss else self.fail('required ADR sequence','missing '+', '.join(miss))
+        self.ok('required ADR sequence','ADR 0001 through 0008 are present') if not miss else self.fail('required ADR sequence','missing '+', '.join(miss))
     def tracked_files(self):
         import subprocess
         try: return subprocess.check_output(['git','ls-files'], cwd=self.root, text=True, stderr=subprocess.DEVNULL).splitlines()

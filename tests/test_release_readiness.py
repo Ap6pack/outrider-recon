@@ -216,7 +216,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         architecture = (ROOT/'docs/architecture.md').read_text()
         self.assertIn('skill request/result contract creation and validation', architecture)
         self.assertIn('deterministic human-reviewed finding promotion and verification', architecture)
-        self.assertIn('optional local loopback-only read-only web review', architecture)
+        self.assertIn('optional local loopback-only web review plus guarded workflow-state transitions', architecture)
         self.assertNotIn('finding validation, Claude skill-contract enforcement', architecture)
         self.assertNotIn('web UI are' + ' not implemented', architecture)
         combined = '\n'.join((ROOT/p).read_text(errors='ignore') for p in ['README.md','docs/releases/README.md','docs/releases/python-0.2.0.md','docs/releases/plugin-3.0.1.md','docs/installation.md'])

@@ -17,7 +17,7 @@ from outrider.skill_contract import (
     validate_skill_request,
     validate_skill_result,
 )
-from outrider.state import StateValidationError, load_manifest, load_state
+from outrider.state import ALLOWED_TRANSITIONS, REASON_REQUIRED, StateValidationError, load_manifest, load_state
 
 CONTROL_FILES = ("manifest.json", "scope.yaml", "run.jsonl", "evidence.jsonl", "approvals.jsonl", "findings.jsonl")
 
@@ -133,6 +133,15 @@ def scope_view(run_dir: str | Path) -> dict[str, Any]:
     return {"valid": True, "in_scope": [_rule(r) for r in scope.in_scope], "out_of_scope": [_rule(r) for r in scope.out_of_scope], "counts": {"in_scope": len(scope.in_scope), "out_of_scope": len(scope.out_of_scope)}, "errors": []}
 
 
+def allowed_state_transitions(current_state: str | None) -> list[dict[str, Any]]:
+    if current_state not in ALLOWED_TRANSITIONS:
+        return []
+    return [
+        {"new_state": new_state, "reason_required": new_state == "cancelled" or (current_state, new_state) in REASON_REQUIRED}
+        for new_state in sorted(ALLOWED_TRANSITIONS[current_state])
+    ]
+
+
 def state_view(run_dir: str | Path) -> dict[str, Any]:
     summary, errors = _ok("state", lambda: load_state(run_dir))
     events: list[dict[str, Any]] = []
@@ -142,7 +151,8 @@ def state_view(run_dir: str | Path) -> dict[str, Any]:
             if line.strip():
                 data = json.loads(line)
                 events.append({k: data.get(k) for k in ("sequence", "event_type", "occurred_at", "actor", "previous_state", "new_state", "reason")})
-    return {"valid": summary is not None, "current_state": getattr(summary, "current_state", None), "event_count": getattr(summary, "event_count", 0), "last_transition_at": getattr(summary, "last_transition_at", None), "events": events, "errors": [e.to_dict() for e in errors]}
+    current_state = getattr(summary, "current_state", None)
+    return {"valid": summary is not None, "current_state": current_state, "allowed_transitions": allowed_state_transitions(current_state), "event_count": getattr(summary, "event_count", 0), "last_transition_at": getattr(summary, "last_transition_at", None), "events": events, "errors": [e.to_dict() for e in errors]}
 
 
 def evidence_view(run_dir: str | Path) -> dict[str, Any]:

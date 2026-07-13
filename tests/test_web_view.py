@@ -64,7 +64,7 @@ class WebViewTests(unittest.TestCase):
                 p.rmdir()
             self.assertIsNotNone(web_view.view_for_run_id(root,rid,'overview'))
             transition_state(run,'scoped','authorized-operator')
-            self.assertEqual(web_view.view_for_run_id(root,rid,'state')['current_state'],'scoped')
+            sv=web_view.view_for_run_id(root,rid,'state'); self.assertEqual(sv['current_state'],'scoped'); self.assertEqual([t['new_state'] for t in sv['allowed_transitions']], ['cancelled','collecting'])
 
     def test_all_views_no_absolute_paths_and_integrity_mismatch(self):
         with tempfile.TemporaryDirectory() as td:
