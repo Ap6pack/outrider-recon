@@ -23,25 +23,74 @@ The MCP server is optional -- all skills work without it.
 
 ## Python package installation
 
-The Python package version is `0.2.0` and is independent of the Claude plugin/content version `3.0.1`. Install the base CLI from a source checkout with:
+The Python package version is `0.2.0` and is independent of the Claude plugin/content version `3.0.1`.
+
+### Install from the published GitHub release wheel
+
+1. Open the Python 0.2.0 GitHub release page: <https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0>.
+2. Download `outrider_recon-0.2.0-py3-none-any.whl` into an artifact directory.
+3. Install the downloaded base wheel:
+
+```bash
+python -m pip install ./outrider_recon-0.2.0-py3-none-any.whl
+```
+
+4. To install optional local web review dependencies from the downloaded wheel, run:
+
+```bash
+python -m pip install "./outrider_recon-0.2.0-py3-none-any.whl[web]"
+```
+
+5. Verify the installed version:
+
+```bash
+outrider --version
+python -m outrider --version
+```
+
+The release documentation does not claim PyPI publication for `outrider-recon==0.2.0`.
+
+### Install from a source checkout
+
+From a repository checkout, install the base CLI with:
 
 ```bash
 python -m pip install .
 ```
 
-The base installation provides deterministic local controls and does not install FastAPI, Uvicorn, httpx, or the MCP SDK. To install the optional local read-only web review plane, use:
+The base installation provides deterministic local run, scope, state, evidence, approval, action-policy, contract, finding, and review controls. It does not install FastAPI, Uvicorn, httpx, or the MCP SDK, and it does not execute the recon methodology itself. To install the optional local read-only web review plane from a source checkout, use:
 
 ```bash
 python -m pip install ".[web]"
 ```
 
-To use the optional MCP server from a source checkout, install its dependencies separately:
+### Optional MCP server from source checkout
+
+The optional MCP server calls the Python control layer and enforces run context, scope, state, and approval policy before the existing live enrichment operations. Denied MCP decisions perform no HTTP or DNS request. Install its dependencies separately from a source checkout:
 
 ```bash
 python -m pip install -r mcp-server/requirements.txt
 ```
 
 Re-running `install.sh` updates the Claude skill symlinks from the current repository content. The `_shared` directory is support material and is not installed as a twelfth skill.
+
+### Plugin/content release bundle
+
+Open the plugin/content 3.0.1 GitHub release page: <https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1>. Download `outrider-recon-bundle-3.0.1.zip`, verify the relevant checksum entry, extract it into a review directory, inspect `RELEASE-MANIFEST.json`, and then follow the Claude skill installation method for your Claude surface. No Claude Marketplace publication is claimed.
+
+If only the plugin bundle is present in your artifact directory, verify just that checksum entry:
+
+```bash
+grep 'outrider-recon-bundle-3.0.1.zip' SHA256SUMS | sha256sum -c -
+```
+
+If only the Python artifacts are present, verify just the Python entries:
+
+```bash
+grep -E 'outrider_recon-0.2.0-py3-none-any.whl|outrider_recon-0.2.0.tar.gz' SHA256SUMS | sha256sum -c -
+```
+
+An unfiltered `sha256sum -c SHA256SUMS` expects every artifact named in the shared checksum file to exist in the current artifact directory.
 
 ## Claude Code (CLI)
 
@@ -171,8 +220,8 @@ Edit `skills/<skill-name>/SKILL.md` directly. All files are plain Markdown. You 
 The Claude skill/plugin bundle and the Python CLI package are separate installation concerns:
 
 - The one-click and manual Claude Code flows install the skill bundle into `~/.claude/skills/` so Claude can load the methodology and sub-skills.
-- The Python package exposes the `outrider` console script for run-folder scaffolding. The current CLI initializes and inspects run folders; it does not currently execute recon or enforce scope.
-- The optional MCP server is installed separately from `mcp-server/requirements.txt` and adds live enrichment tools. It does not currently enforce scope by itself.
+- The Python package exposes the `outrider` console script for deterministic local run, scope, state, evidence, approval, action-policy, contract, finding, and review controls. It does not execute the recon methodology itself.
+- The optional MCP server is installed separately from `mcp-server/requirements.txt` and adds live enrichment tools. It calls the Python control layer before live operations and denied decisions perform no HTTP or DNS request.
 
 ## Verifying versions
 
@@ -206,14 +255,3 @@ rm -rf ~/.claude/skills/analysis-and-reporting \
 ```
 
 Or remove the symlinks if you used method 2 above.
-
-## Local release-candidate artifacts
-
-After maintainers build candidates, install the local Python wheel without claiming PyPI publication:
-
-```bash
-python -m pip install outrider_recon-0.2.0-py3-none-any.whl
-python -m pip install "outrider_recon-0.2.0-py3-none-any.whl[web]"
-```
-
-Verify the plugin/content bundle separately by inspecting `outrider-recon-bundle-3.0.1.zip` and `RELEASE-MANIFEST.json`. Candidate artifacts are unsigned until a maintainer publishes official release records.

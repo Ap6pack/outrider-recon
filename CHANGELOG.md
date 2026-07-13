@@ -9,7 +9,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-No unreleased changes.
+### Documentation
+
+- Updated public documentation after publication of the Python 0.2.0 and Claude plugin/content 3.0.1 GitHub releases, including release links, installation guidance, checksum instructions, and implementation-status corrections.
 
 ---
 

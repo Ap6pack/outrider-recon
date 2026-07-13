@@ -185,12 +185,57 @@ class Audit:
         if unexpected: self.warn('obvious secret-like patterns','review possible fixtures/false positives: '+', '.join(unexpected[:20]))
         else: self.ok('obvious secret-like patterns','no unexpected secret-like patterns found; documented fixtures/examples are allowlisted')
     def check_docs_versions(self):
-        text='\n'.join((self.root/p).read_text(errors='ignore') for p in ['README.md','docs/installation.md','docs/architecture.md','SECURITY.md','.claude-plugin/plugin.json','CHANGELOG.md'] if (self.root/p).exists())
-        if 'Python package release candidate: 0.2.0' in text or 'Python package release candidate `0.2.0`' in text or 'Python package `0.2.0`' in text:
-            if 'Claude plugin/content release candidate: 3.0.1' in text or 'Claude plugin/content release candidate `3.0.1`' in text or 'Claude plugin/content `3.0.1`' in text:
-                self.ok('documentation version-domain references','Python and Claude plugin versions are documented independently')
-                return
-        self.warn('documentation version-domain references','version-domain independence should be stated in public docs')
+        doc_paths = [
+            'README.md', 'docs/installation.md', 'docs/architecture.md', 'docs/release-readiness.md',
+            'docs/releases/README.md', 'docs/releases/python-0.2.0.md',
+            'docs/releases/plugin-3.0.1.md', 'docs/releases/release-checklist.md', 'CHANGELOG.md'
+        ]
+        docs = {p: (self.root / p).read_text(errors='ignore') for p in doc_paths if (self.root / p).exists()}
+        combined = '\n'.join(docs.values())
+        py_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0'
+        plugin_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1'
+        if py_link in combined and plugin_link in combined and 'python-v0.2.0' in combined and 'plugin-v3.0.1' in combined:
+            self.ok('published release documentation links','current docs link both GitHub release tags')
+        else:
+            self.fail('published release documentation links','missing release tag links or tag names')
+        stale_patterns = [
+            'Current repository release ' + 'candidates',
+            'These candidates are not ' + 'published releases',
+            'No Git tags, GitHub ' + 'releases',
+            'Do not create these tags ' + 'until',
+            'Do not treat the unsigned candidate ' + 'as an official release',
+            r'No Git tag, GitHub release',
+            'does not currently enforce scope ' + 'by itself',
+            'web UI are ' + 'not implemented',
+            'finding' + ' validation' + chr(46) + chr(42) + 'not' + ' implemented',
+            'skill-contract' + ' enforcement' + chr(46) + chr(42) + 'not' + ' implemented',
+        ]
+        hits=[]
+        for path, text in docs.items():
+            for pat in stale_patterns:
+                if re.search(pat, text, re.IGNORECASE): hits.append(f'{path}: {pat}')
+        if hits:
+            self.fail('stale release and implementation claims','; '.join(hits[:10]))
+        else:
+            self.ok('stale release and implementation claims','no stale unpublished-release or implementation-status claims detected')
+        forbidden_claims = [r'pip install outrider-recon==0\.2\.0', r'published to PyPI', r'PyPI publication is complete', r'Claude Marketplace publication is complete', r'published to Claude Marketplace']
+        hits=[pat for pat in forbidden_claims if re.search(pat, combined, re.IGNORECASE)]
+        if hits:
+            self.fail('external publication claim boundaries','unexpected PyPI or Claude Marketplace publication claim: '+', '.join(hits))
+        else:
+            self.ok('external publication claim boundaries','docs avoid PyPI and Claude Marketplace publication claims')
+        required = [
+            'unsigned candidate artifacts for maintainer review',
+            'does not publish automatically',
+            'The same `SHA256SUMS` file covers all three',
+            "grep 'outrider-recon-bundle-3.0.1.zip' SHA256SUMS | sha256sum -c -",
+            "grep -E 'outrider_recon-0.2.0-py3-none-any.whl|outrider_recon-0.2.0.tar.gz' SHA256SUMS | sha256sum -c -",
+        ]
+        missing=[term for term in required if term not in combined]
+        if missing:
+            self.fail('published-vs-candidate and checksum documentation','missing '+', '.join(missing))
+        else:
+            self.ok('published-vs-candidate and checksum documentation','docs distinguish published releases, future candidates, and shared SHA256SUMS behavior')
 
     def check_changelog(self):
         text=(self.root/'CHANGELOG.md').read_text(errors='ignore')
