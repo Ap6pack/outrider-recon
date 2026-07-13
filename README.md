@@ -18,9 +18,22 @@ Outrider is not another subdomain-enum wrapper. It is an agentic recon workflow 
 
 ## Version domains and installation boundaries
 
-Outrider uses independent version domains. The Python package remains `0.1.0`; the Claude plugin/content bundle remains `3.0.0`; each skill keeps its own frontmatter version; and JSON contract schemas currently use schema version `1`. Do not assume the Python package version and Claude plugin/content version move together.
+Outrider uses independent version domains. The Python package remains `0.2.0`; the Claude plugin/content bundle remains `3.0.1`; each skill keeps its own frontmatter version; and JSON contract schemas currently use schema version `1`. Do not assume the Python package version and Claude plugin/content version move together.
 
 The base Python package installs the deterministic local controls and CLI with PyYAML only. Web review support is optional via the `web` extra, and MCP server dependencies are installed separately from `mcp-server/requirements.txt` in a source checkout.
+
+## Current repository release candidates
+
+Prepared release versions in this repository are Python package release candidate: 0.2.0 and Claude plugin/content release candidate: 3.0.1. Individual skill versions remain independent, and JSON schema versions remain at `1`. These candidates are not published releases until maintainers create tags, GitHub release records, and any optional PyPI publication.
+
+Release-readiness commands:
+
+```bash
+python tools/release_audit.py
+python tools/build_release_bundle.py --output-dir dist --source-date-epoch 1783900800
+```
+
+The manual `release-candidate.yml` workflow can be triggered through GitHub Actions `workflow_dispatch` to build unsigned candidate artifacts. Publication remains a maintainer action.
 
 ## Optional MCP policy enforcement
 

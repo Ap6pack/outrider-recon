@@ -23,7 +23,7 @@ The MCP server is optional -- all skills work without it.
 
 ## Python package installation
 
-The Python package version is `0.1.0` and is independent of the Claude plugin/content version `3.0.0`. Install the base CLI from a source checkout with:
+The Python package version is `0.2.0` and is independent of the Claude plugin/content version `3.0.1`. Install the base CLI from a source checkout with:
 
 ```bash
 python -m pip install .
@@ -206,3 +206,14 @@ rm -rf ~/.claude/skills/analysis-and-reporting \
 ```
 
 Or remove the symlinks if you used method 2 above.
+
+## Local release-candidate artifacts
+
+After maintainers build candidates, install the local Python wheel without claiming PyPI publication:
+
+```bash
+python -m pip install outrider_recon-0.2.0-py3-none-any.whl
+python -m pip install "outrider_recon-0.2.0-py3-none-any.whl[web]"
+```
+
+Verify the plugin/content bundle separately by inspecting `outrider-recon-bundle-3.0.1.zip` and `RELEASE-MANIFEST.json`. Candidate artifacts are unsigned until a maintainer publishes official release records.

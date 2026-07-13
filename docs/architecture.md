@@ -220,7 +220,7 @@ For individual skills:
 - **MINOR** — new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-The existing plugin/content release is v3.0. The Python CLI package and individual skill versions are separate domains and may use different numbers.
+The prepared plugin/content release candidate is v3.0.1. The Python CLI package and individual skill versions are separate domains and may use different numbers.
 
 ## Renumbering policy
 

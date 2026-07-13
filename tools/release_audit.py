@@ -6,7 +6,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUIRED_FILES = ['pyproject.toml','README.md','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','LICENSE','install.sh','uninstall.sh','.gitignore','.mcp.json','.claude-plugin/plugin.json','.github/workflows/lint.yml']
+REQUIRED_FILES = ['pyproject.toml','README.md','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','LICENSE','install.sh','uninstall.sh','.gitignore','.mcp.json','.claude-plugin/plugin.json','.github/workflows/lint.yml','.github/workflows/release-candidate.yml','tools/build_release_bundle.py','docs/releases/README.md','docs/releases/python-0.2.0.md','docs/releases/plugin-3.0.1.md','docs/releases/release-checklist.md']
 SCHEMAS = ['skill-request-v1.schema.json','skill-result-v1.schema.json','finding-v1.schema.json']
 WEB_STATIC = ['index.html','app.css','app.js']
 ADRS = [f'docs/adr/{i:04d}-{name}.md' for i,name in [(1,'run-manifest-and-state-log'),(2,'evidence-registry-and-integrity'),(3,'approval-registry-and-action-policy'),(4,'mcp-tool-boundary-enforcement'),(5,'skill-python-interchange-contracts'),(6,'deterministic-finding-promotion'),(7,'local-web-review-plane')]]
@@ -85,9 +85,33 @@ class Audit:
         schemas={p.name: json.loads(p.read_text()).get('properties',{}).get('schema_version',{}).get('const') for p in (self.root/'contracts').glob('*.schema.json')}
         return {'python_package':py['project']['version'],'claude_plugin':plugin['version'],'skills':skills,'schemas':schemas,'manifest_schema':1,'state_event_schema':1,'evidence_schema':1,'approval_schema':1,'finding_schema':schemas.get('finding-v1.schema.json')}
     def run(self):
-        self.check_required_files(); self.check_parse(); self.check_skills(); self.check_schemas(); self.check_package_data(); self.check_static(); self.check_adrs(); self.check_artifacts(); self.check_security_patterns(); self.check_docs_versions(); self.check_mcp(); return self
+        self.check_required_files(); self.check_parse(); self.check_versions(); self.check_skills(); self.check_schemas(); self.check_package_data(); self.check_static(); self.check_adrs(); self.check_artifacts(); self.check_security_patterns(); self.check_docs_versions(); self.check_changelog(); self.check_release_workflow(); self.check_mcp(); return self
+
+    def check_versions(self):
+        versions = self.versions()
+        expected_skills = {
+            'analysis-and-reporting': '1.0.0', 'cloud-and-infra': '1.1.0', 'identity-fabric': '1.0.0',
+            'offensive-osint': '2.1.1', 'osint-methodology': '2.2', 'people-breach-intel': '1.0.0',
+            'post-discovery': '1.0.0', 'recon-asset-discovery': '1.0.0', 'report-template': '1.0.0',
+            'secrets-and-dorks': '1.0.0', 'web-surface': '1.0.0'}
+        if versions['python_package'] == '0.2.0' and versions['claude_plugin'] == '3.0.1' and versions['python_package'] != versions['claude_plugin']:
+            self.ok('independent release versions','Python 0.2.0 and plugin/content 3.0.1 are distinct')
+        else:
+            self.fail('independent release versions',f"unexpected versions: {versions['python_package']} / {versions['claude_plugin']}")
+        if versions['skills'] == expected_skills:
+            self.ok('skill version preservation','all 11 skill frontmatter versions match the release-readiness baseline')
+        else:
+            self.fail('skill version preservation','skill versions changed')
+        if set(versions['schemas'].values()) == {1} and all(versions[k] == 1 for k in ['manifest_schema','state_event_schema','evidence_schema','approval_schema','finding_schema']):
+            self.ok('schema version preservation','all runtime schemas remain version 1')
+        else:
+            self.fail('schema version preservation','schema versions changed')
+
+    def is_bundle_root(self):
+        return (self.root/"RELEASE-MANIFEST.json").exists()
     def check_required_files(self):
-        missing=[f for f in REQUIRED_FILES if not (self.root/f).exists()]
+        required = [f for f in REQUIRED_FILES if not (self.is_bundle_root() and f.startswith((".github/", "tests/")))]
+        missing=[f for f in required if not (self.root/f).exists()]
         self.ok('required repository files','all required files are present') if not missing else self.fail('required repository files','missing '+', '.join(missing))
     def check_parse(self):
         try: load_pyproject(self.root/'pyproject.toml'); self.ok('pyproject parseability','pyproject.toml parses')
@@ -162,8 +186,54 @@ class Audit:
         else: self.ok('obvious secret-like patterns','no unexpected secret-like patterns found; documented fixtures/examples are allowlisted')
     def check_docs_versions(self):
         text='\n'.join((self.root/p).read_text(errors='ignore') for p in ['README.md','docs/installation.md','docs/architecture.md','SECURITY.md','.claude-plugin/plugin.json','CHANGELOG.md'] if (self.root/p).exists())
-        if 'Python package 0.1.0' in text and 'Claude plugin/content 3.0.0' in text: self.ok('documentation version-domain references','Python and Claude plugin versions are documented independently')
-        else: self.warn('documentation version-domain references','version-domain independence should be stated in public docs')
+        if 'Python package release candidate: 0.2.0' in text or 'Python package release candidate `0.2.0`' in text or 'Python package `0.2.0`' in text:
+            if 'Claude plugin/content release candidate: 3.0.1' in text or 'Claude plugin/content release candidate `3.0.1`' in text or 'Claude plugin/content `3.0.1`' in text:
+                self.ok('documentation version-domain references','Python and Claude plugin versions are documented independently')
+                return
+        self.warn('documentation version-domain references','version-domain independence should be stated in public docs')
+
+    def check_changelog(self):
+        text=(self.root/'CHANGELOG.md').read_text(errors='ignore')
+        unreleased=text.split('## [Unreleased]',1)[1].split('---',1)[0] if '## [Unreleased]' in text else ''
+        if re.search(r'## \[Python 0\.2\.0\] -- \d{4}-\d{2}-\d{2}', text) and re.search(r'## \[Claude plugin/content 3\.0\.1\] -- \d{4}-\d{2}-\d{2}', text):
+            self.ok('release-domain changelog sections','Python and plugin/content sections are dated')
+        else:
+            self.fail('release-domain changelog sections','missing dated release-domain sections')
+        released_terms=['deterministic scope checks','Claude plugin/content bundle as `3.0.1`','Python package as `0.2.0`']
+        if not any(term in unreleased for term in released_terms):
+            self.ok('unreleased changelog cleanup','released entries are not duplicated under Unreleased')
+        else:
+            self.fail('unreleased changelog cleanup','released entries remain under Unreleased')
+
+    def check_release_workflow(self):
+        if self.is_bundle_root():
+            self.ok('release-candidate workflow exclusion','release bundle intentionally excludes .github workflow files')
+            return
+        path=self.root/'.github/workflows/release-candidate.yml'
+        text=path.read_text(errors='ignore') if path.exists() else ''
+        if 'workflow_dispatch:' in text and not re.search(r'\n\s+(push|pull_request):', text):
+            self.ok('release-candidate workflow trigger','workflow_dispatch is the only trigger')
+        else:
+            self.fail('release-candidate workflow trigger','release workflow must be manual only')
+        if re.search(r'permissions:\s*\n\s*contents:\s*read', text) and not re.search(r'contents:\s*write|packages:\s*write|id-token:\s*write|actions:\s*write', text):
+            self.ok('release-candidate workflow permissions','workflow has read-only contents permission')
+        else:
+            self.fail('release-candidate workflow permissions','workflow must not request write permissions')
+        forbidden=['pypi', 'twine upload', 'gh release create', 'git tag', 'git push', 'secrets.']
+        hits=[x for x in forbidden if x in text.lower()]
+        allowed=[x for x in hits if x == 'pypi' and 'no pypi' in text.lower()]
+        hits=[x for x in hits if x not in allowed]
+        if not hits:
+            self.ok('release-candidate workflow non-publication','no publication, tag, push, or secret usage detected')
+        else:
+            self.fail('release-candidate workflow non-publication','forbidden terms: '+', '.join(hits))
+        required=['tools/release_audit.py','unittest discover','compileall','python -m build','twine check','tools/build_release_bundle.py','SHA256SUMS','actions/upload-artifact@v4']
+        missing=[x for x in required if x not in text]
+        if not missing:
+            self.ok('release-candidate workflow steps','candidate workflow builds, tests, checks, bundles, checksums, and uploads unsigned candidates')
+        else:
+            self.fail('release-candidate workflow steps','missing '+', '.join(missing))
+
     def check_mcp(self):
         s=(self.root/'mcp-server/server.py').read_text()
         tools=s.count('@mcp.tool')
