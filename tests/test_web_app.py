@@ -99,6 +99,8 @@ class WebAppTests(unittest.TestCase):
                 status=cli.main()
             self.assertEqual(status,2); self.assertIn('pip install -e ".[web]"', out.getvalue()); self.assertNotIn('Traceback', out.getvalue())
             with patch.object(sys,'argv',['outrider','--help']), redirect_stdout(StringIO()):
-                self.assertEqual(cli.main(),0)
+                with self.assertRaises(SystemExit) as help_exit:
+                    cli.main()
+            self.assertEqual(help_exit.exception.code, 0)
 
 if __name__=='__main__': unittest.main()
