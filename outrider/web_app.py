@@ -25,6 +25,11 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, debug=False)
     static_dir = Path(__file__).with_name("web_static")
 
+    @app.exception_handler(HTTPException)
+    async def http_error(request, exc):
+        message = exc.detail if isinstance(exc.detail, str) else "request rejected"
+        return JSONResponse({"error": message}, status_code=exc.status_code)
+
     @app.middleware("http")
     async def security_headers(request, call_next):
         response = await call_next(request)
@@ -90,6 +95,9 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
         except ValueError:
             return error(422, "run_id must be a UUID")
         require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None:
+            return error(404, "run not found")
         if "application/json" not in request.headers.get("content-type", ""):
             return error(422, "JSON body required")
         try:
@@ -107,9 +115,6 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
         reason = body.get("reason")
         if reason is not None and (not isinstance(reason, str) or not reason.strip()):
             return error(422, "reason must be null or a non-empty string")
-        run_dir = web_view._run_dir_for_id(root, run_id)
-        if run_dir is None:
-            return error(404, "run not found")
         with mutation_lock:
             try:
                 current = load_state(run_dir)
