@@ -109,7 +109,7 @@ Scope → Recon → Enrich → Score → Finding Cards → Handoff → Report
 - **Claude skills** provide methodology, routing, operator checklists, scoring guidance, and report structure.
 - **Python controls** provide deterministic local enforcement for run identity, workflow state, scope checks, approval policy, evidence integrity, contract validation, and finding promotion.
 - **Optional MCP tools** provide policy-gated live enrichment for bounded public-source lookups and DNS records.
-- **Optional web control plane** provides a local browser interface for creating guarded runs, reviewing run folders, replacing initialized scope rules, checking scope candidates, applying guarded workflow-state transitions, granting/revoking bounded approvals, and checking action policy; see [web review/control details](docs/web-review-plane.md).
+- **Optional web control plane** provides a local browser interface for creating guarded runs, reviewing run folders, replacing initialized scope rules, checking scope candidates, applying guarded workflow-state transitions, granting/revoking bounded approvals, checking action policy, inventorying artifact metadata, registering existing artifacts as evidence, and verifying evidence integrity; see [web review/control details](docs/web-review-plane.md).
 
 The design keeps reasoning and enrichment separate from durable authorization, scope, evidence, and finding records. See [Architecture](docs/architecture.md), [Contracts](contracts/README.md), and the ADRs under [docs/adr/](docs/adr/) for details.
 
@@ -165,7 +165,7 @@ Outrider currently has four implementation domains:
 - **Claude skill layer:** implemented and used as the primary operator-facing capability layer.
 - **Python CLI controls:** implemented for run scaffolding, local scope/state/evidence/approval/contract/finding checks, and read-only review support.
 - **Optional MCP enrichment:** implemented for bounded, policy-gated enrichment tools that require explicit run context before network or DNS activity.
-- **Local web control plane:** implemented as a loopback-only control interface with guarded run creation, initialized-only scope replacement, browser scope checks, guarded workflow-state transitions, guarded approval grant/revocation, and action-policy checks; execution, evidence, contracts, findings, MCP, recon, and artifacts remain unsupported in the browser.
+- **Local web control plane:** implemented as a loopback-only control interface with guarded run creation, initialized-only scope replacement, browser scope checks, guarded workflow-state transitions, guarded approval grant/revocation, action-policy checks, metadata-only artifact inventory, existing-artifact evidence registration, and evidence-integrity verification; artifact transfer, evidence editing/deletion, contracts, findings, MCP, and recon remain unsupported in the browser.
 
 The repository does not claim to execute full automated recon on its own. It is a controlled harness for authorized recon workflows and safe handoff. See [Architecture](docs/architecture.md), [Web review plane](docs/web-review-plane.md), and [Release readiness](docs/release-readiness.md) for the current product boundary.
 
@@ -208,7 +208,7 @@ Python 0.2.0 is published as a GitHub release under tag [`python-v0.2.0`](https:
 | [Release readiness](docs/release-readiness.md) | Maintainer release checks and readiness status |
 | [Security](SECURITY.md) | Authorization and prohibited-use boundaries |
 
-Key architecture decisions are captured in [docs/adr/](docs/adr/), including run state, evidence integrity, approvals, MCP boundaries, contracts, finding promotion, and the guarded web control plane. Additional material lives in [docs/methods/](docs/methods/), [docs/reference/](docs/reference/), [examples/](examples/), and [tests/smoke-test-prompts.md](tests/smoke-test-prompts.md).
+Key architecture decisions are captured in [docs/adr/](docs/adr/), including run state, evidence integrity, approvals, MCP boundaries, contracts, finding promotion, and guarded web control-plane increments. Additional material lives in [docs/methods/](docs/methods/), [docs/reference/](docs/reference/), [examples/](examples/), and [tests/smoke-test-prompts.md](tests/smoke-test-prompts.md).
 
 ---
 

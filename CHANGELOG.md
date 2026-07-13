@@ -11,6 +11,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added guarded browser registration of existing files beneath a run's `artifacts/` directory as hash-and-size-backed evidence records.
+- Added bounded artifact metadata inventory and point-in-time browser evidence integrity verification without artifact upload, preview, or download.
+
 - Added guarded atomic run creation through the local web control plane.
 - Added initialized-only scope replacement with exact-file revision checks, server-managed change attribution, and browser scope evaluation.
 - Added guarded browser approval grants and revocations using exact-file registry revision checks and the existing deterministic approval policy.

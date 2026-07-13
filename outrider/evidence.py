@@ -30,6 +30,27 @@ class EvidenceRegistrationError(ValueError):
 class EvidenceRefusalError(EvidenceRegistrationError):
     pass
 
+
+@dataclass(frozen=True)
+class ArtifactCandidate:
+    relative_artifact_path: str
+    size_bytes: int
+    registered: bool
+    evidence_id: str | None
+    def to_dict(self) -> dict[str, Any]:
+        return asdict(self)
+
+@dataclass(frozen=True)
+class ArtifactInventory:
+    candidates: tuple[ArtifactCandidate, ...]
+    truncated: bool
+    counts: dict[str, int]
+    max_files: int
+    max_depth: int
+    notice: str
+    def to_dict(self) -> dict[str, Any]:
+        return {"candidates": [c.to_dict() for c in self.candidates], "truncated": self.truncated, "counts": self.counts, "max_files": self.max_files, "max_depth": self.max_depth, "notice": self.notice}
+
 @dataclass(frozen=True)
 class EvidenceRecord:
     schema_version: int
@@ -172,6 +193,74 @@ def load_evidence_registry(run_dir: str | Path) -> EvidenceRegistrySummary:
             raise EvidenceValidationError(f"malformed JSON in evidence registry at line {lineno}: {exc}") from exc
         records.append(_parse_record(data, manifest.run_id, len(records)+1, ids, paths))
     return EvidenceRegistrySummary(manifest.run_id, len(records), tuple(records))
+
+
+def evidence_revision(run_dir: str | Path) -> str:
+    """Return SHA-256 of exact evidence.jsonl bytes as a stale-write token, not a signature.
+
+    Missing legacy registries are equivalent to empty bytes. The registry is not
+    created or modified, mtimes are ignored, and artifact changes do not affect
+    this optimistic revision.
+    """
+    path = Path(run_dir) / REGISTRY
+    data = path.read_bytes() if path.exists() else b""
+    return hashlib.sha256(data).hexdigest()
+
+def list_artifact_candidates(run_dir: str | Path, *, max_files: int = 1000, max_depth: int = 16) -> ArtifactInventory:
+    """Return bounded metadata-only regular-file candidates beneath artifacts/.
+
+    Inventory never follows symlinks, opens file contents, hashes artifacts, or
+    exposes absolute paths. Direct filesystem races may affect this point-in-time
+    listing; registration remains authoritative.
+    """
+    if max_files < 1 or max_depth < 0:
+        raise EvidenceValidationError("inventory limits must be positive")
+    run = Path(run_dir)
+    root = run / ARTIFACTS
+    candidates: list[ArtifactCandidate] = []
+    skipped = 0
+    truncated = False
+    registered = {r.path: r.evidence_id for r in load_evidence_registry(run).records}
+    def visit(path: Path, rel_parts: tuple[str, ...], depth: int) -> None:
+        nonlocal skipped, truncated
+        if truncated:
+            return
+        try:
+            st = os.lstat(path)
+        except OSError:
+            skipped += 1; return
+        if stat.S_ISLNK(st.st_mode):
+            skipped += 1; return
+        if stat.S_ISDIR(st.st_mode):
+            if depth >= max_depth:
+                skipped += 1; return
+            try:
+                children = sorted(path.iterdir(), key=lambda p: p.name)
+            except OSError:
+                skipped += 1; return
+            for child in children:
+                visit(child, rel_parts + (child.name,), depth + 1)
+                if truncated: return
+            return
+        if not stat.S_ISREG(st.st_mode):
+            skipped += 1; return
+        rel = PurePosixPath(ARTIFACTS, *rel_parts).as_posix()
+        try:
+            rel = normalize_evidence_path(rel)
+        except EvidenceValidationError:
+            skipped += 1; return
+        if len(candidates) >= max_files:
+            truncated = True; return
+        eid = registered.get(rel)
+        candidates.append(ArtifactCandidate(rel, int(st.st_size), eid is not None, eid))
+    if not root.exists():
+        skipped = 0
+    else:
+        visit(root, tuple(), 0)
+    candidates.sort(key=lambda c: c.relative_artifact_path)
+    reg_count = sum(1 for c in candidates if c.registered)
+    counts = {"eligible_files": len(candidates), "registered_files": reg_count, "unregistered_files": len(candidates)-reg_count, "unsafe_or_skipped_entries": skipped}
+    return ArtifactInventory(tuple(candidates), truncated, counts, max_files, max_depth, "Metadata-only point-in-time inventory; external filesystem races are possible and registration revalidates paths and bytes.")
 
 def validate_artifact_path(run_dir: str | Path, relative_path: str) -> tuple[str, Path]:
     run = Path(run_dir).resolve()

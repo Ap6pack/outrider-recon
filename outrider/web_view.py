@@ -7,7 +7,7 @@ from typing import Any, Callable
 from uuid import UUID
 
 from outrider.approval import ApprovalValidationError, action_class, approval_policy_catalog, approval_revision, list_approvals, MAX_LIFETIME
-from outrider.evidence import EvidenceValidationError, load_evidence_registry, verify_all_evidence
+from outrider.evidence import EvidenceValidationError, evidence_revision, load_evidence_registry, verify_all_evidence
 from outrider.finding import FindingValidationError, list_findings, verify_all_findings
 from outrider.scope import ScopeValidationError, load_scope, scope_revision, load_scope_document
 from outrider.skill_contract import (
@@ -172,17 +172,30 @@ def state_view(run_dir: str | Path) -> dict[str, Any]:
     return {"valid": summary is not None, "current_state": current_state, "allowed_transitions": allowed_state_transitions(current_state), "event_count": getattr(summary, "event_count", 0), "last_transition_at": getattr(summary, "last_transition_at", None), "events": events, "errors": [e.to_dict() for e in errors]}
 
 
+def _verification_counts(verifications: list[Any]) -> dict[str, int]:
+    counts = {"verified": 0, "mismatch": 0, "missing": 0, "unsafe": 0, "other": 0}
+    for v in verifications:
+        status = getattr(v, "status", "other")
+        counts[status if status in counts else "other"] += 1
+    return counts
+
 def evidence_view(run_dir: str | Path) -> dict[str, Any]:
     registry, errors = _ok("evidence", lambda: load_evidence_registry(run_dir))
     verifications, verr = _ok("evidence", lambda: verify_all_evidence(run_dir))
     errors += verr
-    by_id = {v.evidence_id: v for v in (verifications or [])}
+    verifications = verifications or []
+    by_id = {v.evidence_id: v for v in verifications}
+    current_state = None
+    try:
+        current_state = load_state(run_dir).current_state
+    except Exception:
+        pass
     records = []
     for rec in getattr(registry, "records", ()):
         v = by_id.get(rec.evidence_id)
-        records.append({"evidence_id": rec.evidence_id, "sequence": rec.sequence, "relative_artifact_path": rec.path, "artifact_type": rec.artifact_type, "media_type": rec.media_type, "source": rec.source, "actor": rec.actor, "registered_at": rec.registered_at, "expected_sha256": rec.sha256, "expected_size": rec.size_bytes, "verification_status": getattr(v, "status", "unknown"), "verification_reason": getattr(v, "reason", "not verified")})
-    return {"valid": registry is not None, "evidence_count": len(records), "records": records, "errors": [e.to_dict() for e in errors]}
-
+        records.append({"evidence_id": rec.evidence_id, "sequence": rec.sequence, "relative_artifact_path": rec.path, "artifact_type": rec.artifact_type, "media_type": rec.media_type, "source": rec.source, "note": rec.note, "actor": rec.actor, "registered_at": rec.registered_at, "expected_sha256": rec.sha256, "expected_size": rec.size_bytes, "verification_status": getattr(v, "status", "unknown"), "verification_reason": getattr(v, "reason", "not verified"), "actual_sha256": getattr(v, "actual_sha256", None), "actual_size": getattr(v, "actual_size", None)})
+    enabled = current_state is not None and current_state != "archived"
+    return {"valid": registry is not None, "current_state": current_state, "evidence_revision": evidence_revision(run_dir), "registration_enabled": enabled, "registration_disabled_reason": None if enabled else f"evidence registration is not permitted in state {current_state}", "verification_counts": _verification_counts(verifications), "evidence_count": len(records), "records": records, "errors": [e.to_dict() for e in errors], "notice": "Actor values are unauthenticated attribution. Verified evidence proves byte consistency only; registration does not validate a finding and later file modification creates a mismatch."}
 
 def approval_view(run_dir: str | Path) -> dict[str, Any]:
     summary, errors = _ok("approvals", lambda: list_approvals(run_dir))
@@ -244,10 +257,7 @@ def integrity_view(run_dir: str | Path) -> dict[str, Any]:
     errors = [e for _, es in sections.values() for e in es]
     ev = evidence_view(run_dir); fv = finding_view(run_dir); cv = contract_view(run_dir)
     errors += [ViewError(e["section"], e["message"]) for e in ev["errors"] + fv["errors"] + cv["errors"]]
-    ev_counts = {"verified": 0, "mismatch": 0, "missing": 0, "other": 0}
-    for r in ev["records"]:
-        s = r["verification_status"]
-        ev_counts["verified" if s == "verified" else "mismatch" if "mismatch" in s else "missing" if "missing" in s else "other"] += 1
+    ev_counts = ev.get("verification_counts", {"verified": 0, "mismatch": 0, "missing": 0, "unsafe": 0, "other": 0})
     f_counts = {"verified": 0, "invalid": 0, "other": 0}
     for f in fv["findings"]:
         s = f["overall_verification_status"]
