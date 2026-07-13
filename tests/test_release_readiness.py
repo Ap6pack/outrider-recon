@@ -18,6 +18,16 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / 'tools'))
 import release_audit
 
+def copy_repo_fixture(root: Path) -> None:
+    subprocess.check_call(['cp','-a',str(ROOT)+'/.',str(root)])
+    for pattern in ['__pycache__', '.pytest_cache', 'build', 'dist', '*.egg-info']:
+        for path in root.rglob(pattern):
+            if path.exists():
+                if path.is_dir():
+                    shutil.rmtree(path)
+                else:
+                    path.unlink()
+
 class ReleaseReadinessTests(unittest.TestCase):
     def test_audit_human_and_json_output(self):
         buf=io.StringIO()
@@ -37,10 +47,8 @@ class ReleaseReadinessTests(unittest.TestCase):
     def test_warning_and_failure_exit_codes(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td)
-            subprocess.check_call(['cp','-a',str(ROOT)+'/.',str(root)])
+            copy_repo_fixture(root)
             shutil.rmtree(root/'.git')
-            for cache in root.rglob('__pycache__'):
-                shutil.rmtree(cache)
             (root/'fixture.txt').write_text('token = "' + 'abcdefghijklmnopqrstuvwxyz' + '"')
             buf=io.StringIO()
             with contextlib.redirect_stdout(buf): code=release_audit.main(['--root',str(root),'--json'])
@@ -104,7 +112,7 @@ class ReleaseReadinessTests(unittest.TestCase):
 
     def test_detect_unexpected_artifacts_and_secret_like_fixture(self):
         with tempfile.TemporaryDirectory() as td:
-            root=Path(td); subprocess.check_call(['cp','-a',str(ROOT)+'/.',str(root)])
+            root=Path(td); copy_repo_fixture(root)
             (root/'.git').rename(root/'git-disabled')
             (root/'runs').mkdir(exist_ok=True); (root/'runs'/'manifest.json').write_text('{}')
             (root/'fixture.txt').write_text('token = "' + 'abcdefghijklmnopqrstuvwxyz' + '"')
