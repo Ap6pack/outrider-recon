@@ -257,29 +257,31 @@ class Audit:
             return
         path=self.root/'.github/workflows/lint.yml'
         text=path.read_text(errors='ignore') if path.exists() else ''
-        try:
-            import yaml
-            jobs=yaml.safe_load(text)['jobs']
-            core=jobs['python-core-tests']; web=jobs['web-control-tests']; release=jobs['release-readiness']
-            versions=core['strategy']['matrix']['python-version']
-            core_runs='\n'.join(str(step.get('run','')) for step in core.get('steps',[]))
-            web_runs='\n'.join(str(step.get('run','')) for step in web.get('steps',[]))
-            web_setup=next(step for step in web.get('steps',[]) if step.get('uses') == 'actions/setup-python@v5')
-            release_setup=next(step for step in release.get('steps',[]) if step.get('uses') == 'actions/setup-python@v5')
-            no_continue=all('continue-on-error' not in job for job in jobs.values())
-        except Exception as e:
-            self.fail('lint workflow test structure','workflow does not parse with expected jobs: '+str(e)); return
         problems=[]
-        if versions != ['3.10','3.11','3.12']: problems.append('core matrix versions')
-        if 'python -m pip install -e .' not in core_runs or '.[web]' in core_runs: problems.append('core base install boundary')
-        if 'python -m unittest discover -s tests -p "test_*.py"' not in core_runs: problems.append('core unittest discovery')
-        if web_setup.get('with',{}).get('python-version') != '3.12': problems.append('web Python 3.12')
-        if 'python -m pip install -e ".[web]"' not in web_runs: problems.append('web extra install')
-        if 'python -c "import fastapi, httpx, uvicorn"' not in web_runs: problems.append('web dependency import check')
-        if 'python -m unittest tests.test_web_view tests.test_web_app' not in web_runs: problems.append('focused web tests')
-        if 'python -m unittest discover -s tests -p "test_*.py"' not in web_runs: problems.append('web full discovery')
-        if release_setup.get('with',{}).get('python-version') != '3.12': problems.append('release-readiness Python 3.12')
-        if not no_continue: problems.append('continue-on-error forbidden')
+        try:
+            core_start=text.index('  python-core-tests:')
+            web_start=text.index('  web-control-tests:')
+            release_start=text.index('  release-readiness:')
+            core=text[core_start:web_start]
+            web=text[web_start:release_start]
+            release=text[release_start:]
+        except ValueError:
+            self.fail('lint workflow test structure','missing python-core-tests, web-control-tests, or release-readiness job')
+            return
+        if 'python-cli-tests:' in text: problems.append('old python-cli-tests job remains')
+        if 'continue-on-error' in text: problems.append('continue-on-error forbidden')
+        if not re.search(r'python-version:\s*\n\s*- [\'\"]?3\.10[\'\"]?\s*\n\s*- [\'\"]?3\.11[\'\"]?\s*\n\s*- [\'\"]?3\.12[\'\"]?', core): problems.append('core matrix versions')
+        if 'fail-fast: false' not in core: problems.append('core fail-fast false')
+        if 'python -m pip install -e .' not in core or '.[web]' in core: problems.append('core base install boundary')
+        if 'python -m compileall outrider tests mcp-server tools' not in core: problems.append('core compile command')
+        if 'python -m unittest discover -s tests -p "test_*.py"' not in core: problems.append('core unittest discovery')
+        if not re.search(r'python-version:\s*[\'\"]?3\.12[\'\"]?', web): problems.append('web Python 3.12')
+        if 'python -m pip install -e ".[web]"' not in web: problems.append('web extra install')
+        if 'python -c "import fastapi, httpx, uvicorn"' not in web: problems.append('web dependency import check')
+        if 'python -m compileall outrider tests tools' not in web: problems.append('web compile command')
+        if 'python -m unittest tests.test_web_view tests.test_web_app' not in web: problems.append('focused web tests')
+        if 'python -m unittest discover -s tests -p "test_*.py"' not in web: problems.append('web full discovery')
+        if not re.search(r'python-version:\s*[\'\"]?3\.12[\'\"]?', release): problems.append('release-readiness Python 3.12')
         if problems: self.fail('lint workflow test structure','missing or invalid '+', '.join(problems))
         else: self.ok('lint workflow test structure','base matrix, dedicated web job, and release-readiness job are configured')
 
