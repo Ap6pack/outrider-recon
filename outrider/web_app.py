@@ -4,6 +4,7 @@ from pathlib import Path
 from uuid import UUID
 
 from outrider import web_view
+from outrider.evidence import (EvidenceRefusalError, EvidenceValidationError, evidence_revision, list_artifact_candidates, load_evidence_registry, normalize_evidence_path, register_evidence, verify_all_evidence)
 from outrider.approval import (
     ACTION_TYPES, APPROVABLE, ApprovalPolicyError, ApprovalValidationError,
     approval_revision, evaluate_action, grant_approval, list_approvals, revoke_approval,
@@ -69,11 +70,11 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "evidence_registration": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}}
+        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}}
 
     @app.get("/api/session")
     def session():
-        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "evidence_registration": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}})
+        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}})
 
 
     async def read_json_object(request: Request):
@@ -157,7 +158,7 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
         return json(decision)
 
 
-    MAX_TEXT = {"expected_revision": 128, "expected_state": 64, "action_type": 64, "candidate": 512, "actor": 200, "reason": 2000, "conditions": 2000}
+    MAX_TEXT = {"expected_revision": 128, "expected_state": 64, "action_type": 64, "candidate": 512, "actor": 200, "reason": 2000, "conditions": 2000, "relative_artifact_path": 1024, "artifact_type": 64, "media_type": 200, "source": 500, "note": 2000}
 
     def require_text(body, field):
         value = body.get(field)
@@ -249,6 +250,108 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
             except Exception:
                 if registry_bytes(run_dir) != before: (run_dir / "approvals.jsonl").write_bytes(before)
                 return error(500, "approval revocation failed")
+
+
+    def evidence_bytes(run_dir):
+        p = run_dir / "evidence.jsonl"
+        return p.read_bytes() if p.exists() else b""
+
+    def verification_counts(results):
+        counts = {"verified": 0, "mismatch": 0, "missing": 0, "unsafe": 0, "other": 0}
+        for item in results:
+            status = getattr(item, "status", "other")
+            counts[status if status in counts else "other"] += 1
+        return counts
+
+    def verification_payload(v):
+        return {"evidence_id": v.evidence_id, "relative_artifact_path": v.path, "expected_sha256": v.expected_sha256, "actual_sha256": v.actual_sha256, "expected_size": v.expected_size, "actual_size": v.actual_size, "status": v.status, "reason": v.reason}
+
+    @app.get("/api/runs/{run_id}/evidence/artifacts")
+    def artifact_inventory(run_id: str):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        try:
+            return json(list_artifact_candidates(run_dir).to_dict())
+        except Exception:
+            return error(500, "artifact inventory failed")
+
+    @app.post("/api/runs/{run_id}/evidence")
+    async def register_evidence_route(run_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        allowed = {"expected_revision", "expected_state", "relative_artifact_path", "actor", "artifact_type", "media_type", "source", "note"}
+        if set(body) - allowed: return error(422, "unknown field")
+        vals = {}
+        for field in ("expected_revision", "expected_state", "relative_artifact_path", "actor", "artifact_type"):
+            vals[field], err = require_text(body, field)
+            if err: return err
+        optional = {}
+        for field in ("media_type", "source", "note"):
+            value = body.get(field)
+            if value is None:
+                optional[field] = None
+            elif not isinstance(value, str) or not value.strip():
+                return error(422, f"{field} must be null or a non-empty string")
+            elif len(value) > MAX_TEXT[field]:
+                return error(422, f"{field} is too long")
+            else:
+                optional[field] = value.strip()
+        try:
+            normalize_evidence_path(vals["relative_artifact_path"])
+        except EvidenceValidationError:
+            return error(422, "relative_artifact_path is invalid")
+        before = evidence_bytes(run_dir)
+        with mutation_lock:
+            try:
+                if load_state(run_dir).current_state != vals["expected_state"]: return error(409, "expected state is stale")
+                if evidence_revision(run_dir) != vals["expected_revision"]: return error(409, "evidence revision is stale")
+                rec = register_evidence(run_dir, vals["relative_artifact_path"], vals["actor"], vals["artifact_type"], optional["media_type"], optional["source"], optional["note"])
+                view = web_view.evidence_view(run_dir)
+                projected = next(r for r in view["records"] if r["evidence_id"] == rec.evidence_id)
+                return JSONResponse({"ok": True, "evidence": projected, "evidence_view": view}, status_code=201, headers={"Location": f"/api/runs/{run_id}/evidence"})
+            except EvidenceRefusalError as exc:
+                return error(409, str(exc))
+            except EvidenceValidationError as exc:
+                msg = str(exc)
+                if "missing" in msg or "changed while hashing" in msg:
+                    return error(409, msg)
+                return error(422, msg)
+            except Exception:
+                if evidence_bytes(run_dir) != before and evidence_revision(run_dir) == vals.get("expected_revision"):
+                    (run_dir / "evidence.jsonl").write_bytes(before)
+                return error(500, "evidence registration failed")
+
+    @app.post("/api/runs/{run_id}/evidence/verify")
+    async def verify_evidence_route(run_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        if set(body) - {"evidence_id"}: return error(422, "unknown field")
+        eid = body.get("evidence_id")
+        if eid is not None:
+            try: eid = str(UUID(eid))
+            except Exception: return error(422, "evidence_id must be null or a UUID")
+        with mutation_lock:
+            try:
+                if eid is not None and not any(r.evidence_id == eid for r in load_evidence_registry(run_dir).records):
+                    return error(404, "evidence not found")
+                results = verify_all_evidence(run_dir, eid)
+                return json({"ok": True, "evidence_revision": evidence_revision(run_dir), "verification_scope": "one" if eid else "all", "results": [verification_payload(v) for v in results], "counts": verification_counts(results), "notice": "Point-in-time byte-integrity verification; this does not validate the truth or security significance of the evidence."})
+            except EvidenceValidationError:
+                return error(422, "evidence verification request is invalid")
+            except Exception:
+                return error(500, "evidence verification failed")
 
     @app.post("/api/runs/{run_id}/action/check")
     async def action_check(run_id: str, request: Request):

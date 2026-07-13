@@ -135,3 +135,39 @@ class EvidenceTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class EvidenceInventoryRevisionTests(unittest.TestCase):
+    def run_cli(self,*argv):
+        out=StringIO()
+        with patch.object(sys,'argv',['outrider',*argv]), redirect_stdout(out):
+            code=cli.main()
+        return code,out.getvalue()
+    def make_run(self,tmp):
+        code,_=self.run_cli('init','example.com','--output-dir',tmp,'--actor','authorized-operator','--authorization-reference','EXAMPLE-ROE-001')
+        self.assertEqual(code,0); return Path(tmp)/'example.com'
+    def test_revision_and_inventory_boundaries(self):
+        from outrider.evidence import evidence_revision, list_artifact_candidates
+        empty=hashlib.sha256(b'').hexdigest()
+        with tempfile.TemporaryDirectory() as tmp:
+            run=self.make_run(tmp)
+            (run/'evidence.jsonl').unlink()
+            self.assertEqual(evidence_revision(run), empty)
+            self.assertFalse((run/'evidence.jsonl').exists())
+            (run/'evidence.jsonl').write_text('')
+            self.assertEqual(evidence_revision(run), empty)
+            p=run/'artifacts'/'b'/'two.txt'; p.parent.mkdir(parents=True); p.write_text('two')
+            p1=run/'artifacts'/'a.txt'; p1.write_text('one')
+            os.symlink('a.txt', run/'artifacts'/'link.txt')
+            os.symlink('b', run/'artifacts'/'linkdir', target_is_directory=True)
+            inv=list_artifact_candidates(run)
+            paths=[c.relative_artifact_path for c in inv.candidates]
+            self.assertEqual(paths, sorted(paths)); self.assertEqual(paths, ['artifacts/a.txt','artifacts/b/two.txt'])
+            self.assertEqual(inv.counts['unsafe_or_skipped_entries'],2)
+            before=evidence_revision(run); rec=register_evidence(run,'artifacts/a.txt','authorized-operator','text')
+            self.assertNotEqual(evidence_revision(run), before)
+            after=evidence_revision(run); self.assertEqual(verify_all_evidence(run)[0].status,'verified'); self.assertEqual(evidence_revision(run), after)
+            p1.write_text('changed'); self.assertEqual(evidence_revision(run), after)
+            inv=list_artifact_candidates(run,max_files=1); self.assertTrue(inv.truncated); self.assertEqual(inv.counts['eligible_files'],1)
+            inv=list_artifact_candidates(run,max_depth=0); self.assertEqual(inv.candidates, ()); self.assertGreater(inv.counts['unsafe_or_skipped_entries'],0)
+            inv=list_artifact_candidates(run); item=next(c for c in inv.candidates if c.relative_artifact_path=='artifacts/a.txt')
+            self.assertTrue(item.registered); self.assertEqual(item.evidence_id, rec.evidence_id)

@@ -28,9 +28,9 @@ The dashboard lists run target, workflow state, evidence count, active approval 
 
 ## Mutation boundary
 
-The web plane has exactly one mutation capability: `POST /api/runs/{run_id}/state/transition`. It transitions an existing run between valid workflow states by calling the Python state layer. The web layer does not modify `run.jsonl` directly, duplicate transition rules, invoke the CLI, or construct state events.
+The web plane supports guarded run creation, initialized-only scope management, scope checks, workflow-state transitions, approval grant/revocation, action-policy checks, bounded artifact metadata inventory, existing-artifact evidence registration, and evidence-integrity verification. State transitions call the Python state layer; evidence registration calls the Python evidence layer. The web layer does not modify `run.jsonl` or `evidence.jsonl` directly, duplicate domain rules, invoke the CLI, or construct state/evidence events.
 
-The web plane does not create runs, edit scope, execute skills, invoke MCP, perform recon, grant or revoke approvals, register evidence, mutate contracts, promote findings, generate reports, execute generic actions, or serve artifact contents. Those actions remain CLI-only or unsupported.
+The web plane remains limited-control. It does not upload, preview, download, serve, edit, or delete artifact contents; it does not edit/delete evidence, mutate contracts, promote findings, invoke MCP, run recon, generate reports, or execute generic actions.
 
 ## Loopback restriction
 

@@ -9,7 +9,7 @@ try:
     from fastapi.testclient import TestClient
 except ImportError:  # optional web extra not installed in base environments
     TestClient = None
-from outrider import cli
+from outrider import cli, web_view
 from outrider.web_app import create_app
 from uuid import uuid4
 from outrider.state import load_manifest, transition_state
@@ -243,5 +243,47 @@ class WebAppTests(unittest.TestCase):
                 with self.assertRaises(SystemExit) as help_exit:
                     cli.main()
             self.assertEqual(help_exit.exception.code, 0)
+
+    def test_evidence_artifact_registration_and_verification_api(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs_root=Path(td)/'runs'; runs_root.mkdir(); c=self.client(runs_root, token='fixture'); h={'X-Outrider-Control-Token':'fixture'}
+            create=c.post('/api/runs', json={'target':'example.com','actor':'authorized-operator','authorization_reference':'EXAMPLE-ROE-001','in_scope':['example.com'],'out_of_scope':[]}, headers=h)
+            rid=create.json()['run']['run_id']
+            c.post(f'/api/runs/{rid}/state/transition', json={'expected_state':'initialized','new_state':'scoped','actor':'authorized-operator','reason':None}, headers=h)
+            c.post(f'/api/runs/{rid}/state/transition', json={'expected_state':'scoped','new_state':'collecting','actor':'authorized-operator','reason':None}, headers=h)
+            run=web_view._run_dir_for_id(runs_root,rid); art=run/'artifacts'/'obs.txt'; art.write_text('secret-fixture-content', encoding='utf-8')
+            inv=c.get(f'/api/runs/{rid}/evidence/artifacts'); self.assertEqual(inv.status_code,200); self.assertIn('artifacts/obs.txt', inv.text); self.assertNotIn('secret-fixture-content', inv.text)
+            view=c.get(f'/api/runs/{rid}/evidence').json(); rev=view['evidence_revision']; self.assertTrue(view['registration_enabled'])
+            self.assertEqual(c.post(f'/api/runs/{rid}/evidence', json={}).status_code,403)
+            before_art=art.read_bytes(); before_state=(run/'run.jsonl').read_text()
+            ok=c.post(f'/api/runs/{rid}/evidence', json={'expected_revision':rev,'expected_state':'collecting','relative_artifact_path':'artifacts/obs.txt','actor':'authorized-operator','artifact_type':'text','media_type':'text/plain','source':None,'note':'note'}, headers=h)
+            self.assertEqual(ok.status_code,201,ok.text); self.assertEqual(ok.headers['location'], f'/api/runs/{rid}/evidence')
+            eid=ok.json()['evidence']['evidence_id']; self.assertEqual(art.read_bytes(), before_art); self.assertEqual((run/'run.jsonl').read_text(), before_state)
+            newrev=ok.json()['evidence_view']['evidence_revision']; self.assertNotEqual(newrev, rev)
+            v=c.post(f'/api/runs/{rid}/evidence/verify', json={'evidence_id':eid}, headers=h); self.assertEqual(v.status_code,200); self.assertEqual(v.json()['results'][0]['status'],'verified')
+            art.write_text('changed', encoding='utf-8')
+            v2=c.post(f'/api/runs/{rid}/evidence/verify', json={'evidence_id':None}, headers=h); self.assertEqual(v2.status_code,200); self.assertEqual(v2.json()['results'][0]['status'],'mismatch'); self.assertEqual(v2.json()['evidence_revision'], newrev)
+            self.assertEqual(c.get(f'/api/runs/{rid}/artifacts/obs.txt').status_code,404); self.assertEqual(c.get('/api/artifacts/download').status_code,404)
+
+    def test_evidence_registration_rejections_and_static_controls(self):
+        with tempfile.TemporaryDirectory() as td:
+            run=make_run(td); rid=load_manifest(run).run_id; c=self.client(td, token='fixture'); h={'X-Outrider-Control-Token':'fixture'}
+            art=run/'artifacts'/'obs.txt'; art.write_text('abc')
+            view=c.get(f'/api/runs/{rid}/evidence').json(); rev=view['evidence_revision']; before=(run/'evidence.jsonl').read_bytes(); art_before=art.read_bytes()
+            base={'expected_revision':rev,'expected_state':'initialized','relative_artifact_path':'artifacts/obs.txt','actor':'authorized-operator','artifact_type':'text'}
+            for payload in ['{', [], {**base,'extra':'x'}, {**base,'relative_artifact_path':'/tmp/x'}, {**base,'relative_artifact_path':'../x'}, {**base,'relative_artifact_path':'manifest.json'}, {**base,'artifact_type':'Bad'}, {**base,'note':' '}]:
+                if payload=='{': resp=c.post(f'/api/runs/{rid}/evidence', data='{', headers={**h,'Content-Type':'application/json'})
+                else: resp=c.post(f'/api/runs/{rid}/evidence', json=payload, headers=h)
+                self.assertEqual(resp.status_code,422, resp.text); self.assertEqual((run/'evidence.jsonl').read_bytes(), before); self.assertEqual(art.read_bytes(), art_before)
+            self.assertEqual(c.post(f'/api/runs/{rid}/evidence', json={**base,'expected_revision':'0'*64}, headers=h).status_code,409)
+            ok=c.post(f'/api/runs/{rid}/evidence', json=base, headers=h); self.assertEqual(ok.status_code,201)
+            self.assertEqual(c.post(f'/api/runs/{rid}/evidence', json={**base,'expected_revision':ok.json()['evidence_view']['evidence_revision']}, headers=h).status_code,409)
+            self.assertEqual(c.post(f'/api/runs/{rid}/evidence/verify', json={'evidence_id':'not'}, headers=h).status_code,422)
+            self.assertEqual(c.post(f'/api/runs/{rid}/evidence/verify', json={'evidence_id':'00000000-0000-4000-8000-000000000000'}, headers=h).status_code,404)
+            combined=c.get('/').text+c.get('/static/app.js').text+c.get('/static/app.css').text
+            for term in ['artifact-inventory-area','refresh-inventory','evidence-registration-form','verify-all-evidence','verify-evidence-record','evidence_revision','expected_state','X-Outrider-Control-Token','evidence-registration-confirm']:
+                self.assertIn(term, combined)
+            for term in ['type="file"','download=','download-link','preview-control','innerHTML','eval(','localStorage','sessionStorage']:
+                self.assertNotIn(term, combined)
 
 if __name__=='__main__': unittest.main()
