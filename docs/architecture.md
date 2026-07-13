@@ -336,4 +336,10 @@ Use the skills standalone (paste a SKILL.md into a Claude Project) or wired into
 
 Outrider currently implements deterministic scope validation, stable run identity with durable workflow state, evidence integrity checks, approval records with action-policy evaluation, MCP tool-boundary enforcement, and versioned skill request/result contracts. The contracts let Claude skills exchange structured task and result records with the Python control layer while Python remains authoritative for scope, state, approval, and evidence integrity.
 
-The contract layer does not implement automatic skill execution, automatic evidence capture, finding validation or promotion, concurrent orchestration, authenticated actors, or a web UI.
+The contract layer does not implement automatic skill execution, automatic evidence capture, concurrent orchestration, authenticated actors, or a web UI.
+
+## Implemented deterministic control layers
+
+Outrider implements deterministic scope validation, durable run identity and workflow state, evidence integrity, approval policy evaluation, MCP boundary enforcement, skill request/result contracts, and append-only evidence-backed finding promotion. Finding promotion records human-reviewed `validated_finding` entries in `findings.jsonl` with source-result SHA-256 provenance, source-claim snapshots, current-scope checks at promotion time, and local evidence verification.
+
+The architecture does not implement automatic vulnerability validation, exploitation, automatic candidate promotion, finding lifecycle updates, automatic Markdown rendering, client acceptance workflow, authenticated reviewers, concurrent-writer protection, or a web UI.

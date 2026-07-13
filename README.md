@@ -431,3 +431,35 @@ outrider contract result validate \
 ```
 
 Skill results must cite registered evidence IDs for claims rather than raw paths. Discovered candidates are observations only and do not expand `scope.yaml`. The `finding_candidate` classification is not a validated finding and is not promoted by these commands. The contract commands do not execute Claude skills, invoke MCP automatically, perform network activity, capture evidence automatically, or promote findings.
+
+## Deterministic finding promotion
+
+Outrider keeps skill-produced candidates separate from human-reviewed findings. Skills may emit `finding_candidate` claims in validated skill-result contracts, but only the Python control layer can append a `validated_finding` to `findings.jsonl`. Promotion requires a human reviewer to provide attribution, title, affected candidate, severity, confidence, validation basis, validation reason, impact, and remediation. Suggested severity and confidence in the source claim are advisory only.
+
+`findings.jsonl` is the append-only deterministic source of promoted findings. `findings.md` remains an operator-managed working document; automatic Markdown rendering is deferred. Promotion hashes the complete source result file with SHA-256, stores the source-result path and source-claim snapshot, verifies every referenced evidence artifact, requires the affected candidate to be currently in scope, and is allowed only during `analyzing` or `reporting`. The reviewer attribution string is not authenticated identity, and promotion performs no target action, HTTP request, DNS lookup, MCP invocation, approval grant, or automatic validation traffic.
+
+Example promotion:
+
+```sh
+outrider finding promote \
+  runs/example.com \
+  runs/example.com/contracts/results/RESULT_UUID.json \
+  CLAIM_UUID \
+  --actor authorized-operator \
+  --title "Public OpenAPI schema exposes internal API structure" \
+  --candidate api.example.com \
+  --location /openapi.json \
+  --severity medium \
+  --confidence high \
+  --validation-basis response_evidence \
+  --validation-reason "The registered response contains a valid OpenAPI schema." \
+  --impact "The schema exposes undocumented routes and object structures." \
+  --remediation "Restrict schema access and remove unnecessary production documentation."
+```
+
+List and verify promoted findings:
+
+```sh
+outrider finding list runs/example.com
+outrider finding verify runs/example.com
+```

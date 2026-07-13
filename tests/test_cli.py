@@ -41,6 +41,7 @@ class CliCommandTests(unittest.TestCase):
         "run.jsonl",
         "evidence.jsonl",
         "approvals.jsonl",
+        "findings.jsonl",
         "artifacts",
         "contracts",
         "contracts/requests",
