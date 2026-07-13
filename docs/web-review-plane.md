@@ -1,6 +1,6 @@
 # Local web review plane
 
-The local web review plane is an optional, limited-control interface for reviewing existing Outrider runs and applying guarded workflow-state transitions. It is intended for a single operator on the local machine.
+The local web review plane is an optional, limited-control interface for reviewing existing Outrider runs and applying guarded workflow-state transitions, guarded run creation, initialized-only scope replacement, and browser scope checks. It is intended for a single operator on the local machine.
 
 ## Architecture
 

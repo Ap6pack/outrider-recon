@@ -40,6 +40,31 @@ class WebAppTests(unittest.TestCase):
     def client(self, root, token='tok'): return TestClient(create_app(root, control_token=token))
 
 
+    def test_focused_web_run_scope_smoke(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs_root = Path(td) / 'runs'; runs_root.mkdir()
+            c = self.client(runs_root, token='fixture')
+            h = {'X-Outrider-Control-Token': 'fixture'}
+            create = c.post('/api/runs', json={'target':'https://example.com/path','actor':'authorized-operator','authorization_reference':'EXAMPLE-ROE-001','in_scope':['example.com','*.example.com'],'out_of_scope':[]}, headers=h)
+            self.assertEqual(create.status_code, 201, create.text)
+            rid = create.json()['run']['run_id']
+            self.assertEqual(c.get('/api/runs').json()['total'], 1)
+            self.assertEqual(create.json()['run']['current_state'], 'initialized')
+            first_scope = c.get(f'/api/runs/{rid}/scope').json()
+            first_revision = first_scope['scope_revision']
+            check = c.post(f'/api/runs/{rid}/scope/check', json={'candidate':'api.example.com'}, headers=h)
+            self.assertEqual(check.status_code, 200, check.text)
+            self.assertEqual(check.json()['decision'], 'allow')
+            replace = c.put(f'/api/runs/{rid}/scope', json={'expected_revision':first_revision,'actor':'authorized-operator','reason':'Add authorized API subdomains from updated ROE','in_scope':['example.com','*.example.com','api2.example.com'],'out_of_scope':['admin.example.com']}, headers=h)
+            self.assertEqual(replace.status_code, 200, replace.text)
+            self.assertNotEqual(replace.json()['scope']['scope_revision'], first_revision)
+            self.assertEqual(c.post(f'/api/runs/{rid}/scope/check', json={'candidate':'example.com'}, headers=h).json()['decision'], 'allow')
+            trans = c.post(f'/api/runs/{rid}/state/transition', json={'expected_state':'initialized','new_state':'scoped','actor':'authorized-operator','reason':None}, headers=h)
+            self.assertEqual(trans.status_code, 200, trans.text)
+            stale = c.put(f'/api/runs/{rid}/scope', json={'expected_revision':replace.json()['scope']['scope_revision'],'actor':'authorized-operator','reason':'blocked','in_scope':['example.com'],'out_of_scope':[]}, headers=h)
+            self.assertEqual(stale.status_code, 409)
+            self.assertEqual(c.get('/').status_code, 200); self.assertEqual(c.get('/static/app.css').status_code, 200); self.assertEqual(c.get('/static/app.js').status_code, 200)
+
     def test_focused_control_plane_smoke_transition(self):
         with tempfile.TemporaryDirectory() as td:
             runs_root = Path(td) / 'runs'
@@ -91,7 +116,7 @@ class WebAppTests(unittest.TestCase):
                 body=resp.text
                 self.assertNotIn(td, body); self.assertNotIn('Traceback', body); self.assertNotIn('api.example.com evidence', body)
             html=c.get('/').text; js=c.get('/static/app.js').text; css=c.get('/static/app.css').text
-            self.assertIn('Run dashboard', html); self.assertIn('workflow-state transitions are enabled', html); self.assertIn('viewport', html)
+            self.assertIn('Run dashboard', html); self.assertIn('guarded run creation', html); self.assertIn('viewport', html)
             for term in ['Overview','Scope','State','Evidence','Approvals','Contracts','Findings','Integrity']:
                 self.assertIn(term, html)
             bad_terms=['cdn','analytics','fonts.googleapis','eval(','innerHTML','localStorage','sessionStorage']
@@ -106,9 +131,10 @@ class WebAppTests(unittest.TestCase):
             c=self.client(td)
             self.assertEqual(c.get('/api/runs/not-a-uuid/overview').status_code,422)
             self.assertEqual(c.get(f'/api/runs/00000000-0000-4000-8000-000000000000/overview').status_code,404)
-            for method in ['post','put','patch','delete']:
+            for method in ['put','patch','delete']:
                 self.assertEqual(getattr(c,method)('/api/runs').status_code,405)
                 self.assertEqual(getattr(c,method)(f'/api/runs/{rid}/overview').status_code,405)
+            self.assertEqual(c.post('/api/runs').status_code,403)
             self.assertEqual(c.post(f'/api/runs/{rid}/state/transition').status_code,403)
             self.assertEqual(c.get('/docs').status_code,404); self.assertEqual(c.get('/openapi.json').status_code,404)
             self.assertEqual(c.get('/artifacts/obs.txt').status_code,404)
@@ -125,7 +151,7 @@ class WebAppTests(unittest.TestCase):
             session=c.get('/api/session')
             self.assertEqual(session.status_code,200); self.assertEqual(session.headers['cache-control'],'no-store')
             self.assertEqual(session.json()['control_token'],'fixture')
-            self.assertTrue(session.json()['capabilities']['state_transition'])
+            self.assertTrue(session.json()['capabilities']['state_transition']); self.assertTrue(session.json()['capabilities']['run_creation']); self.assertTrue(session.json()['capabilities']['scope_edit']); self.assertTrue(session.json()['capabilities']['scope_check'])
             for path in ['/', '/static/app.js', '/api/runs', f'/api/runs/{rid}/state']:
                 self.assertNotIn('fixture', c.get(path).text)
             body={"expected_state":"initialized","new_state":"scoped","actor":"authorized-operator","reason":None}

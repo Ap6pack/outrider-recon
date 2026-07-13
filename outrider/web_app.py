@@ -4,7 +4,9 @@ from pathlib import Path
 from uuid import UUID
 
 from outrider import web_view
-from outrider.state import InvalidTransitionError, StateValidationError, load_state, transition_state
+from outrider.state import InvalidTransitionError, StateValidationError, load_manifest, load_state, transition_state
+from outrider.scope import ScopeValidationError, evaluate_scope, load_scope, replace_scope_rules_atomic, scope_revision
+from outrider.run_setup import RunConflictError, RunSetupError, WebRunRequest, create_web_run_atomic
 
 TOKEN_HEADER = "X-Outrider-Control-Token"
 
@@ -63,11 +65,92 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "state_transition": True}
+        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": False, "evidence_registration": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}}
 
     @app.get("/api/session")
     def session():
-        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": False, "scope_edit": False, "approval_mutation": False, "evidence_registration": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}})
+        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": False, "evidence_registration": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}})
+
+
+    async def read_json_object(request: Request):
+        if "application/json" not in request.headers.get("content-type", ""):
+            return None, error(422, "JSON body required")
+        try:
+            body = await request.json()
+        except Exception:
+            return None, error(422, "malformed JSON")
+        if not isinstance(body, dict):
+            return None, error(422, "JSON object required")
+        return body, None
+
+    @app.post("/api/runs")
+    async def create_run(request: Request):
+        require_mutation_guard(request)
+        body, err = await read_json_object(request)
+        if err: return err
+        allowed = {"target", "actor", "authorization_reference", "in_scope", "out_of_scope"}
+        if set(body) - allowed: return error(422, "unknown field")
+        for field in ("target", "actor", "authorization_reference"):
+            if not isinstance(body.get(field), str) or not body[field].strip():
+                return error(422, f"{field} must be a non-empty string")
+        if "in_scope" not in body or "out_of_scope" not in body:
+            return error(422, "in_scope and out_of_scope are required")
+        with mutation_lock:
+            try:
+                run_dir = create_web_run_atomic(root, WebRunRequest(body["target"], body["actor"], body["authorization_reference"], body["in_scope"], body["out_of_scope"]))
+                manifest = load_manifest(run_dir)
+                payload = {"ok": True, "run": web_view.run_overview(run_dir), "scope": web_view.scope_view(run_dir)}
+                return JSONResponse(payload, status_code=201, headers={"Location": f"/api/runs/{manifest.run_id}/overview"})
+            except RunConflictError:
+                return error(409, "run destination already exists")
+            except (RunSetupError, ScopeValidationError, ValueError):
+                return error(422, "run creation request is invalid")
+            except Exception:
+                return error(500, "run creation failed")
+
+    @app.put("/api/runs/{run_id}/scope")
+    async def replace_scope(run_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        allowed = {"expected_revision", "actor", "reason", "in_scope", "out_of_scope"}
+        if set(body) - allowed: return error(422, "unknown field")
+        for field in ("expected_revision", "actor", "reason"):
+            if not isinstance(body.get(field), str) or not body[field].strip(): return error(422, f"{field} must be a non-empty string")
+        if not isinstance(body.get("in_scope"), list) or not isinstance(body.get("out_of_scope"), list): return error(422, "scope rules must be lists")
+        before = (run_dir / "scope.yaml").read_bytes()
+        with mutation_lock:
+            try:
+                if load_state(run_dir).current_state != "initialized": return error(409, "scope changes are web-enabled only while the run is initialized")
+                manifest = load_manifest(run_dir)
+                replace_scope_rules_atomic(run_dir, body["expected_revision"], body["actor"], body["reason"], body["in_scope"], body["out_of_scope"], manifest.target)
+                return json({"ok": True, "scope": web_view.scope_view(run_dir)})
+            except FileExistsError as exc:
+                return error(409, str(exc))
+            except ScopeValidationError:
+                if (run_dir / "scope.yaml").read_bytes() != before: (run_dir / "scope.yaml").write_bytes(before)
+                return error(422, "scope replacement request is invalid")
+            except Exception:
+                return error(500, "scope replacement failed")
+
+    @app.post("/api/runs/{run_id}/scope/check")
+    async def scope_check(run_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        if set(body) - {"candidate"}: return error(422, "unknown field")
+        if not isinstance(body.get("candidate"), str) or not body["candidate"].strip(): return error(422, "candidate must be a non-empty string")
+        decision = evaluate_scope(load_scope(run_dir), body["candidate"]).to_dict()
+        decision["scope_revision"] = scope_revision(run_dir)
+        return json(decision)
 
     @app.get("/api/runs")
     def runs():

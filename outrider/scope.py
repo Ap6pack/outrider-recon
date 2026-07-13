@@ -290,3 +290,92 @@ def _can_be_ip(text: str) -> bool:
         return True
     except ValueError:
         return False
+
+import hashlib
+import os
+import tempfile
+from datetime import datetime, timezone
+
+
+def normalize_rule_key(rule: Any, source: str) -> str:
+    parsed = _parse_rule(rule, source)
+    return f"{parsed.kind}:{parsed.value}"
+
+
+def normalized_scope_rules(rules: list[Any], source: str) -> list[ScopeRule]:
+    return [_parse_rule(rule, source) for rule in rules]
+
+
+def normalize_target_host(target: str) -> str:
+    if not isinstance(target, str):
+        raise ScopeValidationError('target must be a string')
+    parsed = urlsplit(target.strip()) if '://' in target.strip() else None
+    if parsed and any(part == '..' for part in Path(parsed.path).parts):
+        raise ScopeValidationError('target URL path must not contain traversal')
+    normalized, ctype, _value = _normalize_candidate(target)
+    if target.strip().startswith('*.') or '/' in normalized:
+        raise ScopeValidationError('target must be a single domain or IP host')
+    # reject CIDR and path-like values that _normalize_candidate already rejects
+    return normalized
+
+
+def scope_revision(run_dir: str | Path) -> str:
+    return hashlib.sha256((Path(run_dir) / 'scope.yaml').read_bytes()).hexdigest()
+
+
+def load_scope_document(run_dir: str | Path) -> dict[str, Any]:
+    path = Path(run_dir) / 'scope.yaml'
+    data = yaml.load(path.read_text(encoding='utf-8'), Loader=_UniqueKeySafeLoader)
+    if not isinstance(data, dict):
+        raise ScopeValidationError('scope.yaml must contain a top-level mapping')
+    return data
+
+
+def _now_iso() -> str:
+    return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
+
+
+def replace_scope_rules_atomic(run_dir: str | Path, expected_revision: str, actor: str, reason: str, in_scope: list[str], out_of_scope: list[str], target: str) -> str:
+    run = Path(run_dir)
+    if not expected_revision or scope_revision(run) != expected_revision:
+        raise FileExistsError('scope revision is stale')
+    if not actor.strip() or not reason.strip():
+        raise ScopeValidationError('actor and reason are required')
+    in_keys = [normalize_rule_key(r, 'in_scope') for r in in_scope]
+    out_keys = [normalize_rule_key(r, 'out_of_scope') for r in out_of_scope]
+    if not in_scope or len(in_keys) != len(set(in_keys)) or len(out_keys) != len(set(out_keys)) or set(in_keys) & set(out_keys):
+        raise ScopeValidationError('duplicate or conflicting scope rules')
+    current = load_scope_document(run)
+    current_in = [normalize_rule_key(r, 'in_scope') for r in current.get('in_scope', [])]
+    current_out = [normalize_rule_key(r, 'out_of_scope') for r in current.get('out_of_scope', [])]
+    if set(current_in) == set(in_keys) and set(current_out) == set(out_keys):
+        raise FileExistsError('scope replacement is an effective no-op')
+    prior_control = current.get('scope_control') if isinstance(current.get('scope_control'), dict) else None
+    history = list(prior_control.get('history', [])) if prior_control else []
+    next_rev = int(prior_control.get('revision_number', 0)) + 1 if prior_control else 1
+    now = _now_iso()
+    history.append({'revision_number': next_rev, 'occurred_at': now, 'actor': actor.strip(), 'reason': reason.strip(), 'previous_revision': expected_revision})
+    current['in_scope'] = [r.strip() for r in in_scope]
+    current['out_of_scope'] = [r.strip() for r in out_of_scope]
+    current['scope_control'] = {'schema_version': 1, 'revision_number': next_rev, 'last_updated_at': now, 'last_updated_by': actor.strip(), 'last_change_reason': reason.strip(), 'history': history}
+    content = yaml.safe_dump(current, sort_keys=False, allow_unicode=True)
+    fd, tmp = tempfile.mkstemp(prefix='.scope.', suffix='.tmp', dir=run)
+    tmp_path = Path(tmp)
+    try:
+        with os.fdopen(fd, 'w', encoding='utf-8') as handle:
+            handle.write(content); handle.flush(); os.fsync(handle.fileno())
+        # validate temporary as scope.yaml by loading its text via yaml and parsing rules
+        data = yaml.load(tmp_path.read_text(encoding='utf-8'), Loader=_UniqueKeySafeLoader)
+        if not isinstance(data, dict): raise ScopeValidationError('scope.yaml must contain a top-level mapping')
+        tmp_dir = tempfile.mkdtemp(prefix='.scope-validate-', dir=run)
+        try:
+            Path(tmp_dir, 'scope.yaml').write_text(content, encoding='utf-8')
+            cfg = load_scope(tmp_dir)
+            if evaluate_scope(cfg, target).decision != 'allow':
+                raise ScopeValidationError('manifest target must remain allowed by scope')
+        finally:
+            import shutil; shutil.rmtree(tmp_dir, ignore_errors=True)
+        os.replace(tmp_path, run / 'scope.yaml')
+    finally:
+        if tmp_path.exists(): tmp_path.unlink(missing_ok=True)
+    return scope_revision(run)
