@@ -76,19 +76,69 @@ jobs:
               runs_root = Path(temporary_directory) / "runs"
               runs_root.mkdir()
 
-              client = TestClient(create_app(runs_root))
+              client = TestClient(create_app(runs_root, control_token="fixture"))
+              headers = {"X-Outrider-Control-Token": "fixture"}
 
               health = client.get("/api/health")
               assert health.status_code == 200
-              assert health.json() == {
-                  "ok": True,
-                  "service": "outrider-web",
-                  "mode": "limited-control",
-                  "network_scope": "loopback-only",
-              }
+              assert health.json()["capabilities"]["approval_mutation"] is True
+              assert health.json()["capabilities"]["action_check"] is True
 
-              session = client.get("/api/session")
-              assert session.status_code == 200
+              created = client.post("/api/runs", json={
+                  "target": "example.com",
+                  "actor": "authorized-operator",
+                  "authorization_reference": "EXAMPLE-ROE-001",
+                  "in_scope": ["example.com", "*.example.com"],
+                  "out_of_scope": [],
+              }, headers=headers)
+              assert created.status_code == 201, created.text
+              run_id = created.json()["run"]["run_id"]
+
+              transitioned = client.post(f"/api/runs/{run_id}/state/transition", json={
+                  "expected_state": "initialized",
+                  "new_state": "scoped",
+                  "actor": "authorized-operator",
+                  "reason": None,
+              }, headers=headers)
+              assert transitioned.status_code == 200, transitioned.text
+
+              approvals = client.get(f"/api/runs/{run_id}/approvals").json()
+              revision = approvals["approval_revision"]
+
+              grant = client.post(f"/api/runs/{run_id}/approvals", json={
+                  "expected_revision": revision,
+                  "expected_state": "scoped",
+                  "action_type": "target_enumeration",
+                  "candidate": "api.example.com",
+                  "actor": "authorized-operator",
+                  "reason": "Authorized DNS enumeration under ROE",
+                  "duration_minutes": 30,
+                  "conditions": None,
+              }, headers=headers)
+              assert grant.status_code == 201, grant.text
+              approval_id = grant.json()["approval"]["approval_id"]
+              revision = grant.json()["approvals"]["approval_revision"]
+
+              allowed = client.post(f"/api/runs/{run_id}/action/check", json={
+                  "action_type": "target_enumeration",
+                  "candidate": "api.example.com",
+              }, headers=headers)
+              assert allowed.status_code == 200
+              assert allowed.json()["decision"] == "allow"
+
+              revoked = client.post(f"/api/runs/{run_id}/approvals/{approval_id}/revoke", json={
+                  "expected_revision": revision,
+                  "actor": "authorized-operator",
+                  "reason": "Testing window closed",
+              }, headers=headers)
+              assert revoked.status_code == 200, revoked.text
+
+              denied = client.post(f"/api/runs/{run_id}/action/check", json={
+                  "action_type": "target_enumeration",
+                  "candidate": "api.example.com",
+              }, headers=headers)
+              assert denied.status_code == 200
+              assert denied.json()["decision"] == "deny"
 
               assert client.get("/").status_code == 200
               assert client.get("/static/app.css").status_code == 200

@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any, Callable
 from uuid import UUID
 
-from outrider.approval import ApprovalValidationError, list_approvals
+from outrider.approval import ApprovalValidationError, action_class, approval_policy_catalog, approval_revision, list_approvals, MAX_LIFETIME
 from outrider.evidence import EvidenceValidationError, load_evidence_registry, verify_all_evidence
 from outrider.finding import FindingValidationError, list_findings, verify_all_findings
 from outrider.scope import ScopeValidationError, load_scope, scope_revision, load_scope_document
@@ -186,10 +186,17 @@ def evidence_view(run_dir: str | Path) -> dict[str, Any]:
 
 def approval_view(run_dir: str | Path) -> dict[str, Any]:
     summary, errors = _ok("approvals", lambda: list_approvals(run_dir))
+    current_state = None
+    try:
+        current_state = load_state(run_dir).current_state
+    except Exception:
+        pass
     approvals = []
     for a in getattr(summary, "approvals", ()):
-        approvals.append({"approval_id": a.approval_id, "action_type": a.action_type, "normalized_candidate": a.candidate, "actor": a.actor, "granted_at": a.occurred_at, "expires_at": a.expires_at, "current_status": a.status, "revoked_at": a.revoked_at, "revoked_by": a.revoked_by, "revocation_reason": a.revocation_reason, "reason": a.reason, "conditions": a.conditions})
-    return {"valid": summary is not None, "approval_count": len(approvals), "active_count": getattr(summary, "active_count", 0), "expired_count": getattr(summary, "expired_count", 0), "revoked_count": getattr(summary, "revoked_count", 0), "approvals": approvals, "errors": [e.to_dict() for e in errors], "notice": "Actor values are attribution only; approvals are not proof of written authorization; expired and revoked approvals do not authorize actions."}
+        revocable = a.status == "active"
+        approvals.append({"approval_id": a.approval_id, "action_type": a.action_type, "action_class": action_class(a.action_type), "normalized_candidate": a.candidate, "candidate_type": a.candidate_type, "actor": a.actor, "granted_at": a.occurred_at, "expires_at": a.expires_at, "current_status": a.status, "revocable": revocable, "revocation_disabled_reason": None if revocable else f"approval is {a.status}", "revoked_at": a.revoked_at, "revoked_by": a.revoked_by, "revocation_reason": a.revocation_reason, "reason": a.reason, "conditions": a.conditions})
+    grant_enabled = current_state in {"scoped", "collecting", "analyzing"}
+    return {"valid": summary is not None, "current_state": current_state, "approval_revision": approval_revision(run_dir), "grant_enabled": grant_enabled, "grant_disabled_reason": None if grant_enabled else f"approval grants are not permitted in state {current_state}", "max_lifetime_minutes": int(MAX_LIFETIME.total_seconds() // 60), "action_types": approval_policy_catalog(), "approval_count": len(approvals), "active_count": getattr(summary, "active_count", 0), "expired_count": getattr(summary, "expired_count", 0), "revoked_count": getattr(summary, "revoked_count", 0), "approvals": approvals, "errors": [e.to_dict() for e in errors], "notice": "Actor values are attribution only; approvals are not proof of written authorization. An active approval alone does not guarantee an action is currently allowed; evaluate_action remains a point-in-time policy check."}
 
 
 def _json_files(base: Path) -> list[Path]:

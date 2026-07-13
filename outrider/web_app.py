@@ -4,6 +4,10 @@ from pathlib import Path
 from uuid import UUID
 
 from outrider import web_view
+from outrider.approval import (
+    ACTION_TYPES, APPROVABLE, ApprovalPolicyError, ApprovalValidationError,
+    approval_revision, evaluate_action, grant_approval, list_approvals, revoke_approval,
+)
 from outrider.state import InvalidTransitionError, StateValidationError, load_manifest, load_state, transition_state
 from outrider.scope import ScopeValidationError, evaluate_scope, load_scope, replace_scope_rules_atomic, scope_revision
 from outrider.run_setup import RunConflictError, RunSetupError, WebRunRequest, create_web_run_atomic
@@ -65,11 +69,11 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": False, "evidence_registration": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}}
+        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "evidence_registration": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}}
 
     @app.get("/api/session")
     def session():
-        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": False, "evidence_registration": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}})
+        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "evidence_registration": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}})
 
 
     async def read_json_object(request: Request):
@@ -150,6 +154,121 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
         if not isinstance(body.get("candidate"), str) or not body["candidate"].strip(): return error(422, "candidate must be a non-empty string")
         decision = evaluate_scope(load_scope(run_dir), body["candidate"]).to_dict()
         decision["scope_revision"] = scope_revision(run_dir)
+        return json(decision)
+
+
+    MAX_TEXT = {"expected_revision": 128, "expected_state": 64, "action_type": 64, "candidate": 512, "actor": 200, "reason": 2000, "conditions": 2000}
+
+    def require_text(body, field):
+        value = body.get(field)
+        if not isinstance(value, str) or not value.strip():
+            return None, error(422, f"{field} must be a non-empty string")
+        if len(value) > MAX_TEXT.get(field, 2000):
+            return None, error(422, f"{field} is too long")
+        return value.strip(), None
+
+    def registry_bytes(run_dir):
+        p = run_dir / "approvals.jsonl"
+        return p.read_bytes() if p.exists() else b""
+
+    @app.post("/api/runs/{run_id}/approvals")
+    async def grant_approval_route(run_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        allowed = {"expected_revision", "expected_state", "action_type", "candidate", "actor", "reason", "duration_minutes", "conditions"}
+        if set(body) - allowed: return error(422, "unknown field")
+        values = {}
+        for field in ("expected_revision", "expected_state", "action_type", "candidate", "actor", "reason"):
+            values[field], err = require_text(body, field)
+            if err: return err
+        if values["action_type"] not in ACTION_TYPES: return error(422, "unknown action_type")
+        if values["action_type"] not in APPROVABLE: return error(422, "action_type cannot be approved")
+        duration = body.get("duration_minutes")
+        if isinstance(duration, bool) or not isinstance(duration, int): return error(422, "duration_minutes must be an integer")
+        if duration < 1 or duration > 10080: return error(422, "duration_minutes must be between 1 and 10080")
+        conditions = body.get("conditions")
+        if conditions is not None:
+            if not isinstance(conditions, str) or not conditions.strip(): return error(422, "conditions must be null or a non-empty string")
+            if len(conditions) > MAX_TEXT["conditions"]: return error(422, "conditions is too long")
+            conditions = conditions.strip()
+        before = registry_bytes(run_dir)
+        with mutation_lock:
+            try:
+                if load_state(run_dir).current_state != values["expected_state"]: return error(409, "expected state is stale")
+                if approval_revision(run_dir) != values["expected_revision"]: return error(409, "approval revision is stale")
+                approval = grant_approval(run_dir, values["action_type"], values["candidate"], values["actor"], values["reason"], duration_minutes=duration, conditions=conditions)
+                payload = {"ok": True, "approval": next(a for a in web_view.approval_view(run_dir)["approvals"] if a["approval_id"] == approval.approval_id), "approvals": web_view.approval_view(run_dir)}
+                return JSONResponse(payload, status_code=201, headers={"Location": f"/api/runs/{run_id}/approvals"})
+            except ApprovalValidationError:
+                if registry_bytes(run_dir) != before: (run_dir / "approvals.jsonl").write_bytes(before)
+                return error(422, "approval grant request is invalid")
+            except ApprovalPolicyError as exc:
+                if registry_bytes(run_dir) != before: (run_dir / "approvals.jsonl").write_bytes(before)
+                return error(409, str(exc))
+            except Exception:
+                if registry_bytes(run_dir) != before: (run_dir / "approvals.jsonl").write_bytes(before)
+                return error(500, "approval grant failed")
+
+    @app.post("/api/runs/{run_id}/approvals/{approval_id}/revoke")
+    async def revoke_approval_route(run_id: str, approval_id: str, request: Request):
+        try: UUID(run_id); UUID(approval_id)
+        except ValueError: return error(422, "run_id and approval_id must be UUIDs")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        if set(body) - {"expected_revision", "actor", "reason"}: return error(422, "unknown field")
+        expected, err = require_text(body, "expected_revision")
+        if err: return err
+        actor, err = require_text(body, "actor")
+        if err: return err
+        reason, err = require_text(body, "reason")
+        if err: return err
+        before = registry_bytes(run_dir)
+        with mutation_lock:
+            try:
+                if approval_revision(run_dir) != expected: return error(409, "approval revision is stale")
+                summary = list_approvals(run_dir)
+                match = next((a for a in summary.approvals if a.approval_id == str(UUID(approval_id))), None)
+                if match is None: return error(404, "approval not found")
+                if match.status != "active": return error(409, f"approval is {match.status}")
+                revoke_approval(run_dir, approval_id, actor, reason)
+                return json({"ok": True, "revoked_approval_id": str(UUID(approval_id)), "approvals": web_view.approval_view(run_dir)})
+            except ApprovalValidationError:
+                if registry_bytes(run_dir) != before: (run_dir / "approvals.jsonl").write_bytes(before)
+                return error(422, "approval revocation request is invalid")
+            except ApprovalPolicyError as exc:
+                if registry_bytes(run_dir) != before: (run_dir / "approvals.jsonl").write_bytes(before)
+                return error(409, str(exc))
+            except Exception:
+                if registry_bytes(run_dir) != before: (run_dir / "approvals.jsonl").write_bytes(before)
+                return error(500, "approval revocation failed")
+
+    @app.post("/api/runs/{run_id}/action/check")
+    async def action_check(run_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        if set(body) - {"action_type", "candidate"}: return error(422, "unknown field")
+        action_type, err = require_text(body, "action_type")
+        if err: return err
+        if action_type not in ACTION_TYPES: return error(422, "unknown action_type")
+        candidate = body.get("candidate")
+        if candidate is not None and (not isinstance(candidate, str) or not candidate.strip()): return error(422, "candidate must be null or a non-empty string")
+        if candidate is None and action_type != "local_analysis": return error(422, "candidate is required")
+        decision = evaluate_action(run_dir, action_type, candidate.strip() if isinstance(candidate, str) else None).to_dict()
+        decision["approval_revision"] = approval_revision(run_dir)
+        decision["notice"] = "Point-in-time deterministic policy decision only; no action was executed."
         return json(decision)
 
     @app.get("/api/runs")

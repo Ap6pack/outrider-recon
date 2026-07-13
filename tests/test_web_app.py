@@ -182,6 +182,43 @@ class WebAppTests(unittest.TestCase):
             before=(run/'run.jsonl').read_text(); self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json=bad, headers=headers).status_code,409); self.assertEqual((run/'run.jsonl').read_text(), before)
             unknown={**bad,'extra':True}; self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json=unknown, headers=headers).status_code,422)
 
+    def test_approval_projection_grant_revoke_and_action_check(self):
+        with tempfile.TemporaryDirectory() as td:
+            run=make_run(td); rid=load_manifest(run).run_id; c=self.client(td, token='fixture')
+            h={'X-Outrider-Control-Token':'fixture'}
+            c.post(f'/api/runs/{rid}/state/transition', json={'expected_state':'initialized','new_state':'scoped','actor':'authorized-operator','reason':None}, headers=h)
+            view=c.get(f'/api/runs/{rid}/approvals').json(); rev=view['approval_revision']
+            self.assertTrue(view['grant_enabled']); self.assertIn('action_types', view); self.assertEqual(view['max_lifetime_minutes'],10080)
+            before=(run/'approvals.jsonl').read_bytes()
+            self.assertEqual(c.post(f'/api/runs/{rid}/approvals', json={}, headers={}).status_code,403)
+            self.assertEqual((run/'approvals.jsonl').read_bytes(), before)
+            bad=c.post(f'/api/runs/{rid}/approvals', json={'expected_revision':rev,'expected_state':'scoped','action_type':'local_analysis','candidate':'api.example.com','actor':'authorized-operator','reason':'x','duration_minutes':30}, headers=h)
+            self.assertEqual(bad.status_code,422); self.assertEqual((run/'approvals.jsonl').read_bytes(), before)
+            ok=c.post(f'/api/runs/{rid}/approvals', json={'expected_revision':rev,'expected_state':'scoped','action_type':'target_enumeration','candidate':'API.EXAMPLE.COM','actor':'authorized-operator','reason':'Authorized DNS enumeration under ROE','duration_minutes':30,'conditions':'Read-only enumeration only'}, headers=h)
+            self.assertEqual(ok.status_code,201,ok.text); body=ok.json(); aid=body['approval']['approval_id']; self.assertEqual(body['approval']['normalized_candidate'],'api.example.com'); self.assertTrue(body['approval']['revocable']); self.assertNotEqual(body['approvals']['approval_revision'], rev)
+            self.assertEqual(c.post(f'/api/runs/{rid}/approvals', json={'expected_revision':rev,'expected_state':'scoped','action_type':'target_enumeration','candidate':'api.example.com','actor':'authorized-operator','reason':'duplicate','duration_minutes':30}, headers=h).status_code,409)
+            allow=c.post(f'/api/runs/{rid}/action/check', json={'action_type':'target_enumeration','candidate':'api.example.com'}, headers=h)
+            self.assertEqual(allow.status_code,200); self.assertEqual(allow.json()['decision'],'allow'); self.assertEqual(allow.json()['matched_approval_id'], aid)
+            deny=c.post(f'/api/runs/{rid}/action/check', json={'action_type':'target_enumeration','candidate':'other.example.com'}, headers=h)
+            self.assertEqual(deny.status_code,200); self.assertEqual(deny.json()['decision'],'deny')
+            rev=body['approvals']['approval_revision']
+            revoked=c.post(f'/api/runs/{rid}/approvals/{aid}/revoke', json={'expected_revision':rev,'actor':'authorized-operator','reason':'closed'}, headers=h)
+            self.assertEqual(revoked.status_code,200,revoked.text); self.assertNotEqual(revoked.json()['approvals']['approval_revision'], rev)
+            self.assertEqual(c.post(f'/api/runs/{rid}/action/check', json={'action_type':'target_enumeration','candidate':'api.example.com'}, headers=h).json()['decision'],'deny')
+            self.assertEqual(c.post(f'/api/runs/{rid}/approvals/{aid}/revoke', json={'expected_revision':revoked.json()['approvals']['approval_revision'],'actor':'authorized-operator','reason':'again'}, headers=h).status_code,409)
+
+    def test_static_approval_controls_and_capabilities(self):
+        with tempfile.TemporaryDirectory() as td:
+            c=self.client(td, token='fixture')
+            caps=c.get('/api/session').json()['capabilities']
+            self.assertTrue(caps['approval_mutation']); self.assertTrue(caps['action_check'])
+            html=c.get('/').text; js=c.get('/static/app.js').text; combined=html+js+c.get('/static/app.css').text
+            for term in ['action-check-form','approval-grant-form','approval-revoke-form','approval_revision','expected_state','intrusive-validation-warning','Exact normalized candidate']:
+                self.assertIn(term, combined)
+            for term in ['innerHTML','eval(','localStorage','sessionStorage','evidence-upload','approval-renewal','Run recon','Call MCP']:
+                self.assertNotIn(term, combined)
+
+
     def test_cli_validation_and_missing_dependency_guidance(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); file=root/'file'; file.write_text('x'); link=root/'link'; link.symlink_to(root, target_is_directory=True)

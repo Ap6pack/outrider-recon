@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import datetime, timedelta, timezone
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -353,6 +354,36 @@ def _parse(
         return ev
     raise ApprovalValidationError("unknown approval event_type")
 
+
+
+def approval_revision(run_dir: str | Path) -> str:
+    """Return an optimistic stale-write token for the exact approvals registry bytes.
+
+    The value is a lowercase SHA-256 digest of the current approvals.jsonl bytes.
+    A missing legacy registry is treated as empty bytes. This is not a signature
+    and does not authenticate the registry contents. The helper never creates
+    the registry and does not use filesystem metadata such as modification time.
+    """
+    path = Path(run_dir) / REGISTRY
+    data = path.read_bytes() if path.exists() else b""
+    return hashlib.sha256(data).hexdigest()
+
+
+def approval_policy_catalog() -> list[dict[str, Any]]:
+    """Return deterministic public approval-policy metadata derived from constants."""
+    rows = []
+    for action_type in sorted(ACTION_TYPES):
+        cls = action_class(action_type)
+        rows.append({
+            "action_type": action_type,
+            "action_class": cls,
+            "candidate_required": action_type != "local_analysis",
+            "approval_required": action_type in APPROVABLE,
+            "grantable": action_type in APPROVABLE,
+            "permanently_prohibited": action_type in PROHIBITED,
+            "allowed_states": sorted(ALLOWED_STATES.get(action_type, [])),
+        })
+    return rows
 
 def load_approval_registry(
     run_dir: str | Path, now: datetime | None = None

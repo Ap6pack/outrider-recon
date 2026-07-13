@@ -63,3 +63,19 @@ Artifact contents, contract raw JSON contents, environment variables, Python tra
 ## Limitations and troubleshooting
 
 Install the `web` extra if `outrider web serve` reports missing web dependencies. Use the CLI for all authoritative control actions. This release has no authentication, no multiuser semantics, no remote-hosting support, and no cross-process concurrent-writer guarantee.
+
+## Guarded approval controls and action-policy checks
+
+The Approvals tab now contains three browser controls: action-policy check, bounded approval grant, and active-approval revocation. These controls reuse `outrider.approval` for candidate normalization, scope evaluation, workflow-state policy, exact matching approvals, duplicate prevention, expiration, and append-only registry writes.
+
+Approval grants require the process-local control token, same-origin checks, the current workflow state, and the exact `approvals.jsonl` SHA-256 revision. The revision is an optimistic stale-write token calculated from registry bytes; it is not a signature and does not authenticate the operator. Missing legacy registries are treated as empty bytes, and merely reading the revision does not create a file.
+
+The web API accepts duration in minutes only, with the existing seven-day maximum. It does not accept arbitrary expiration timestamps. Local, passive, and prohibited action categories cannot be granted; prohibited action categories remain permanently denied.
+
+Action-policy checks call `evaluate_action` and return a point-in-time decision for the current state, scope, and exact matching approval status. A browser allow decision does not execute anything and creates no evidence, findings, contracts, MCP calls, recon, DNS lookups, HTTP requests, or artifacts.
+
+Approvals are exact-match records. An approval for `api.example.com` does not approve `other.example.com`, an apex approval does not approve subdomains, an approval for one action type does not approve another, and expired or revoked approvals do not authorize. Scope or workflow-state changes can cause a previously approved candidate to deny.
+
+Active approvals can be revoked through the browser with the same token, origin, mutation-lock, and revision guard. Revocation appends one event, does not require a grant-capable workflow state, and never renews or edits an approval.
+
+The mutation lock is process-local. Revision checks serialize guarded web mutations within one app process, but operators must avoid simultaneous CLI and web mutations, multiple web server processes, and direct registry edits against the same run.
