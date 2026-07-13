@@ -212,6 +212,42 @@ class ApprovalTests(unittest.TestCase):
         )
         self.assertEqual((run / "approvals.jsonl").read_text().count("\n"), 1)
 
+    def test_revision_and_policy_catalog_metadata(self):
+        tmp, run = self.make_run()
+        self.addCleanup(tmp.cleanup)
+        import hashlib
+
+        empty = approval_revision(run)
+        self.assertEqual(empty, hashlib.sha256(b"").hexdigest())
+        (run / "approvals.jsonl").unlink()
+        self.assertEqual(approval_revision(run), empty)
+        self.assertFalse((run / "approvals.jsonl").exists())
+
+        catalog = approval_policy_catalog()
+        self.assertEqual([row["action_type"] for row in catalog], sorted(ACTION_TYPES))
+        self.assertEqual(len(catalog), len(ACTION_TYPES))
+        by_action = {row["action_type"]: row for row in catalog}
+        for action_type in ACTION_TYPES:
+            self.assertEqual(by_action[action_type]["action_class"], action_class(action_type))
+            self.assertEqual(by_action[action_type]["grantable"], action_type in APPROVABLE)
+            self.assertEqual(by_action[action_type]["approval_required"], action_type in APPROVABLE)
+            self.assertEqual(by_action[action_type]["permanently_prohibited"], action_type in PROHIBITED)
+            self.assertEqual(by_action[action_type]["allowed_states"], sorted(ALLOWED_STATES.get(action_type, [])))
+        self.assertFalse(by_action["local_analysis"]["candidate_required"])
+        self.assertTrue(by_action["target_enumeration"]["candidate_required"])
+
+        before = approval_revision(run)
+        now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        first = grant_approval(run, "target_enumeration", "api.example.com", "authorized-operator", "x", duration_minutes=1, now=now)
+        after_grant = approval_revision(run)
+        self.assertNotEqual(before, after_grant)
+        self.assertEqual(list_approvals(run, now + timedelta(days=1)).approvals[0].status, "expired")
+        self.assertEqual(approval_revision(run), after_grant)
+        second = grant_approval(run, "target_enumeration", "other.example.com", "authorized-operator", "x", duration_minutes=10, now=now)
+        before_revoke = approval_revision(run)
+        revoke_approval(run, second.approval_id, "authorized-operator", "closed", now=now + timedelta(minutes=1))
+        self.assertNotEqual(approval_revision(run), before_revoke)
+
 
 if __name__ == "__main__":
     unittest.main()

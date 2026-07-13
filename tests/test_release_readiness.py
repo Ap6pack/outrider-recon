@@ -209,7 +209,8 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn('TemporaryDirectory', clean_web_script)
         self.assertRegex(clean_web_script, r'runs_root\s*=\s*Path\([^\n]+\)\s*/\s*[\"\']runs[\"\']')
         self.assertIn('runs_root.mkdir()', clean_web_script)
-        self.assertRegex(clean_web_script, r'create_app\(\s*runs_root\s*\)')
+        self.assertRegex(clean_web_script, r'create_app\(\s*runs_root(?:\s*,\s*control_token=)?')
+        self.assertIn('control_token="fixture"', clean_web_script)
         self.assertNotRegex(clean_web_script, r'create_app\(\s*\)')
         for path in ['/api/health', '/', '/static/app.css', '/static/app.js']:
             self.assertIn(path, clean_web_script)
