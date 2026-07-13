@@ -299,4 +299,6 @@ This project is a fork of [elementalsouls/Claude-OSINT](https://github.com/eleme
 
 ## Unreleased
 
+- Added append-only `findings.jsonl` validated-finding records with human-reviewed promotion from evidence-backed `finding_candidate` claims, source-result/source-claim provenance, source-result SHA-256 recording, evidence-integrity enforcement, current-scope and workflow-state checks, and finding list/show/verify CLI commands without automatic execution or automatic promotion.
+
 - Added versioned skill request/result contracts, a deterministic shipped-skill catalog, policy-aware request creation and validation, evidence-backed result validation with candidate/action assessments, and shared contract instructions for all shipped skills without adding skill execution or finding promotion.

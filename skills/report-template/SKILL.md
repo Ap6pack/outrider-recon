@@ -146,3 +146,7 @@ Follow the shared run-contract instructions in `../_shared/run-contract.md`.
 - Do not claim final finding validation; use `finding_candidate` only when a human-reviewed candidate should be handed off.
 - Do not directly edit `manifest.json`, `scope.yaml`, `run.jsonl`, `evidence.jsonl`, or `approvals.jsonl`.
 - Use policy-gated MCP with the explicit `run_dir`; the Python control layer and MCP boundary must reevaluate current controls.
+
+## Promoted finding source
+
+Promoted findings are read from the append-only `findings.jsonl` registry. Unpromoted `finding_candidate` claims from skill results must be clearly labeled as candidates, and report generation must not silently promote them. In this PR, `findings.md` remains operator-managed working Markdown rather than an automatically rendered finding export.

@@ -14,6 +14,14 @@ from outrider.approval import (
     list_approvals,
     revoke_approval,
 )
+from outrider.finding import (
+    FindingPromotionRefusal,
+    FindingValidationError,
+    get_finding,
+    list_findings,
+    promote_finding,
+    verify_all_findings,
+)
 from outrider.evidence import (
     EvidenceRefusalError,
     EvidenceRegistrationError,
@@ -269,6 +277,8 @@ def init_run(args: argparse.Namespace) -> int:
         created.append("evidence.jsonl")
     if write_if_missing(run_dir / "approvals.jsonl", ""):
         created.append("approvals.jsonl")
+    if write_if_missing(run_dir / "findings.jsonl", ""):
+        created.append("findings.jsonl")
     artifacts_dir = run_dir / "artifacts"
     if not artifacts_dir.exists():
         artifacts_dir.mkdir()
@@ -312,6 +322,7 @@ def show_run(args: argparse.Namespace) -> int:
         "run.jsonl",
         "evidence.jsonl",
         "approvals.jsonl",
+        "findings.jsonl",
         "artifacts/",
         "contracts/",
         "contracts/requests/",
@@ -690,6 +701,109 @@ def contract_result_validate(args: argparse.Namespace) -> int:
     if report.structural_valid: return 1
     return 2
 
+
+def _print_finding_record(record, as_json: bool) -> None:
+    if as_json:
+        print(json.dumps(record.to_dict(), sort_keys=True))
+        return
+    print(f"Finding ID: {record.finding_id}")
+    print(f"Title: {record.title}")
+    print(f"Classification: {record.classification}")
+    print(f"Affected candidate: {record.affected_candidate}")
+    print(f"Severity: {record.severity}")
+    print(f"Confidence: {record.confidence}")
+    print(f"Promoted by: {record.promoted_by}")
+    print(f"Promoted at: {record.promoted_at}")
+    print(f"Source result ID: {record.source.result_id}")
+    print(f"Source claim ID: {record.source.claim_id}")
+    print(f"Evidence count: {len(record.evidence_ids)}")
+    print(f"Source result SHA-256: {record.source.result_sha256}")
+
+
+def finding_promote(args: argparse.Namespace) -> int:
+    try:
+        record = promote_finding(
+            args.run_dir, args.result_file, args.claim_id,
+            actor=args.actor, title=args.title, candidate=args.candidate,
+            severity=args.severity, confidence=args.confidence,
+            validation_basis=args.validation_basis,
+            validation_reason=args.validation_reason, impact=args.impact,
+            remediation=args.remediation, location=args.location, notes=args.notes,
+            supplementary_evidence_ids=args.evidence_id or [],
+        )
+        _print_finding_record(record, args.json)
+        return 0
+    except FindingPromotionRefusal as exc:
+        print(f"ERROR: {exc}")
+        return 1
+    except (FindingValidationError, SkillContractValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+
+
+def finding_list(args: argparse.Namespace) -> int:
+    try:
+        summary = list_findings(args.run_dir)
+        if args.json:
+            print(json.dumps(summary.to_dict(), sort_keys=True))
+        else:
+            print(f"Run ID: {summary.run_id}")
+            print(f"Finding count: {summary.finding_count}")
+            for r in summary.records:
+                print(f"{r.sequence} {r.finding_id} {r.title} {r.affected_candidate} {r.severity} {r.confidence} {r.source.skill} {r.promoted_at} {r.promoted_by}")
+        return 0
+    except (FindingValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+
+
+def finding_show(args: argparse.Namespace) -> int:
+    try:
+        record = get_finding(args.run_dir, args.finding_id)
+        if record is None:
+            print("ERROR: finding_id is not registered")
+            return 1
+        if args.json:
+            print(json.dumps(record.to_dict(), sort_keys=True))
+        else:
+            _print_finding_record(record, False)
+            print(f"Location: {record.location or 'n/a'}")
+            print(f"Validation basis: {record.validation_basis}")
+            print(f"Validation reason: {record.validation_reason}")
+            print(f"Impact: {record.impact}")
+            print(f"Remediation: {record.remediation}")
+            print(f"Evidence IDs: {', '.join(record.evidence_ids)}")
+            print(f"Source request ID: {record.source.request_id}")
+            print(f"Source skill: {record.source.skill}")
+            print(f"Source result path: {record.source.result_path}")
+        return 0
+    except (FindingValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+
+
+def finding_verify(args: argparse.Namespace) -> int:
+    try:
+        results = verify_all_findings(args.run_dir, args.finding_id)
+        ok = all(r.overall_status == "verified" for r in results)
+        if args.json:
+            print(json.dumps({"verified": ok, "results": [r.to_dict() for r in results]}, sort_keys=True))
+        else:
+            for r in results:
+                print(f"Finding ID: {r.finding_id}")
+                print(f"Title: {r.title or 'n/a'}")
+                print(f"Source-result status: {r.source_status}")
+                print(f"Expected source SHA-256: {r.expected_source_sha256 or 'n/a'}")
+                print(f"Actual source SHA-256: {r.actual_source_sha256 or 'n/a'}")
+                print(f"Evidence status: {r.evidence_status}")
+                print(f"Current-scope status: {r.current_scope_status}")
+                print(f"Overall status: {r.overall_status}")
+                print(f"Reason: {r.reason}")
+        return 0 if ok else 1
+    except (FindingValidationError, StateValidationError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="outrider",
@@ -850,6 +964,43 @@ def build_parser() -> argparse.ArgumentParser:
     evidence_verify_parser.add_argument("--json", action="store_true")
     evidence_verify_parser.set_defaults(func=evidence_verify)
 
+
+
+
+    finding_parser = subcommands.add_parser("finding", help="Promote, list, show, and verify human-reviewed findings.")
+    finding_sub = finding_parser.add_subparsers(dest="finding_command", required=True)
+    finding_promote_parser = finding_sub.add_parser("promote", help="Promote a finding_candidate into a validated_finding.")
+    finding_promote_parser.add_argument("run_dir")
+    finding_promote_parser.add_argument("result_file")
+    finding_promote_parser.add_argument("claim_id")
+    finding_promote_parser.add_argument("--actor", required=True)
+    finding_promote_parser.add_argument("--title", required=True)
+    finding_promote_parser.add_argument("--candidate", required=True)
+    finding_promote_parser.add_argument("--severity", required=True)
+    finding_promote_parser.add_argument("--confidence", required=True)
+    finding_promote_parser.add_argument("--validation-basis", required=True)
+    finding_promote_parser.add_argument("--validation-reason", required=True)
+    finding_promote_parser.add_argument("--impact", required=True)
+    finding_promote_parser.add_argument("--remediation", required=True)
+    finding_promote_parser.add_argument("--location")
+    finding_promote_parser.add_argument("--notes")
+    finding_promote_parser.add_argument("--evidence-id", action="append")
+    finding_promote_parser.add_argument("--json", action="store_true")
+    finding_promote_parser.set_defaults(func=finding_promote)
+    finding_list_parser = finding_sub.add_parser("list", help="List promoted findings.")
+    finding_list_parser.add_argument("run_dir")
+    finding_list_parser.add_argument("--json", action="store_true")
+    finding_list_parser.set_defaults(func=finding_list)
+    finding_show_parser = finding_sub.add_parser("show", help="Show a promoted finding.")
+    finding_show_parser.add_argument("run_dir")
+    finding_show_parser.add_argument("finding_id")
+    finding_show_parser.add_argument("--json", action="store_true")
+    finding_show_parser.set_defaults(func=finding_show)
+    finding_verify_parser = finding_sub.add_parser("verify", help="Verify promoted finding provenance and evidence.")
+    finding_verify_parser.add_argument("run_dir")
+    finding_verify_parser.add_argument("--finding-id")
+    finding_verify_parser.add_argument("--json", action="store_true")
+    finding_verify_parser.set_defaults(func=finding_verify)
 
     contract_parser = subcommands.add_parser("contract", help="Create and validate skill interchange contracts.")
     contract_sub = contract_parser.add_subparsers(dest="contract_command", required=True)

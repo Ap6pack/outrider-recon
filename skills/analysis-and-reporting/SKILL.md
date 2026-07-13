@@ -394,3 +394,7 @@ Follow the shared run-contract instructions in `../_shared/run-contract.md`.
 - Do not claim final finding validation; use `finding_candidate` only when a human-reviewed candidate should be handed off.
 - Do not directly edit `manifest.json`, `scope.yaml`, `run.jsonl`, `evidence.jsonl`, or `approvals.jsonl`.
 - Use policy-gated MCP with the explicit `run_dir`; the Python control layer and MCP boundary must reevaluate current controls.
+
+## Finding promotion boundary
+
+Analysis may classify evidence-backed claims as `finding_candidate` and may recommend a severity, but it must not finalize severity, create `validated_finding`, or self-promote a claim. Human promotion occurs only through `outrider finding promote` after the Python control layer verifies the source contract, registered evidence, current scope, and workflow state.
