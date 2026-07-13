@@ -68,3 +68,5 @@ If you used these skills during an authorized engagement and found a vulnerabili
 - Verify SHA-256 of any binary helper scripts before execution.
 - Don't commit your engagement-specific notes into a fork of this repo.
 - Use sock-puppet GitHub accounts when contributing if your engagement persona shouldn't be linked to your contributor identity.
+
+The process-local control token gates mutations; it is not authentication. Contract actor and created_by values are unauthenticated attribution. Valid request or result contracts do not prove skill execution, exploitation, vulnerability, client acceptance, or finding status.

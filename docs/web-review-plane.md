@@ -79,3 +79,5 @@ Approvals are exact-match records. An approval for `api.example.com` does not ap
 Active approvals can be revoked through the browser with the same token, origin, mutation-lock, and revision guard. Revocation appends one event, does not require a grant-capable workflow state, and never renews or edits an approval.
 
 The mutation lock is process-local. Revision checks serialize guarded web mutations within one app process, but operators must avoid simultaneous CLI and web mutations, multiple web server processes, and direct registry edits against the same run.
+
+evidence integrity verification, guarded skill request contract creation, and point-in-time request/result contract validation

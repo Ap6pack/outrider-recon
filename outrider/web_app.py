@@ -12,6 +12,7 @@ from outrider.approval import (
 from outrider.state import InvalidTransitionError, StateValidationError, load_manifest, load_state, transition_state
 from outrider.scope import ScopeValidationError, evaluate_scope, load_scope, replace_scope_rules_atomic, scope_revision
 from outrider.run_setup import RunConflictError, RunSetupError, WebRunRequest, create_web_run_atomic
+from outrider.skill_contract import (REQUEST_ACTIONS, SkillContractValidationError, contract_revision, create_skill_request, find_skill_request_by_id, find_skill_result_by_id, list_known_skills, load_skill_request, load_skill_result, validate_skill_request, validate_skill_result)
 
 TOKEN_HEADER = "X-Outrider-Control-Token"
 
@@ -70,11 +71,11 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}}
+        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}}
 
     @app.get("/api/session")
     def session():
-        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}})
+        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}})
 
 
     async def read_json_object(request: Request):
@@ -158,7 +159,7 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
         return json(decision)
 
 
-    MAX_TEXT = {"expected_revision": 128, "expected_state": 64, "action_type": 64, "candidate": 512, "actor": 200, "reason": 2000, "conditions": 2000, "relative_artifact_path": 1024, "artifact_type": 64, "media_type": 200, "source": 500, "note": 2000}
+    MAX_TEXT = {"expected_revision": 128, "expected_state": 64, "action_type": 64, "candidate": 512, "actor": 200, "reason": 2000, "conditions": 2000, "relative_artifact_path": 1024, "artifact_type": 64, "media_type": 200, "source": 500, "note": 2000, "skill": 128, "objective": 4000, "notes": 4000}
 
     def require_text(body, field):
         value = body.get(field)
@@ -373,6 +374,108 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
         decision["approval_revision"] = approval_revision(run_dir)
         decision["notice"] = "Point-in-time deterministic policy decision only; no action was executed."
         return json(decision)
+
+
+    def validate_uuid_text(value, field):
+        try: return str(UUID(value))
+        except Exception: raise ValueError(f"{field} must be a UUID")
+
+    def contract_validation_response(kind, cid, report, run_dir):
+        return json({"ok": True, "contract_type": f"skill_{kind}", "contract_id": cid, "validation_report": report.to_dict(), "validation_context": web_view.validation_context(run_dir), "notice": "Point-in-time contract validation; no skill or recommended action was executed."})
+
+    def contract_body_expected(body):
+        if set(body) - {"expected_revision"}: return None, error(422, "unknown field")
+        expected, err = require_text(body, "expected_revision")
+        if err: return None, err
+        return expected, None
+
+    @app.post("/api/runs/{run_id}/contracts/requests")
+    async def create_contract_request(run_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        allowed={"expected_revision","expected_state","skill","actor","objective","action_type","candidate","input_evidence_ids","max_items","notes"}
+        if set(body)-allowed: return error(422,"unknown field")
+        vals={}
+        for field in ("expected_revision","expected_state","skill","actor","objective","action_type"):
+            vals[field], err = require_text(body, field)
+            if err: return err
+        if vals["skill"] not in list_known_skills(): return error(422,"unknown skill")
+        if vals["action_type"] not in REQUEST_ACTIONS: return error(422,"unsupported request action")
+        cand=body.get("candidate")
+        if cand is None:
+            if vals["action_type"] != "local_analysis": return error(422,"candidate is required")
+        elif not isinstance(cand,str) or not cand.strip(): return error(422,"candidate must be null or a non-empty string")
+        elif len(cand)>MAX_TEXT["candidate"]: return error(422,"candidate is too long")
+        ids=body.get("input_evidence_ids", [])
+        if not isinstance(ids,list): return error(422,"input_evidence_ids must be a list")
+        try: ids=[str(UUID(x)) for x in ids]
+        except Exception: return error(422,"input_evidence_ids must contain UUID strings")
+        if len(set(ids))!=len(ids): return error(422,"duplicate evidence IDs")
+        max_items=body.get("max_items",100)
+        if isinstance(max_items,bool) or not isinstance(max_items,int) or max_items<1 or max_items>1000: return error(422,"max_items must be an integer from 1 through 1000")
+        notes=body.get("notes")
+        if notes is not None:
+            if not isinstance(notes,str) or not notes.strip(): return error(422,"notes must be null or a non-empty string")
+            if len(notes)>MAX_TEXT["notes"]: return error(422,"notes is too long")
+            notes=notes.strip()
+        with mutation_lock:
+            try:
+                if load_state(run_dir).current_state != vals["expected_state"]: return error(409,"expected state is stale")
+                if contract_revision(run_dir) != vals["expected_revision"]: return error(409,"contract revision is stale")
+                req, path, rep = create_skill_request(run_dir, vals["skill"], vals["actor"], vals["objective"], vals["action_type"], cand.strip() if isinstance(cand,str) else None, ids, max_items, notes)
+                refreshed=web_view.contract_view(run_dir)
+                projected=next(r for r in refreshed["requests"] if r["request_id"]==req.request_id)
+                return JSONResponse({"ok":True,"request":projected,"validation_report":rep.to_dict(),"contracts":refreshed}, status_code=201, headers={"Location":f"/api/runs/{run_id}/contracts"})
+            except SkillContractValidationError as exc:
+                msg=str(exc)
+                if "unknown evidence_id" in msg: return error(422,msg)
+                if "current policy" in msg or "does not allow" in msg or "verification" in msg: return error(409,msg)
+                return error(422,msg)
+            except Exception:
+                return error(500,"contract request creation failed")
+
+    @app.post("/api/runs/{run_id}/contracts/requests/{request_id}/validate")
+    async def validate_contract_request(run_id: str, request_id: str, request: Request):
+        try: UUID(run_id); rid=str(UUID(request_id))
+        except ValueError: return error(422,"run_id and request_id must be UUIDs")
+        require_mutation_guard(request)
+        run_dir=web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404,"run not found")
+        body, err=await read_json_object(request)
+        if err: return err
+        expected, err=contract_body_expected(body)
+        if err: return err
+        with mutation_lock:
+            if contract_revision(run_dir) != expected: return error(409,"contract revision is stale")
+            lookup=find_skill_request_by_id(run_dir,rid)
+            if lookup.status=="not_found": return error(404,"request not found")
+            if lookup.status=="ambiguous": return error(409,"request ID is ambiguous")
+            rep=validate_skill_request(run_dir, lookup.relative_path)
+            return contract_validation_response("request", rid, rep, run_dir)
+
+    @app.post("/api/runs/{run_id}/contracts/results/{result_id}/validate")
+    async def validate_contract_result(run_id: str, result_id: str, request: Request):
+        try: UUID(run_id); rid=str(UUID(result_id))
+        except ValueError: return error(422,"run_id and result_id must be UUIDs")
+        require_mutation_guard(request)
+        run_dir=web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404,"run not found")
+        body, err=await read_json_object(request)
+        if err: return err
+        expected, err=contract_body_expected(body)
+        if err: return err
+        with mutation_lock:
+            if contract_revision(run_dir) != expected: return error(409,"contract revision is stale")
+            lookup=find_skill_result_by_id(run_dir,rid)
+            if lookup.status=="not_found": return error(404,"result not found")
+            if lookup.status=="ambiguous": return error(409,"result ID is ambiguous")
+            rep=validate_skill_result(run_dir, lookup.relative_path)
+            return contract_validation_response("result", rid, rep, run_dir)
 
     @app.get("/api/runs")
     def runs():

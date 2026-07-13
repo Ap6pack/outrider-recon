@@ -165,7 +165,7 @@ Outrider currently has four implementation domains:
 - **Claude skill layer:** implemented and used as the primary operator-facing capability layer.
 - **Python CLI controls:** implemented for run scaffolding, local scope/state/evidence/approval/contract/finding checks, and read-only review support.
 - **Optional MCP enrichment:** implemented for bounded, policy-gated enrichment tools that require explicit run context before network or DNS activity.
-- **Local web control plane:** implemented as a loopback-only control interface with guarded run creation, initialized-only scope replacement, browser scope checks, guarded workflow-state transitions, guarded approval grant/revocation, action-policy checks, metadata-only artifact inventory, existing-artifact evidence registration, and evidence-integrity verification; artifact transfer, evidence editing/deletion, contracts, findings, MCP, and recon remain unsupported in the browser.
+- **Local web control plane:** implemented as a loopback-only control interface with guarded run creation, initialized-only scope replacement, browser scope checks, guarded workflow-state transitions, guarded approval grant/revocation, action-policy checks, metadata-only artifact inventory, existing-artifact evidence registration, evidence-integrity verification, guarded skill request creation, and request/result contract validation; artifact transfer, evidence editing/deletion, result creation/upload, finding promotion, MCP, and recon remain unsupported in the browser.
 
 The repository does not claim to execute full automated recon on its own. It is a controlled harness for authorized recon workflows and safe handoff. See [Architecture](docs/architecture.md), [Web review plane](docs/web-review-plane.md), and [Release readiness](docs/release-readiness.md) for the current product boundary.
 
@@ -252,3 +252,5 @@ Outrider codifies external attack-surface tradecraft into Claude-native skills, 
 **License:** [MIT](LICENSE) — use freely, attribution appreciated.
 
 > _Raw recon tells you what exists. Outrider helps decide what matters first._
+
+browser scope checks, workflow-state transitions, approval controls, action-policy checks, artifact metadata inventory, evidence registration, evidence integrity verification, guarded skill request creation, and request/result contract validation
