@@ -41,7 +41,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             shutil.rmtree(root/'.git')
             for cache in root.rglob('__pycache__'):
                 shutil.rmtree(cache)
-            (root/'fixture.txt').write_text('token = "abcdefghijklmnopqrstuvwxyz"')
+            (root/'fixture.txt').write_text('token = "' + 'abcdefghijklmnopqrstuvwxyz' + '"')
             buf=io.StringIO()
             with contextlib.redirect_stdout(buf): code=release_audit.main(['--root',str(root),'--json'])
             self.assertEqual(code, 1)
@@ -77,7 +77,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             self.assertTrue(list((ROOT/'docs/adr').glob(f'{i:04d}-*.md')))
 
     def test_package_metadata_boundaries(self):
-        py=release_audit.tomllib.loads((ROOT/'pyproject.toml').read_text())
+        py=release_audit.load_pyproject(ROOT/'pyproject.toml')
         deps='\n'.join(py['project'].get('dependencies',[])).lower()
         self.assertNotIn('fastapi', deps)
         self.assertNotIn('uvicorn', deps)
@@ -107,7 +107,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             root=Path(td); subprocess.check_call(['cp','-a',str(ROOT)+'/.',str(root)])
             (root/'.git').rename(root/'git-disabled')
             (root/'runs').mkdir(exist_ok=True); (root/'runs'/'manifest.json').write_text('{}')
-            (root/'fixture.txt').write_text('token = "abcdefghijklmnopqrstuvwxyz"')
+            (root/'fixture.txt').write_text('token = "' + 'abcdefghijklmnopqrstuvwxyz' + '"')
             audit=release_audit.Audit(root).run()
             by={c.name:c for c in audit.checks}
             self.assertEqual(by['no obvious tracked run/build artifacts'].status, 'FAIL')

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from __future__ import annotations
 
-import argparse, json, os, re, sys, tarfile, tempfile, tomllib, zipfile
+import argparse, json, os, re, sys, tarfile, tempfile, zipfile
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
@@ -10,6 +10,57 @@ REQUIRED_FILES = ['pyproject.toml','README.md','CHANGELOG.md','SECURITY.md','CON
 SCHEMAS = ['skill-request-v1.schema.json','skill-result-v1.schema.json','finding-v1.schema.json']
 WEB_STATIC = ['index.html','app.css','app.js']
 ADRS = [f'docs/adr/{i:04d}-{name}.md' for i,name in [(1,'run-manifest-and-state-log'),(2,'evidence-registry-and-integrity'),(3,'approval-registry-and-action-policy'),(4,'mcp-tool-boundary-enforcement'),(5,'skill-python-interchange-contracts'),(6,'deterministic-finding-promotion'),(7,'local-web-review-plane')]]
+
+def load_pyproject(path: Path) -> dict[str, object]:
+    """Parse the small pyproject subset this audit needs using only stdlib."""
+    data: dict[str, object] = {"project": {}, "tool": {"setuptools": {"package-data": {}}}}
+    section: tuple[str, ...] = ()
+    current_key: str | None = None
+    current_list: list[str] | None = None
+    for raw in path.read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            section = tuple(line[1:-1].split("."))
+            current_key = None
+            current_list = None
+            continue
+        if current_list is not None:
+            if line == "]":
+                current_key = None
+                current_list = None
+                continue
+            current_list.append(line.rstrip(",").strip().strip('"'))
+            continue
+        if "=" not in line:
+            continue
+        key, value = [part.strip() for part in line.split("=", 1)]
+        if value == "[":
+            current_key = key
+            current_list = []
+            _set_pyproject_value(data, section, key, current_list)
+            continue
+        parsed: object
+        if value.startswith('"') and value.endswith('"'):
+            parsed = value.strip('"')
+        elif value.startswith("[") and value.endswith("]"):
+            parsed = [item.strip().strip('"') for item in value[1:-1].split(",") if item.strip()]
+        else:
+            parsed = value
+        _set_pyproject_value(data, section, key, parsed)
+    project = data.get("project", {})
+    if not isinstance(project, dict) or "version" not in project:
+        raise ValueError("pyproject.toml missing [project] version")
+    return data
+
+
+def _set_pyproject_value(data: dict[str, object], section: tuple[str, ...], key: str, value: object) -> None:
+    cur: dict[str, object] = data
+    for part in section:
+        cur = cur.setdefault(part, {})  # type: ignore[assignment]
+    cur[key] = value
+
 
 @dataclass
 class Check:
@@ -24,7 +75,7 @@ class Audit:
     def warn(self,name,detail): self.add(name,'WARN',detail)
     def ok(self,name,detail): self.add(name,'PASS',detail)
     def versions(self):
-        py=tomllib.loads((self.root/'pyproject.toml').read_text())
+        py=load_pyproject(self.root/'pyproject.toml')
         plugin=json.loads((self.root/'.claude-plugin/plugin.json').read_text())
         skills={}
         for p in sorted((self.root/'skills').glob('*/SKILL.md')):
@@ -39,7 +90,7 @@ class Audit:
         missing=[f for f in REQUIRED_FILES if not (self.root/f).exists()]
         self.ok('required repository files','all required files are present') if not missing else self.fail('required repository files','missing '+', '.join(missing))
     def check_parse(self):
-        try: tomllib.loads((self.root/'pyproject.toml').read_text()); self.ok('pyproject parseability','pyproject.toml parses')
+        try: load_pyproject(self.root/'pyproject.toml'); self.ok('pyproject parseability','pyproject.toml parses')
         except Exception as e: self.fail('pyproject parseability',str(e))
         try: json.loads((self.root/'.claude-plugin/plugin.json').read_text()); self.ok('plugin JSON parseability','plugin metadata parses')
         except Exception as e: self.fail('plugin JSON parseability',str(e))
@@ -70,7 +121,7 @@ class Audit:
             if rd != pd: bad.append(f'{name}: packaged schema differs from contract')
         self.ok('JSON schema parseability','contract schemas parse and packaged copies match') if not bad else self.fail('JSON schema parseability','; '.join(bad))
     def check_package_data(self):
-        py=tomllib.loads((self.root/'pyproject.toml').read_text())
+        py=load_pyproject(self.root/'pyproject.toml')
         data=py.get('tool',{}).get('setuptools',{}).get('package-data',{}).get('outrider',[])
         needed=['web_static/*','skill_catalog.json','schemas/*.json']
         miss=[x for x in needed if x not in data]

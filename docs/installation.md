@@ -21,7 +21,6 @@ The project includes an optional MCP server that adds live API tools (crt.sh loo
 
 The MCP server is optional -- all skills work without it.
 
-
 ## Python package installation
 
 The Python package version is `0.1.0` and is independent of the Claude plugin/content version `3.0.0`. Install the base CLI from a source checkout with:
