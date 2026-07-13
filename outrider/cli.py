@@ -51,11 +51,13 @@ from outrider.state import (
 LOOPBACK_WEB_HOSTS = {"127.0.0.1", "localhost", "::1"}
 
 def package_version() -> str:
+    pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+    if pyproject.exists():
+        return next(line.split("=", 1)[1].strip().strip("\"'") for line in pyproject.read_text(encoding="utf-8").splitlines() if line.strip().startswith("version ="))
     try:
         return version("outrider-recon")
-    except PackageNotFoundError:  # pragma: no cover - source tree fallback
-        pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
-        return next(line.split("=", 1)[1].strip().strip("\"'") for line in pyproject.read_text(encoding="utf-8").splitlines() if line.strip().startswith("version ="))
+    except PackageNotFoundError:  # pragma: no cover - installed metadata should normally exist
+        return "0.2.0"
 
 def _valid_web_port(value: str) -> int:
     try:
