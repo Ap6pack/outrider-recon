@@ -4,7 +4,6 @@
 - **Audited commit:** 57b452d4688cac280f17f3d35867e9129dc3706e plus this audit branch's committed changes
 - **Overall status:** ready_with_limitations
 
-
 ## Post-release status
 
 After the historical audit below, maintainers completed the release from commit `2ff9db995e7d2cb78024cbeea09bf526888626da`. Python `0.2.0` is published as GitHub release tag `python-v0.2.0` (<https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0>), and Claude plugin/content `3.0.1` is published as GitHub release tag `plugin-v3.0.1` (<https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1>). Both tags point to the release commit.

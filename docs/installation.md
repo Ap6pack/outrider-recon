@@ -35,13 +35,13 @@ The Python package version is `0.2.0` and is independent of the Claude plugin/co
 python -m pip install ./outrider_recon-0.2.0-py3-none-any.whl
 ```
 
-4. To install optional local web review dependencies from the downloaded wheel, run:
+1. To install optional local web review dependencies from the downloaded wheel, run:
 
 ```bash
 python -m pip install "./outrider_recon-0.2.0-py3-none-any.whl[web]"
 ```
 
-5. Verify the installed version:
+1. Verify the installed version:
 
 ```bash
 outrider --version
