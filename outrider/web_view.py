@@ -9,7 +9,7 @@ from uuid import UUID
 from outrider.approval import ApprovalValidationError, list_approvals
 from outrider.evidence import EvidenceValidationError, load_evidence_registry, verify_all_evidence
 from outrider.finding import FindingValidationError, list_findings, verify_all_findings
-from outrider.scope import ScopeValidationError, load_scope
+from outrider.scope import ScopeValidationError, load_scope, scope_revision, load_scope_document
 from outrider.skill_contract import (
     SkillContractValidationError,
     load_skill_request,
@@ -128,9 +128,26 @@ def list_runs(runs_root: str | Path) -> dict[str, Any]:
 
 def scope_view(run_dir: str | Path) -> dict[str, Any]:
     scope, errors = _ok("scope", lambda: load_scope(run_dir))
+    current_state = None
+    try:
+        current_state = load_state(run_dir).current_state
+    except Exception:
+        current_state = None
+    editable = current_state == "initialized"
+    rev = None
+    control = None
+    try:
+        rev = scope_revision(run_dir)
+        doc = load_scope_document(run_dir)
+        if isinstance(doc.get("scope_control"), dict):
+            sc = doc["scope_control"]
+            control = {k: sc.get(k) for k in ("schema_version", "revision_number", "last_updated_at", "last_updated_by", "last_change_reason", "history") if k in sc}
+    except Exception:
+        pass
+    base = {"scope_revision": rev, "editable": editable, "edit_reason": None if editable else "scope changes are web-enabled only while the run is initialized", "current_state": current_state, "scope_control": control}
     if scope is None:
-        return {"valid": False, "in_scope": [], "out_of_scope": [], "counts": {"in_scope": 0, "out_of_scope": 0}, "errors": [e.to_dict() for e in errors]}
-    return {"valid": True, "in_scope": [_rule(r) for r in scope.in_scope], "out_of_scope": [_rule(r) for r in scope.out_of_scope], "counts": {"in_scope": len(scope.in_scope), "out_of_scope": len(scope.out_of_scope)}, "errors": []}
+        return {**base, "valid": False, "in_scope": [], "out_of_scope": [], "counts": {"in_scope": 0, "out_of_scope": 0}, "errors": [e.to_dict() for e in errors]}
+    return {**base, "valid": True, "in_scope": [_rule(r) for r in scope.in_scope], "out_of_scope": [_rule(r) for r in scope.out_of_scope], "counts": {"in_scope": len(scope.in_scope), "out_of_scope": len(scope.out_of_scope)}, "errors": []}
 
 
 def allowed_state_transitions(current_state: str | None) -> list[dict[str, Any]]:

@@ -8,9 +8,9 @@
   <script src="/static/app.js" defer></script>
 </head>
 <body>
-<header class="app-header" role="banner"><h1>Outrider Local Control Plane</h1><p>Local review with controlled workflow-state transitions</p></header>
+<header class="app-header" role="banner"><h1>Outrider Local Control Plane</h1><p>Local review with guarded run creation, initialized-only scope management, and controlled workflow-state transitions</p></header>
 <main id="main" role="main">
-  <section class="banner" aria-label="limited control status">Local single-operator interface. No authentication is provided. workflow-state transitions are enabled; all other mutations remain CLI-only. No MCP, recon execution, artifact download, approvals, evidence registration, contracts, or finding promotion are implemented.</section>
+  <section class="banner" aria-label="limited control status">Local single-operator interface. No authentication is provided. guarded run creation, initialized-only scope replacement, browser scope evaluation, and workflow-state transitions are enabled. No MCP, recon execution, artifact download, approvals, evidence registration, contracts, or finding promotion are implemented.</section>
   <section class="panel" aria-labelledby="dashboard-title">
     <h2 id="dashboard-title">Run dashboard</h2>
     <div id="loading" class="muted">Loading runs…</div>
@@ -21,6 +21,20 @@
       <label>Health <select id="filter-health"><option value="">Any health</option><option>healthy</option><option>warning</option><option>error</option></select></label>
     </div>
     <div id="summary-cards" class="cards"></div>
+    <section class="create-run" aria-labelledby="create-run-title">
+      <h3 id="create-run-title">Create run</h3>
+      <form id="create-run-form" class="transition-form">
+        <label><span>Target</span><input id="create-target" required autocomplete="off"></label>
+        <label><span>Actor</span><input id="create-actor" required autocomplete="off"></label>
+        <label><span>Authorization reference</span><input id="create-auth" required autocomplete="off"></label>
+        <label><span>In-scope rules, one per line</span><textarea id="create-in-scope" required rows="4"></textarea></label>
+        <label><span>Out-of-scope rules, one per line</span><textarea id="create-out-scope" rows="3"></textarea></label>
+        <label><span>Confirm authorized run creation</span><input id="create-confirm" type="checkbox" required></label>
+        <button id="create-run-submit" type="submit">Create run</button>
+        <p id="create-run-message" class="form-message" aria-live="polite"></p>
+      </form>
+    </section>
+
     <div id="empty-state" class="empty" hidden>No runs found beneath this runs root.</div>
     <div id="run-list" class="run-list" aria-live="polite"></div>
   </section>
@@ -33,6 +47,6 @@
     <div id="detail" tabindex="-1"></div>
   </section>
 </main>
-<footer role="contentinfo">Command-line controls remain authoritative for every non-state action. This is not a multiuser server.</footer>
+<footer role="contentinfo">Command-line controls remain authoritative for unsupported actions. This is not a multiuser server.</footer>
 </body>
 </html>

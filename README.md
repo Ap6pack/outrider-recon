@@ -109,7 +109,7 @@ Scope → Recon → Enrich → Score → Finding Cards → Handoff → Report
 - **Claude skills** provide methodology, routing, operator checklists, scoring guidance, and report structure.
 - **Python controls** provide deterministic local enforcement for run identity, workflow state, scope checks, approval policy, evidence integrity, contract validation, and finding promotion.
 - **Optional MCP tools** provide policy-gated live enrichment for bounded public-source lookups and DNS records.
-- **Optional web control plane** provides a local browser interface for reviewing existing run folders and applying guarded workflow-state transitions; see [web review/control details](docs/web-review-plane.md).
+- **Optional web control plane** provides a local browser interface for creating guarded runs, reviewing run folders, replacing initialized scope rules, checking scope candidates, and applying guarded workflow-state transitions; see [web review/control details](docs/web-review-plane.md).
 
 The design keeps reasoning and enrichment separate from durable authorization, scope, evidence, and finding records. See [Architecture](docs/architecture.md), [Contracts](contracts/README.md), and the ADRs under [docs/adr/](docs/adr/) for details.
 
@@ -165,7 +165,7 @@ Outrider currently has four implementation domains:
 - **Claude skill layer:** implemented and used as the primary operator-facing capability layer.
 - **Python CLI controls:** implemented for run scaffolding, local scope/state/evidence/approval/contract/finding checks, and read-only review support.
 - **Optional MCP enrichment:** implemented for bounded, policy-gated enrichment tools that require explicit run context before network or DNS activity.
-- **Local web control plane:** implemented as a loopback-only review interface with guarded workflow-state transitions for existing run folders; all other web mutations remain unsupported.
+- **Local web control plane:** implemented as a loopback-only control interface with guarded run creation, initialized-only scope replacement, browser scope checks, and guarded workflow-state transitions; all other web mutations remain unsupported.
 
 The repository does not claim to execute full automated recon on its own. It is a controlled harness for authorized recon workflows and safe handoff. See [Architecture](docs/architecture.md), [Web review plane](docs/web-review-plane.md), and [Release readiness](docs/release-readiness.md) for the current product boundary.
 
@@ -201,7 +201,7 @@ Python 0.2.0 is published as a GitHub release under tag [`python-v0.2.0`](https:
 | [Architecture](docs/architecture.md) | Responsibility boundaries and deterministic controls |
 | [Capabilities](docs/capabilities.md) | Complete capability inventory |
 | [Coverage](docs/coverage.md) | Practitioner coverage by workflow and engagement phase |
-| [Web control plane](docs/web-review-plane.md) | Local review interface with guarded workflow-state transitions |
+| [Web control plane](docs/web-review-plane.md) | Local control interface with guarded run creation, scope management, scope checks, and workflow-state transitions |
 | [Contracts](contracts/README.md) | Skill request/result interchange |
 | [MCP server](mcp-server/README.md) | Optional policy-gated enrichment server |
 | [Release documentation](docs/releases/README.md) | Versions, artifacts, and checksum verification |

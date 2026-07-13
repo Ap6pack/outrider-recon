@@ -11,6 +11,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added guarded atomic run creation through the local web control plane.
+- Added initialized-only scope replacement with exact-file revision checks, server-managed change attribution, and browser scope evaluation.
+
 - Added the first guarded web mutation capability: process-local-token-protected workflow-state transitions that reuse the deterministic Python state policy.
 
 ### Changed
