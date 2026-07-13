@@ -32,8 +32,17 @@ class BundleError(Exception):
     pass
 
 def read_py_version() -> str:
-    import tomllib
-    return tomllib.loads((ROOT / "pyproject.toml").read_text())["project"]["version"]
+    in_project = False
+    for raw in (ROOT / "pyproject.toml").read_text(encoding="utf-8").splitlines():
+        line = raw.strip()
+        if line == "[project]":
+            in_project = True
+            continue
+        if line.startswith("[") and line.endswith("]"):
+            in_project = False
+        if in_project and line.startswith("version") and "=" in line:
+            return line.split("=", 1)[1].strip().strip("\"'")
+    raise BundleError("pyproject.toml missing [project] version")
 
 def skill_names() -> list[str]:
     return sorted(p.parent.name for p in (ROOT / "skills").glob("*/SKILL.md") if p.parent.name != "_shared")

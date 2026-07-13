@@ -84,7 +84,6 @@ None identified after this audit. Remaining items are release limitations, not b
 - **Individual skills:** **no version change** is recommended for this audit because skill content semantics are unchanged.
 - **JSON schemas:** **no version change** is recommended because schema semantics remain version `1`.
 
-
 ## Applied version decision for release preparation
 
 - Python package `0.2.0` is applied as a minor pre-1.0 release candidate for backward-compatible deterministic control-plane functionality.

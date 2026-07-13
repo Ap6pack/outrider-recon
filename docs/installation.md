@@ -207,7 +207,6 @@ rm -rf ~/.claude/skills/analysis-and-reporting \
 
 Or remove the symlinks if you used method 2 above.
 
-
 ## Local release-candidate artifacts
 
 After maintainers build candidates, install the local Python wheel without claiming PyPI publication:
