@@ -66,10 +66,30 @@ jobs:
           python -m venv /tmp/outrider-web
           /tmp/outrider-web/bin/python -m pip install "dist/outrider_recon-0.2.0-py3-none-any.whl[web]"
           /tmp/outrider-web/bin/python - <<'PY'
+          from pathlib import Path
+          from tempfile import TemporaryDirectory
+
           from fastapi.testclient import TestClient
           from outrider.web_app import create_app
-          c=TestClient(create_app())
-          assert c.get('/').status_code in (200, 404)
+
+          with TemporaryDirectory() as temporary_directory:
+              runs_root = Path(temporary_directory) / "runs"
+              runs_root.mkdir()
+
+              client = TestClient(create_app(runs_root))
+
+              health = client.get("/api/health")
+              assert health.status_code == 200
+              assert health.json() == {
+                  "ok": True,
+                  "service": "outrider-web",
+                  "mode": "read-only",
+                  "network_scope": "loopback-only",
+              }
+
+              assert client.get("/").status_code == 200
+              assert client.get("/static/app.css").status_code == 200
+              assert client.get("/static/app.js").status_code == 200
           PY
       - name: Verify bundle manifest
         run: |

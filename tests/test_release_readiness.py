@@ -153,6 +153,22 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertNotIn('pull_request:', wf)
         self.assertNotIn('push:', wf)
         self.assertIn('contents: read', wf)
+        clean_web_step = next(
+            step for step in parsed['jobs']['build-candidates']['steps']
+            if step.get('name') == 'Clean web install smoke'
+        )
+        clean_web_script = clean_web_step['run']
+        self.assertIn('TemporaryDirectory', clean_web_script)
+        self.assertRegex(clean_web_script, r'runs_root\s*=\s*Path\([^\n]+\)\s*/\s*[\"\']runs[\"\']')
+        self.assertIn('runs_root.mkdir()', clean_web_script)
+        self.assertRegex(clean_web_script, r'create_app\(\s*runs_root\s*\)')
+        self.assertNotRegex(clean_web_script, r'create_app\(\s*\)')
+        for path in ['/api/health', '/', '/static/app.css', '/static/app.js']:
+            self.assertIn(path, clean_web_script)
+        self.assertIn('health.status_code == 200', clean_web_script)
+        self.assertIn('client.get("/").status_code == 200', clean_web_script)
+        self.assertNotIn('uvicorn', clean_web_script.lower())
+        self.assertNotIn('0.0.0.0', clean_web_script)
         for bad in ['contents: write','packages: write','id-token: write','actions: write','twine upload','gh release create','git tag','git push','secrets.']:
             self.assertNotIn(bad, wf)
         for needed in ['tools/release_audit.py','unittest discover','compileall','python -m build','twine check','tools/build_release_bundle.py','SHA256SUMS','Clean base install','Clean web install','actions/upload-artifact@v4']:
