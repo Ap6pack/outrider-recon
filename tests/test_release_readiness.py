@@ -130,6 +130,54 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertEqual(package_version(), '0.2.0')
 
 
+    def test_lint_workflow_separates_core_and_web_tests(self):
+        import yaml
+        workflow = (ROOT/'.github/workflows/lint.yml').read_text()
+        parsed = yaml.safe_load(workflow)
+        jobs = parsed['jobs']
+        self.assertIn('python-core-tests', jobs)
+        self.assertIn('web-control-tests', jobs)
+        self.assertIn('release-readiness', jobs)
+        self.assertNotIn('python-cli-tests', jobs)
+
+        for job in jobs.values():
+            self.assertNotIn('continue-on-error', job)
+
+        core = jobs['python-core-tests']
+        self.assertEqual(core['name'], 'Python core tests (${{ matrix.python-version }})')
+        self.assertFalse(core['strategy']['fail-fast'])
+        self.assertEqual(core['strategy']['matrix']['python-version'], ['3.10', '3.11', '3.12'])
+        core_steps = '\n'.join(str(step.get('run', '')) for step in core['steps'])
+        self.assertIn('python -m pip install -e .', core_steps)
+        self.assertNotIn('.[web]', core_steps)
+        self.assertIn('python -m compileall outrider tests mcp-server tools', core_steps)
+        self.assertIn('python -m unittest discover -s tests -p "test_*.py"', core_steps)
+
+        web = jobs['web-control-tests']
+        self.assertEqual(web['name'], 'Web control-plane tests (3.12)')
+        setup = next(step for step in web['steps'] if step.get('uses') == 'actions/setup-python@v5')
+        self.assertEqual(setup['with']['python-version'], '3.12')
+        web_steps = '\n'.join(str(step.get('run', '')) for step in web['steps'])
+        self.assertIn('python -m pip install -e ".[web]"', web_steps)
+        self.assertIn('python -c "import fastapi, httpx, uvicorn"', web_steps)
+        self.assertIn('python -m unittest tests.test_web_view tests.test_web_app', web_steps)
+        self.assertIn('python -m unittest discover -s tests -p "test_*.py"', web_steps)
+
+        release = jobs['release-readiness']
+        release_setup = next(step for step in release['steps'] if step.get('uses') == 'actions/setup-python@v5')
+        self.assertEqual(release_setup['with']['python-version'], '3.12')
+        all_versions = set()
+        for job in jobs.values():
+            matrix = job.get('strategy', {}).get('matrix', {})
+            all_versions.update(matrix.get('python-version', []))
+            for step in job.get('steps', []):
+                if step.get('uses') == 'actions/setup-python@v5':
+                    version = step.get('with', {}).get('python-version')
+                    if isinstance(version, str) and version.startswith('3.'):
+                        all_versions.add(version)
+        self.assertTrue({'3.10', '3.11', '3.12'}.issubset(all_versions))
+
+
     def test_release_notes_changelog_and_workflow(self):
         changelog=(ROOT/'CHANGELOG.md').read_text()
         self.assertIn('## [Unreleased]', changelog)

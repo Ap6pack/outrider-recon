@@ -90,8 +90,8 @@ jobs:
           scandir: .
           additional_files: install.sh uninstall.sh
 
-  python-cli-tests:
-    name: Python CLI tests (${{ matrix.python-version }})
+  python-core-tests:
+    name: Python core tests (${{ matrix.python-version }})
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -107,11 +107,32 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
-      - name: Install local package
-        run: python -m pip install -e ".[web]"
-      - name: Compile package, tests, and MCP server
-        run: python -m compileall outrider tests mcp-server
+      - name: Install base package
+        run: python -m pip install -e .
+      - name: Compile package, tests, MCP server, and tools
+        run: python -m compileall outrider tests mcp-server tools
       - name: Run complete unit test suite
+        run: python -m unittest discover -s tests -p "test_*.py"
+
+  web-control-tests:
+    name: Web control-plane tests (3.12)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Upgrade pip
+        run: python -m pip install --upgrade pip
+      - name: Install package with web extra
+        run: python -m pip install -e ".[web]"
+      - name: Verify optional web dependencies
+        run: python -c "import fastapi, httpx, uvicorn"
+      - name: Compile package, tests, and tools
+        run: python -m compileall outrider tests tools
+      - name: Run focused web tests
+        run: python -m unittest tests.test_web_view tests.test_web_app
+      - name: Run complete unit test suite with web extra
         run: python -m unittest discover -s tests -p "test_*.py"
 
   release-readiness:
@@ -176,5 +197,25 @@ jobs:
               venv.EnvBuilder(with_pip=True).create(env)
               py = env / 'bin' / 'python'
               subprocess.check_call([py, '-m', 'pip', 'install', f'{wheel}[web]'])
-              subprocess.check_call([py, '-c', 'from outrider.web_app import create_app; from fastapi.testclient import TestClient; from outrider.package_resources import web_static_path; app=create_app("."); c=TestClient(app); assert c.get("/api/health").status_code == 200; assert c.get("/").status_code == 200; assert c.get("/static/app.css").status_code == 200; assert c.get("/static/app.js").status_code == 200; assert web_static_path("index.html").exists()'])
+              import textwrap
+              smoke = textwrap.dedent('''
+                  from pathlib import Path
+                  from tempfile import TemporaryDirectory
+                  from fastapi.testclient import TestClient
+                  from outrider.package_resources import web_static_path
+                  from outrider.web_app import create_app
+                  with TemporaryDirectory() as td:
+                      runs_root = Path(td) / "runs"
+                      runs_root.mkdir()
+                      client = TestClient(create_app(runs_root, control_token="fixture"))
+                      health = client.get("/api/health")
+                      assert health.status_code == 200
+                      assert health.json()["mode"] == "limited-control"
+                      assert client.get("/api/session").status_code == 200
+                      assert client.get("/").status_code == 200
+                      assert client.get("/static/app.css").status_code == 200
+                      assert client.get("/static/app.js").status_code == 200
+                      assert web_static_path("index.html").exists()
+              ''')
+              subprocess.check_call([py, '-c', smoke])
           PY

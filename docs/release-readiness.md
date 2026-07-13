@@ -57,7 +57,7 @@ Status: **ready_with_limitations**. Public documentation now distinguishes skill
 
 ## Test and CI status
 
-Status: **ready_with_limitations**. Unit tests continue on Python 3.10 and 3.11, with Python 3.12 added. A separate release-readiness package-build job builds distributions, runs the audit, checks package contents, and performs clean base/web installation smoke checks without live target network calls.
+Status: **ready_with_limitations**. Base-package compatibility is tested on Python 3.10, 3.11, and 3.12 without optional web dependencies. The optional web control-plane integration suite runs once on Python 3.12 with `.[web]` installed. A separate release-readiness package-build job builds distributions, runs the audit, checks package contents, and performs clean base/web installation smoke checks without live target network calls.
 
 ## Known limitations
 
