@@ -99,6 +99,7 @@ jobs:
         python-version:
           - '3.10'
           - '3.11'
+          - '3.12'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -112,3 +113,68 @@ jobs:
         run: python -m compileall outrider tests mcp-server
       - name: Run complete unit test suite
         run: python -m unittest discover -s tests -p "test_*.py"
+
+  release-readiness:
+    name: Release readiness package build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+      - name: Run release audit
+        run: python tools/release_audit.py
+      - name: Build sdist and wheel
+        run: |
+          rm -rf dist build *.egg-info
+          python -m build
+          python -m twine check dist/*
+      - name: Inspect package contents
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import sys
+          sys.path.insert(0, 'tools')
+          import release_audit
+          for artifact in sorted(Path('dist').iterdir()):
+              result = release_audit.inspect_archive(artifact)
+              print(result)
+              assert result['has_license']
+              assert result['has_metadata']
+              assert result['has_web_static']
+              assert result['has_schemas']
+              assert result['has_skill_catalog']
+              assert not result['unexpected']
+          PY
+      - name: Clean base wheel installation smoke test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, sys, tempfile, venv
+          wheel = next(Path('dist').glob('*.whl')).resolve()
+          with tempfile.TemporaryDirectory() as td:
+              env = Path(td) / 'base'
+              venv.EnvBuilder(with_pip=True).create(env)
+              py = env / 'bin' / 'python'
+              subprocess.check_call([py, '-m', 'pip', 'install', str(wheel)])
+              for args in [['outrider','--version'], ['outrider','--help'], ['outrider','init','--help'], ['outrider','show','--help'], ['outrider','scope-check','--help'], ['outrider','state','--help'], ['outrider','evidence','--help'], ['outrider','approval','--help'], ['outrider','action-check','--help'], ['outrider','contract','--help'], ['outrider','finding','--help'], ['outrider','web','--help']]:
+                  subprocess.check_call([env / 'bin' / args[0], *args[1:]])
+              subprocess.check_call([py, '-c', 'import outrider, outrider.cli; from outrider.skill_contract import list_known_skills; from outrider.package_resources import schema_json; assert len(list_known_skills()) == 11; assert schema_json("skill-request-v1.schema.json")["properties"]["schema_version"]["const"] == 1; import importlib.util; assert importlib.util.find_spec("fastapi") is None'])
+          PY
+      - name: Clean web wheel installation smoke test
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess, tempfile, venv
+          wheel = next(Path('dist').glob('*.whl')).resolve()
+          with tempfile.TemporaryDirectory() as td:
+              env = Path(td) / 'web'
+              venv.EnvBuilder(with_pip=True).create(env)
+              py = env / 'bin' / 'python'
+              subprocess.check_call([py, '-m', 'pip', 'install', f'{wheel}[web]'])
+              subprocess.check_call([py, '-c', 'from outrider.web_app import create_app; from fastapi.testclient import TestClient; from outrider.package_resources import web_static_path; app=create_app("."); c=TestClient(app); assert c.get("/api/health").status_code == 200; assert c.get("/").status_code == 200; assert c.get("/static/app.css").status_code == 200; assert c.get("/static/app.js").status_code == 200; assert web_static_path("index.html").exists()'])
+          PY

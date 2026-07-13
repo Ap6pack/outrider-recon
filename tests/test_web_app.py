@@ -5,7 +5,10 @@ from io import StringIO
 from pathlib import Path
 from unittest.mock import patch
 
-from fastapi.testclient import TestClient
+try:
+    from fastapi.testclient import TestClient
+except ImportError:  # optional web extra not installed in base environments
+    TestClient = None
 from outrider import cli
 from outrider.web_app import create_app
 from uuid import uuid4
@@ -32,6 +35,7 @@ def populate(run):
     rp=run/'contracts'/'results'/f'{result["result_id"]}.json'; rp.write_text(json.dumps(result, sort_keys=True), encoding='utf-8')
     promote_finding(run,rp,claim_id,actor='authorized-operator',title='Public schema',candidate='api.example.com',severity='medium',confidence='high',validation_basis='response_evidence',validation_reason='reviewed',impact='info leak',remediation='restrict',location='/openapi.json')
 
+@unittest.skipIf(TestClient is None, "FastAPI web extra is not installed")
 class WebAppTests(unittest.TestCase):
     def client(self, root): return TestClient(create_app(root))
 

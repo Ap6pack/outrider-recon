@@ -16,6 +16,12 @@ Outrider is not another subdomain-enum wrapper. It is an agentic recon workflow 
 
 ---
 
+## Version domains and installation boundaries
+
+Outrider uses independent version domains. The Python package remains `0.1.0`; the Claude plugin/content bundle remains `3.0.0`; each skill keeps its own frontmatter version; and JSON contract schemas currently use schema version `1`. Do not assume the Python package version and Claude plugin/content version move together.
+
+The base Python package installs the deterministic local controls and CLI with PyYAML only. Web review support is optional via the `web` extra, and MCP server dependencies are installed separately from `mcp-server/requirements.txt` in a source checkout.
+
 ## Optional MCP policy enforcement
 
 The optional MCP server exposes five bounded enrichment tools and now requires an explicit Outrider `run_dir` for every call. Before any HTTP request or DNS resolution, each MCP tool evaluates the current run manifest, workflow state, scope, and approval policy through the existing Python control layer.

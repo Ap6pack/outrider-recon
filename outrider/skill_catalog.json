@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "skills": [
+    "analysis-and-reporting",
+    "cloud-and-infra",
+    "identity-fabric",
+    "offensive-osint",
+    "osint-methodology",
+    "people-breach-intel",
+    "post-discovery",
+    "recon-asset-discovery",
+    "report-template",
+    "secrets-and-dorks",
+    "web-surface"
+  ]
+}

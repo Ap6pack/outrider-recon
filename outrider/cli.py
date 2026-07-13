@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+from importlib.metadata import PackageNotFoundError, version
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
@@ -48,6 +49,12 @@ from outrider.state import (
 
 
 LOOPBACK_WEB_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+def package_version() -> str:
+    try:
+        return version("outrider-recon")
+    except PackageNotFoundError:  # pragma: no cover - source tree fallback
+        return "0.1.0"
 
 def _valid_web_port(value: str) -> int:
     try:
@@ -858,6 +865,7 @@ def build_parser() -> argparse.ArgumentParser:
         prog="outrider",
         description="Outrider Recon CLI harness for run-folder creation and evidence-backed handoff.",
     )
+    parser.add_argument("--version", action="version", version=f"outrider-recon {package_version()}")
     subcommands = parser.add_subparsers(dest="command", required=True)
 
     init_parser = subcommands.add_parser(
