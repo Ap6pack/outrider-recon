@@ -186,7 +186,6 @@ See [Release documentation](docs/releases/README.md) for version domains, artifa
 
 ---
 
-
 ## Current releases
 
 Python 0.2.0 is published as a GitHub release under tag [`python-v0.2.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0), and Claude plugin/content 3.0.1 is published under tag [`plugin-v3.0.1`](https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1). The same `SHA256SUMS` file covers all three release artifacts across both release domains; future release-candidate workflow runs produce unsigned candidate artifacts for maintainer review; the workflow does not publish automatically.
