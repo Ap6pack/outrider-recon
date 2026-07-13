@@ -24,7 +24,7 @@ Pipeline content also includes:
 - Detection-aware guidance encouraging back-off rather than evasion when active defenses are detected.
 - Validator discipline — only read-only credential verification; never destructive.
 
-These controls are enforced in two layers: Claude skills provide methodology and operator guardrails, while the Python package provides deterministic run manifests, workflow state, scope decisions, evidence integrity checks, approval records, skill-contract validation, finding promotion, and MCP tool-boundary policy for the optional server. The optional web review plane is local, loopback-only, and read-only.
+These controls are enforced in two layers: Claude skills provide methodology and operator guardrails, while the Python package provides deterministic run manifests, workflow state, scope decisions, evidence integrity checks, approval records, skill-contract validation, finding promotion, and MCP tool-boundary policy for the optional server. The optional web control plane is local and loopback-only. It has no user authentication; its only web mutation is process-local-token-protected workflow-state transition, and all other mutations remain CLI-only.
 
 ## Reporting a security issue with the skills themselves
 

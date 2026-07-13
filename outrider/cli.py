@@ -91,11 +91,13 @@ def web_serve(args: argparse.Namespace) -> int:
             return 2
         app = create_app(root)
         url = f"http://{args.host}:{args.port}" if args.host != "::1" else f"http://[::1]:{args.port}"
-        print(f"Outrider web review plane: {url}")
+        print(f"Outrider local control plane: {url}")
         print("Runs root accepted.")
-        print("Interface mode: read-only.")
+        print("Interface mode: local review with controlled workflow-state transitions.")
         print("Authentication: none provided.")
+        print("Mutation protection: process-local control token and same-origin checks.")
         print("Network scope: restricted to the local machine (loopback only).")
+        print("Other control actions remain CLI-only.")
         uvicorn.run(app, host=args.host, port=args.port)
         return 0
     except ValueError as exc:

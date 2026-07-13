@@ -37,12 +37,12 @@ def populate(run):
 
 @unittest.skipIf(TestClient is None, "FastAPI web extra is not installed")
 class WebAppTests(unittest.TestCase):
-    def client(self, root): return TestClient(create_app(root))
+    def client(self, root, token='tok'): return TestClient(create_app(root, control_token=token))
 
     def test_health_runs_details_headers_and_static_ui(self):
         with tempfile.TemporaryDirectory() as td:
             c=self.client(td)
-            r=c.get('/api/health'); self.assertEqual(r.status_code,200); self.assertEqual(r.json()['mode'],'read-only')
+            r=c.get('/api/health'); self.assertEqual(r.status_code,200); self.assertEqual(r.json()['mode'],'limited-control')
             self.assertEqual(r.headers['cache-control'],'no-store')
             self.assertIn("default-src 'self'", r.headers['content-security-policy'])
             self.assertEqual(r.headers['x-content-type-options'],'nosniff')
@@ -56,10 +56,10 @@ class WebAppTests(unittest.TestCase):
                 body=resp.text
                 self.assertNotIn(td, body); self.assertNotIn('Traceback', body); self.assertNotIn('api.example.com evidence', body)
             html=c.get('/').text; js=c.get('/static/app.js').text; css=c.get('/static/app.css').text
-            self.assertIn('Run dashboard', html); self.assertIn('Read-only', html); self.assertIn('viewport', html)
+            self.assertIn('Run dashboard', html); self.assertIn('workflow-state transitions are enabled', html); self.assertIn('viewport', html)
             for term in ['Overview','Scope','State','Evidence','Approvals','Contracts','Findings','Integrity']:
                 self.assertIn(term, html)
-            bad_terms=['http://','https://','cdn','analytics','fonts.googleapis','eval(','innerHTML']
+            bad_terms=['cdn','analytics','fonts.googleapis','eval(','innerHTML','localStorage','sessionStorage']
             for term in bad_terms:
                 self.assertNotIn(term, html+js+css)
             self.assertIn('role="main"', html)
@@ -74,6 +74,7 @@ class WebAppTests(unittest.TestCase):
             for method in ['post','put','patch','delete']:
                 self.assertEqual(getattr(c,method)('/api/runs').status_code,405)
                 self.assertEqual(getattr(c,method)(f'/api/runs/{rid}/overview').status_code,405)
+            self.assertEqual(c.post(f'/api/runs/{rid}/state/transition').status_code,403)
             self.assertEqual(c.get('/docs').status_code,404); self.assertEqual(c.get('/openapi.json').status_code,404)
             self.assertEqual(c.get('/artifacts/obs.txt').status_code,404)
             self.assertEqual(c.get('/api/files/manifest.json').status_code,404)
@@ -81,6 +82,44 @@ class WebAppTests(unittest.TestCase):
                 c.get(path)
             after={p.relative_to(run).as_posix():p.read_bytes() for p in run.rglob('*') if p.is_file()}
             self.assertEqual(before, after)
+
+
+    def test_session_token_and_state_transition_guards(self):
+        with tempfile.TemporaryDirectory() as td:
+            run=make_run(td); rid=load_manifest(run).run_id; c=self.client(td, token='fixture')
+            session=c.get('/api/session')
+            self.assertEqual(session.status_code,200); self.assertEqual(session.headers['cache-control'],'no-store')
+            self.assertEqual(session.json()['control_token'],'fixture')
+            self.assertTrue(session.json()['capabilities']['state_transition'])
+            for path in ['/', '/static/app.js', '/api/runs', f'/api/runs/{rid}/state']:
+                self.assertNotIn('fixture', c.get(path).text)
+            body={"expected_state":"initialized","new_state":"scoped","actor":"authorized-operator","reason":None}
+            before=(run/'run.jsonl').read_text()
+            self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json=body).status_code,403)
+            self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json=body, headers={'X-Outrider-Control-Token':'bad'}).status_code,403)
+            self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json=body, headers={'X-Outrider-Control-Token':'fixture','Sec-Fetch-Site':'cross-site'}).status_code,403)
+            self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json=body, headers={'X-Outrider-Control-Token':'fixture','Origin':'http://evil.test'}).status_code,403)
+            self.assertEqual((run/'run.jsonl').read_text(), before)
+            ok=c.post(f'/api/runs/{rid}/state/transition', json=body, headers={'X-Outrider-Control-Token':'fixture'})
+            self.assertEqual(ok.status_code,200,ok.text); self.assertTrue(ok.json()['ok'])
+            self.assertEqual(ok.json()['state']['current_state'],'scoped')
+            self.assertEqual(len((run/'run.jsonl').read_text().splitlines()), 2)
+            stale=c.post(f'/api/runs/{rid}/state/transition', json=body, headers={'X-Outrider-Control-Token':'fixture'})
+            self.assertEqual(stale.status_code,409)
+
+    def test_state_transition_request_validation_and_default_token(self):
+        with tempfile.TemporaryDirectory() as td:
+            run=make_run(td); rid=load_manifest(run).run_id; c=self.client(td, token='fixture')
+            generated=TestClient(create_app(td)).get('/api/session').json()['control_token']
+            self.assertIsInstance(generated,str); self.assertGreater(len(generated),20)
+            headers={'X-Outrider-Control-Token':'fixture'}
+            self.assertEqual(c.post('/api/runs/not-a-uuid/state/transition', json={}, headers=headers).status_code,422)
+            self.assertEqual(c.post('/api/runs/00000000-0000-4000-8000-000000000000/state/transition', json={}, headers=headers).status_code,404)
+            self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', data='{', headers={**headers,'Content-Type':'application/json'}).status_code,422)
+            self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json={'expected_state':'initialized','new_state':'scoped'}, headers=headers).status_code,422)
+            bad={'expected_state':'initialized','new_state':'completed','actor':'authorized-operator','reason':None}
+            before=(run/'run.jsonl').read_text(); self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json=bad, headers=headers).status_code,409); self.assertEqual((run/'run.jsonl').read_text(), before)
+            unknown={**bad,'extra':True}; self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json=unknown, headers=headers).status_code,422)
 
     def test_cli_validation_and_missing_dependency_guidance(self):
         with tempfile.TemporaryDirectory() as td:

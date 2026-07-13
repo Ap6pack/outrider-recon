@@ -109,7 +109,7 @@ Scope → Recon → Enrich → Score → Finding Cards → Handoff → Report
 - **Claude skills** provide methodology, routing, operator checklists, scoring guidance, and report structure.
 - **Python controls** provide deterministic local enforcement for run identity, workflow state, scope checks, approval policy, evidence integrity, contract validation, and finding promotion.
 - **Optional MCP tools** provide policy-gated live enrichment for bounded public-source lookups and DNS records.
-- **Optional web review plane** provides a local, read-only browser interface for reviewing existing run folders.
+- **Optional web control plane** provides a local browser interface for reviewing existing run folders and applying guarded workflow-state transitions; see [web review/control details](docs/web-review-plane.md).
 
 The design keeps reasoning and enrichment separate from durable authorization, scope, evidence, and finding records. See [Architecture](docs/architecture.md), [Contracts](contracts/README.md), and the ADRs under [docs/adr/](docs/adr/) for details.
 
@@ -152,7 +152,7 @@ See [examples/05-sample-output.md](examples/05-sample-output.md) for a fuller sa
 
 ## Installation
 
-Outrider has separate install paths for Claude skills, the Python CLI, optional web extras, and optional MCP server dependencies. The base Python package installs deterministic local controls and the CLI; web review dependencies are installed with the `web` extra; MCP dependencies are installed from `mcp-server/requirements.txt` in a source checkout.
+Outrider has separate install paths for Claude skills, the Python CLI, optional web extras, and optional MCP server dependencies. The base Python package installs deterministic local controls and the CLI; web control-plane dependencies are installed with the `web` extra; MCP dependencies are installed from `mcp-server/requirements.txt` in a source checkout.
 
 Use [docs/installation.md](docs/installation.md) for supported install patterns, including one-click install, manual Claude Code setup, editable Python installs, web extras, MCP setup, updates, and uninstall steps.
 
@@ -165,7 +165,7 @@ Outrider currently has four implementation domains:
 - **Claude skill layer:** implemented and used as the primary operator-facing capability layer.
 - **Python CLI controls:** implemented for run scaffolding, local scope/state/evidence/approval/contract/finding checks, and read-only review support.
 - **Optional MCP enrichment:** implemented for bounded, policy-gated enrichment tools that require explicit run context before network or DNS activity.
-- **Local web review plane:** implemented as a loopback-only, read-only review interface for existing run folders.
+- **Local web control plane:** implemented as a loopback-only review interface with guarded workflow-state transitions for existing run folders; all other web mutations remain unsupported.
 
 The repository does not claim to execute full automated recon on its own. It is a controlled harness for authorized recon workflows and safe handoff. See [Architecture](docs/architecture.md), [Web review plane](docs/web-review-plane.md), and [Release readiness](docs/release-readiness.md) for the current product boundary.
 
@@ -201,14 +201,14 @@ Python 0.2.0 is published as a GitHub release under tag [`python-v0.2.0`](https:
 | [Architecture](docs/architecture.md) | Responsibility boundaries and deterministic controls |
 | [Capabilities](docs/capabilities.md) | Complete capability inventory |
 | [Coverage](docs/coverage.md) | Practitioner coverage by workflow and engagement phase |
-| [Web review plane](docs/web-review-plane.md) | Local read-only review interface |
+| [Web control plane](docs/web-review-plane.md) | Local review interface with guarded workflow-state transitions |
 | [Contracts](contracts/README.md) | Skill request/result interchange |
 | [MCP server](mcp-server/README.md) | Optional policy-gated enrichment server |
 | [Release documentation](docs/releases/README.md) | Versions, artifacts, and checksum verification |
 | [Release readiness](docs/release-readiness.md) | Maintainer release checks and readiness status |
 | [Security](SECURITY.md) | Authorization and prohibited-use boundaries |
 
-Key architecture decisions are captured in [docs/adr/](docs/adr/), including run state, evidence integrity, approvals, MCP boundaries, contracts, finding promotion, and the web review plane. Additional material lives in [docs/methods/](docs/methods/), [docs/reference/](docs/reference/), [examples/](examples/), and [tests/smoke-test-prompts.md](tests/smoke-test-prompts.md).
+Key architecture decisions are captured in [docs/adr/](docs/adr/), including run state, evidence integrity, approvals, MCP boundaries, contracts, finding promotion, and the web control plane. Additional material lives in [docs/methods/](docs/methods/), [docs/reference/](docs/reference/), [examples/](examples/), and [tests/smoke-test-prompts.md](tests/smoke-test-prompts.md).
 
 ---
 

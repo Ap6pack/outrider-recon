@@ -3,14 +3,14 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Outrider Review Plane</title>
+  <title>Outrider Local Control Plane</title>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/app.js" defer></script>
 </head>
 <body>
-<header class="app-header" role="banner"><h1>Outrider Local Review Plane</h1><p>Operator dashboard for read-only run review</p></header>
+<header class="app-header" role="banner"><h1>Outrider Local Control Plane</h1><p>Local review with controlled workflow-state transitions</p></header>
 <main id="main" role="main">
-  <section class="banner" aria-label="read-only status">Read-only local interface. No authentication is provided. No artifact downloads, MCP calls, recon, approvals, state transitions, evidence registration, or finding promotion are implemented.</section>
+  <section class="banner" aria-label="limited control status">Local single-operator interface. No authentication is provided. workflow-state transitions are enabled; all other mutations remain CLI-only. No MCP, recon execution, artifact download, approvals, evidence registration, contracts, or finding promotion are implemented.</section>
   <section class="panel" aria-labelledby="dashboard-title">
     <h2 id="dashboard-title">Run dashboard</h2>
     <div id="loading" class="muted">Loading runs…</div>
@@ -33,6 +33,6 @@
     <div id="detail" tabindex="-1"></div>
   </section>
 </main>
-<footer role="contentinfo">Command-line controls remain authoritative. This first web release is not a multiuser server.</footer>
+<footer role="contentinfo">Command-line controls remain authoritative for every non-state action. This is not a multiuser server.</footer>
 </body>
 </html>
