@@ -9,6 +9,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+- Added an optional local loopback-only, read-only web review plane with a dashboard and run detail views for scope, state, evidence, approvals, contracts, findings, and integrity summaries; it serves no artifacts and performs no run mutations.
+
 - Restored append-only approval records and bounded action-policy evaluation after the approval-layer revert.
 - Reconciled MCP tool-boundary enforcement with the restored approval layer and exact active DNS approval checks.
 - Restored approval and MCP regression coverage for policy decisions, CLI exits, and denied zero-network paths.

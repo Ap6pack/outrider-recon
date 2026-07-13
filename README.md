@@ -463,3 +463,16 @@ List and verify promoted findings:
 outrider finding list runs/example.com
 outrider finding verify runs/example.com
 ```
+
+## Local web review plane
+
+Outrider includes an optional first-increment local web review plane for operator review of existing run folders. Install the optional web dependencies only when you want to use it:
+
+```bash
+python -m pip install -e ".[web]"
+outrider web serve ./runs
+```
+
+Then open `http://127.0.0.1:8765`.
+
+The web plane is loopback-only and accepts only `127.0.0.1`, `localhost`, or `::1` as bind hosts. It is read-only: browser-based run mutations are not implemented, artifact downloads are not served, and the interface does not execute skills, recon, network lookups, DNS, MCP calls, approvals, evidence registration, finding promotion, scope edits, or state transitions. It has no authentication, is not a multiuser server, and must not be placed behind a public reverse proxy. The dashboard and detail workspace show run identity, workflow state, scope, evidence integrity, approval status, skill contracts, promoted findings, warnings, and integrity errors. Command-line controls remain authoritative.

@@ -16,9 +16,19 @@ dependencies = [
   "PyYAML>=6",
 ]
 
+[project.optional-dependencies]
+web = [
+  "fastapi>=0.115,<1",
+  "uvicorn>=0.30,<1",
+  "httpx>=0.27,<1",
+]
+
 [project.scripts]
 outrider = "outrider.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["outrider*"]
+
+[tool.setuptools.package-data]
+outrider = ["web_static/*"]

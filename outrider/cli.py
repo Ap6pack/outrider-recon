@@ -46,6 +46,55 @@ from outrider.state import (
     transition_state,
 )
 
+
+LOOPBACK_WEB_HOSTS = {"127.0.0.1", "localhost", "::1"}
+
+def _valid_web_port(value: str) -> int:
+    try:
+        port = int(value)
+    except ValueError as exc:
+        raise argparse.ArgumentTypeError("port must be an integer from 1024 through 65535") from exc
+    if port < 1024 or port > 65535:
+        raise argparse.ArgumentTypeError("port must be an integer from 1024 through 65535")
+    return port
+
+def _validate_web_args(args: argparse.Namespace) -> Path:
+    if args.host not in LOOPBACK_WEB_HOSTS:
+        raise ValueError("web host must be one of 127.0.0.1, localhost, or ::1")
+    root = Path(args.runs_root)
+    if root.is_symlink():
+        raise ValueError("RUNS_ROOT must not be a symlink")
+    if not root.exists():
+        raise ValueError("RUNS_ROOT does not exist")
+    if not root.is_dir():
+        raise ValueError("RUNS_ROOT must be a directory")
+    return root
+
+def web_serve(args: argparse.Namespace) -> int:
+    try:
+        root = _validate_web_args(args)
+        try:
+            import uvicorn
+            from outrider.web_app import create_app
+        except ImportError:
+            print('ERROR: web dependencies are not installed. Install them with: python -m pip install -e ".[web]"')
+            return 2
+        app = create_app(root)
+        url = f"http://{args.host}:{args.port}" if args.host != "::1" else f"http://[::1]:{args.port}"
+        print(f"Outrider web review plane: {url}")
+        print("Runs root accepted.")
+        print("Interface mode: read-only.")
+        print("Authentication: none provided.")
+        print("Network scope: restricted to the local machine (loopback only).")
+        uvicorn.run(app, host=args.host, port=args.port)
+        return 0
+    except ValueError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    except RuntimeError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+
 DEFAULT_FILES = {
     "assets.json": {"assets": [], "notes": "Discovered assets will be stored here."},
     "web_surface.json": {
@@ -1001,6 +1050,14 @@ def build_parser() -> argparse.ArgumentParser:
     finding_verify_parser.add_argument("--finding-id")
     finding_verify_parser.add_argument("--json", action="store_true")
     finding_verify_parser.set_defaults(func=finding_verify)
+
+    web_parser = subcommands.add_parser("web", help="Serve the optional local read-only web review plane.")
+    web_sub = web_parser.add_subparsers(dest="web_command", required=True)
+    web_serve_parser = web_sub.add_parser("serve", help="Serve run review UI on a loopback interface.")
+    web_serve_parser.add_argument("runs_root")
+    web_serve_parser.add_argument("--host", default="127.0.0.1", choices=sorted(LOOPBACK_WEB_HOSTS))
+    web_serve_parser.add_argument("--port", type=_valid_web_port, default=8765)
+    web_serve_parser.set_defaults(func=web_serve)
 
     contract_parser = subcommands.add_parser("contract", help="Create and validate skill interchange contracts.")
     contract_sub = contract_parser.add_subparsers(dest="contract_command", required=True)

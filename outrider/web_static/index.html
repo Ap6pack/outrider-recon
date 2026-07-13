@@ -1,0 +1,38 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Outrider Review Plane</title>
+  <link rel="stylesheet" href="/static/app.css">
+  <script src="/static/app.js" defer></script>
+</head>
+<body>
+<header class="app-header" role="banner"><h1>Outrider Local Review Plane</h1><p>Operator dashboard for read-only run review</p></header>
+<main id="main" role="main">
+  <section class="banner" aria-label="read-only status">Read-only local interface. No authentication is provided. No artifact downloads, MCP calls, recon, approvals, state transitions, evidence registration, or finding promotion are implemented.</section>
+  <section class="panel" aria-labelledby="dashboard-title">
+    <h2 id="dashboard-title">Run dashboard</h2>
+    <div id="loading" class="muted">Loading runs…</div>
+    <div id="error-panel" class="error" hidden></div>
+    <div class="filters" aria-label="dashboard filters">
+      <label>Target <input id="filter-target" type="search" autocomplete="off"></label>
+      <label>State <select id="filter-state"><option value="">Any state</option></select></label>
+      <label>Health <select id="filter-health"><option value="">Any health</option><option>healthy</option><option>warning</option><option>error</option></select></label>
+    </div>
+    <div id="summary-cards" class="cards"></div>
+    <div id="empty-state" class="empty" hidden>No runs found beneath this runs root.</div>
+    <div id="run-list" class="run-list" aria-live="polite"></div>
+  </section>
+  <section id="workspace" class="panel" aria-labelledby="workspace-title" hidden>
+    <h2 id="workspace-title">Run detail</h2>
+    <nav id="tabs" class="tabs" aria-label="Run sections">
+      <button data-view="overview">Overview</button><button data-view="scope">Scope</button><button data-view="state">State</button><button data-view="evidence">Evidence</button><button data-view="approvals">Approvals</button><button data-view="contracts">Contracts</button><button data-view="findings">Findings</button><button data-view="integrity">Integrity</button>
+    </nav>
+    <div id="detail-loading" class="muted" hidden>Loading detail…</div>
+    <div id="detail" tabindex="-1"></div>
+  </section>
+</main>
+<footer role="contentinfo">Command-line controls remain authoritative. This first web release is not a multiuser server.</footer>
+</body>
+</html>
