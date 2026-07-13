@@ -103,3 +103,21 @@ class SkillContractTests(unittest.TestCase):
         self.assertIn('Router role', (ROOT/'skills/offensive-osint/SKILL.md').read_text())
 
 if __name__=='__main__': unittest.main()
+
+class ContractInventoryRevisionTests(unittest.TestCase):
+    def test_revision_inventory_lookup_and_catalog(self):
+        with tempfile.TemporaryDirectory() as td:
+            run=make_run(td); empty=__import__('outrider.skill_contract',fromlist=['contract_revision']).contract_revision(run)
+            self.assertEqual(empty, __import__('outrider.skill_contract',fromlist=['contract_revision']).contract_revision(run))
+            transition_state(run,'scoped','authorized-operator')
+            req,_,_=create_skill_request(run,'recon-asset-discovery','authorized-operator','obj','public_source_lookup','example.com')
+            result={"schema_version":1,"contract_type":"skill_result","result_id":str(uuid4()),"request_id":req.request_id,"run_id":req.run_id,"skill":req.skill,"completed_at":utc_now(),"status":"completed","summary":"s","claims":[],"discovered_candidates":[{"candidate":"api.example.com","relationship":"domain","source_evidence_ids":[]}],"recommended_actions":[],"errors":[]}
+            # use blocked result to avoid evidence fixture for inventory-only test
+            result={"schema_version":1,"contract_type":"skill_result","result_id":str(uuid4()),"request_id":req.request_id,"run_id":req.run_id,"skill":req.skill,"completed_at":utc_now(),"status":"blocked","summary":"blocked","claims":[],"discovered_candidates":[],"recommended_actions":[],"errors":[{"message":"manual"}]}
+            (run/'contracts/results/result.json').write_text(json.dumps(result))
+            from outrider.skill_contract import contract_revision, list_contract_inventory, find_skill_request_by_id, request_action_catalog, REQUEST_ACTIONS
+            changed=contract_revision(run); self.assertNotEqual(empty, changed)
+            inv=list_contract_inventory(run); self.assertEqual(inv['request_count'],1); self.assertEqual(inv['result_count'],1); self.assertNotIn(str(Path(td)), json.dumps(inv))
+            req_id=inv['requests'][0]['contract_id']; self.assertEqual(find_skill_request_by_id(run, req_id).status, 'found')
+            catalog=request_action_catalog(); self.assertEqual({c['action_type'] for c in catalog}, set(REQUEST_ACTIONS)); self.assertNotIn('intrusive_validation',{c['action_type'] for c in catalog})
+            self.assertEqual([c['action_type'] for c in catalog], sorted(c['action_type'] for c in catalog))

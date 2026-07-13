@@ -12,8 +12,12 @@ from outrider.finding import FindingValidationError, list_findings, verify_all_f
 from outrider.scope import ScopeValidationError, load_scope, scope_revision, load_scope_document
 from outrider.skill_contract import (
     SkillContractValidationError,
+    contract_revision,
+    list_contract_inventory,
+    list_known_skills,
     load_skill_request,
     load_skill_result,
+    request_action_catalog,
     validate_skill_request,
     validate_skill_result,
 )
@@ -218,26 +222,55 @@ def _json_files(base: Path) -> list[Path]:
     return [p for p in sorted(base.iterdir(), key=lambda x: x.name) if p.is_file() and not p.is_symlink() and p.suffix == ".json"]
 
 
+def validation_context(run_dir: str | Path) -> dict[str, Any]:
+    current_state = None
+    try: current_state = load_state(run_dir).current_state
+    except Exception: pass
+    return {"current_state": current_state, "contract_revision": contract_revision(run_dir), "scope_revision": scope_revision(run_dir), "approval_revision": approval_revision(run_dir), "evidence_revision": evidence_revision(run_dir)}
+
+
+def _evidence_options(run_dir: Path) -> list[dict[str, Any]]:
+    registry, _ = _ok("evidence", lambda: load_evidence_registry(run_dir))
+    verifications, _ = _ok("evidence", lambda: verify_all_evidence(run_dir))
+    by_id = {v.evidence_id: v for v in (verifications or [])}
+    rows=[]
+    for rec in getattr(registry, "records", ()):
+        v=by_id.get(rec.evidence_id); status=getattr(v,"status","unknown"); selectable=status=="verified"
+        rows.append({"evidence_id":rec.evidence_id,"relative_artifact_path":rec.path,"artifact_type":rec.artifact_type,"verification_status":status,"selectable":selectable,"selection_disabled_reason":None if selectable else getattr(v,"reason","evidence is not verified")})
+    return rows
+
+
 def contract_view(run_dir: str | Path) -> dict[str, Any]:
     run = Path(run_dir)
     requests = []
     results = []
     errors: list[ViewError] = []
+    inventory = list_contract_inventory(run)
+    inv_req = {i["relative_path"]: i for i in inventory["requests"]}
+    inv_res = {i["relative_path"]: i for i in inventory["results"]}
     for path in _json_files(run / "contracts" / "requests"):
         rel = path.relative_to(run).as_posix()
         req, err = _ok("contracts", lambda rel=rel: load_skill_request(run, rel))
         rep = validate_skill_request(run, rel)
         if err: errors += err
         if req:
-            requests.append({"request_id": req.request_id, "skill": req.skill, "objective": req.objective, "requested_action": req.requested_action, "candidate": req.candidate, "created_at": req.created_at, "validation_result": rep.overall_status, "policy_decision": rep.current_request_policy_decision, "evidence_status": "valid" if rep.evidence_ids_valid else "error"})
+            requests.append({"request_id": req.request_id, "skill": req.skill, "created_at": req.created_at, "created_by": req.created_by, "objective": req.objective, "action_type": req.requested_action["action_type"], "candidate": req.requested_action.get("candidate"), "input_evidence_ids": req.input_evidence_ids, "max_items": req.limits.get("max_items"), "notes": req.notes, "validation_result": rep.overall_status, "structural_valid": rep.structural_valid, "evidence_verified": rep.evidence_verified, "current_policy_decision": rep.current_request_policy_decision})
+        elif rel in inv_req:
+            errors.append(ViewError("contracts", inv_req[rel].get("error") or "invalid request contract"))
     for path in _json_files(run / "contracts" / "results"):
         rel = path.relative_to(run).as_posix()
         res, err = _ok("contracts", lambda rel=rel: load_skill_result(run, rel))
         rep = validate_skill_result(run, rel)
         if err: errors += err
         if res:
-            results.append({"result_id": res.result_id, "request_id": res.request_id, "skill": res.skill, "completion_status": res.status, "summary": res.summary, "claim_count": len(res.claims), "discovered_candidate_count": len(res.discovered_candidates), "recommended_action_count": len(res.recommended_actions), "validation_result": rep.overall_status, "evidence_status": "valid" if rep.evidence_ids_valid else "error"})
-    return {"valid": not errors, "requests": requests, "results": results, "request_count": len(requests), "result_count": len(results), "errors": [e.to_dict() for e in errors], "notice": "finding_candidate entries are skill output; validated_finding entries are human-reviewed local promotions."}
+            finding_count=sum(1 for c in res.claims if c.get("classification")=="finding_candidate")
+            results.append({"result_id": res.result_id, "request_id": res.request_id, "skill": res.skill, "completed_at": res.completed_at, "completion_status": res.status, "summary": res.summary, "claim_count": len(res.claims), "finding_candidate_count": finding_count, "discovered_candidate_count": len(res.discovered_candidates), "recommended_action_count": len(res.recommended_actions), "error_count": len(res.errors), "validation_result": rep.overall_status, "structural_valid": rep.structural_valid, "evidence_verified": rep.evidence_verified})
+        elif rel in inv_res:
+            errors.append(ViewError("contracts", inv_res[rel].get("error") or "invalid result contract"))
+    invalid_req=sum(1 for i in inventory["requests"] if i.get("error"))
+    invalid_res=sum(1 for i in inventory["results"] if i.get("error"))
+    ctx=validation_context(run)
+    return {"valid": not errors, "current_state": ctx["current_state"], "contract_revision": ctx["contract_revision"], "validation_context": ctx, "known_skills": list(list_known_skills()), "request_action_types": request_action_catalog(), "evidence_options": _evidence_options(run), "request_count": len(requests), "result_count": len(results), "invalid_request_count": invalid_req, "invalid_result_count": invalid_res, "requests": requests, "results": results, "errors": [e.to_dict() for e in errors], "notice": "Point-in-time contract summaries only. Request creation does not execute skills; result validation does not promote finding_candidate claims."}
 
 
 def finding_view(run_dir: str | Path) -> dict[str, Any]:

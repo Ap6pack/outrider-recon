@@ -2,12 +2,12 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
-import json, os, re, stat, tempfile
+import hashlib, json, os, re, stat, tempfile
 from pathlib import Path
 from typing import Any
 from uuid import UUID, uuid4
 
-from outrider.approval import ACTION_TYPES, INTRUSIVE, PROHIBITED, evaluate_action
+from outrider.approval import ACTION_TYPES, ACTIVE, ALLOWED_STATES, INTRUSIVE, PROHIBITED, action_class, evaluate_action
 from outrider.evidence import load_evidence_registry, verify_all_evidence
 from outrider.scope import ScopeValidationError, _normalize_candidate, evaluate_scope_path
 from outrider.state import load_manifest, load_state
@@ -94,7 +94,7 @@ def _json_obj(path:Path)->dict[str,Any]:
 def _safe_existing_file(run_dir:Path, file_path:str|Path, subdir:str)->Path:
     run=run_dir.resolve(); base=run/"contracts"/subdir
     p=Path(file_path)
-    if not p.is_absolute(): p=(Path.cwd()/p).resolve()
+    if not p.is_absolute(): p=(run/p).resolve()
     else: p=p.resolve()
     try: rel=p.relative_to(base.resolve(strict=False))
     except ValueError as e: raise SkillContractValidationError(f"contract file must be under contracts/{subdir}/") from e
@@ -107,6 +107,109 @@ def _safe_existing_file(run_dir:Path, file_path:str|Path, subdir:str)->Path:
         st=os.lstat(cur)
         if stat.S_ISLNK(st.st_mode): raise SkillContractValidationError("contract path contains a symbolic link")
     return p
+
+
+@dataclass(frozen=True)
+class ContractLookup:
+    contract_id: str
+    relative_path: str
+    kind: str
+    status: str = "found"
+    error: str | None = None
+    def to_dict(self): return asdict(self)
+
+EMPTY_CONTRACT_REVISION = hashlib.sha256(b"outrider-contract-set-v1\n").hexdigest()
+
+def _contract_dir(run_dir: Path, kind: str) -> Path:
+    return run_dir / "contracts" / kind
+
+def _safe_contract_files(run_dir: Path, kind: str) -> tuple[list[Path], list[str]]:
+    base = _contract_dir(run_dir, kind); errors=[]
+    if not base.exists(): return [], errors
+    st=os.lstat(base)
+    if stat.S_ISLNK(st.st_mode): return [], [f"contracts/{kind} is a symbolic link"]
+    if not stat.S_ISDIR(st.st_mode): return [], [f"contracts/{kind} is not a directory"]
+    files=[]
+    for child in base.iterdir():
+        try: cst=os.lstat(child)
+        except OSError as e: errors.append(f"contracts/{kind}/{child.name}: {e}"); continue
+        if stat.S_ISLNK(cst.st_mode): errors.append(f"contracts/{kind}/{child.name}: symbolic links are skipped"); continue
+        if not stat.S_ISREG(cst.st_mode): continue
+        if child.suffix != ".json": continue
+        files.append(child)
+    return sorted(files, key=lambda p: p.relative_to(run_dir).as_posix()), errors
+
+def _read_stable_bytes(path: Path) -> bytes:
+    before=os.stat(path, follow_symlinks=False)
+    if not stat.S_ISREG(before.st_mode): raise SkillContractValidationError("contract path is not a regular file")
+    data=path.read_bytes()
+    after=os.stat(path, follow_symlinks=False)
+    if (before.st_mtime_ns,before.st_size,before.st_ino)!=(after.st_mtime_ns,after.st_size,after.st_ino):
+        raise SkillContractValidationError("contract file changed while reading")
+    return data
+
+def contract_revision(run_dir: str|Path) -> str:
+    """Return an optimistic SHA-256 inventory token for safe request/result contracts; not a signature."""
+    run=Path(run_dir); h=hashlib.sha256(); h.update(b"outrider-contract-set-v1\n")
+    entries=[]; errors=[]
+    for kind in ("requests","results"):
+        fs, es=_safe_contract_files(run, kind); entries += fs; errors += es
+    if errors: raise SkillContractValidationError("; ".join(errors))
+    for path in sorted(entries, key=lambda p: p.relative_to(run).as_posix()):
+        rel=path.relative_to(run).as_posix().encode(); data=_read_stable_bytes(path)
+        h.update(len(rel).to_bytes(8,"big")); h.update(rel); h.update(len(data).to_bytes(8,"big")); h.update(data)
+    return h.hexdigest()
+
+def _top_uuid(path: Path, field: str) -> tuple[str|None,str|None]:
+    try:
+        data=json.loads(_read_stable_bytes(path).decode("utf-8"))
+        if not isinstance(data,dict): return None,"contract JSON must be an object"
+        v=data.get(field)
+        if isinstance(v,str): return str(UUID(v)), None
+        return None, f"missing {field}"
+    except Exception as e:
+        return None, str(e)
+
+def list_contract_inventory(run_dir: str|Path, *, max_files:int=2000) -> dict[str,Any]:
+    run=Path(run_dir); out={"requests":[],"results":[],"request_count":0,"result_count":0,"truncated":False,"max_files":max_files,"skipped":[],"duplicates":{"request_ids":[],"result_ids":[]}}
+    seen={"requests":{},"results":{}}
+    total=0
+    for kind, field in (("requests","request_id"),("results","result_id")):
+        files, errors=_safe_contract_files(run, kind); out["skipped"] += [{"section":kind,"message":e} for e in errors]
+        for path in files:
+            if total >= max_files: out["truncated"]=True; break
+            total += 1; rel=path.relative_to(run).as_posix(); cid,err=_top_uuid(path, field)
+            item={"kind":kind[:-1],"relative_path":rel,"contract_id":cid,"valid_json":err is None,"error":err}
+            out[kind].append(item)
+            if cid: seen[kind].setdefault(cid,[]).append(rel)
+    for kind, key in (("requests","request_ids"),("results","result_ids")):
+        out["duplicates"][key]=sorted([cid for cid,paths in seen[kind].items() if len(paths)>1])
+    out["request_count"]=len(out["requests"]); out["result_count"]=len(out["results"])
+    return out
+
+def _find_by_id(run_dir: str|Path, kind: str, field: str, contract_id: str) -> ContractLookup:
+    try: cid=str(UUID(contract_id))
+    except Exception as e: raise SkillContractValidationError(f"{field} must be a UUID") from e
+    run=Path(run_dir); matches=[]
+    files,_=_safe_contract_files(run, kind)
+    for path in files:
+        found,err=_top_uuid(path, field)
+        if found == cid: matches.append(path.relative_to(run).as_posix())
+    if not matches: return ContractLookup(cid,"",kind[:-1],"not_found")
+    if len(matches)>1: return ContractLookup(cid,"",kind[:-1],"ambiguous","duplicate matching contract IDs")
+    return ContractLookup(cid,matches[0],kind[:-1])
+
+def find_skill_request_by_id(run_dir: str|Path, request_id: str) -> ContractLookup:
+    return _find_by_id(run_dir,"requests","request_id",request_id)
+
+def find_skill_result_by_id(run_dir: str|Path, result_id: str) -> ContractLookup:
+    return _find_by_id(run_dir,"results","result_id",result_id)
+
+def request_action_catalog() -> list[dict[str,Any]]:
+    rows=[]
+    for at in sorted(REQUEST_ACTIONS):
+        rows.append({"action_type":at,"action_class":action_class(at),"candidate_mode":"optional" if at=="local_analysis" else "required","candidate_required":at!="local_analysis","approval_required":at in ACTIVE,"allowed_states":sorted(ALLOWED_STATES.get(at,()))})
+    return rows
 
 def ensure_contract_dirs(run_dir: str|Path)->None:
     run=Path(run_dir); load_manifest(run); load_state(run)
@@ -158,7 +261,7 @@ def _parse_request(run_dir:Path, data:dict[str,Any])->SkillRequest:
     limits=data["limits"]
     if not isinstance(limits,dict) or set(limits)!={"max_items"}: raise SkillContractValidationError("limits must contain only max_items")
     mi=limits["max_items"]
-    if not isinstance(mi,int) or mi<1 or mi>1000: raise SkillContractValidationError("max_items must be between 1 and 1000")
+    if isinstance(mi,bool) or not isinstance(mi,int) or mi<1 or mi>1000: raise SkillContractValidationError("max_items must be between 1 and 1000")
     notes=data["notes"]
     if notes is not None: notes=_nonempty(notes,"notes")
     return SkillRequest(1,REQUEST_CONTRACT_TYPE,rid,manifest.run_id,created_at,actor,skill,objective,{"action_type":at,"candidate":cand},ids,{"max_items":mi},notes)
@@ -255,8 +358,10 @@ def validate_skill_result(run_dir: str|Path, result_file: str|Path)->ContractVal
     run=Path(run_dir)
     try:
         res=load_skill_result(run,result_file)
-        req_path=run/"contracts"/"requests"/f"{res.request_id}.json"
-        req=load_skill_request(run,req_path)
+        lookup=find_skill_request_by_id(run,res.request_id)
+        if lookup.status == "not_found": raise SkillContractValidationError("linked request not found")
+        if lookup.status == "ambiguous": raise SkillContractValidationError("linked request ID is ambiguous")
+        req=load_skill_request(run,lookup.relative_path)
         if req.request_id!=res.request_id or req.run_id!=res.run_id or req.skill!=res.skill: raise SkillContractValidationError("result does not match linked request")
         req_rep=_report_request(run,req)
         eids=[]

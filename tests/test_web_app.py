@@ -287,3 +287,21 @@ class WebAppTests(unittest.TestCase):
                 self.assertNotIn(term, combined)
 
 if __name__=='__main__': unittest.main()
+
+@unittest.skipIf(TestClient is None, "FastAPI web extra is not installed")
+class ContractEndpointTests(unittest.TestCase):
+    def client(self, root, token='tok'): return TestClient(create_app(root, control_token=token))
+    def test_contract_request_create_and_validate_smoke(self):
+        with tempfile.TemporaryDirectory() as td:
+            run=make_run(td); rid=load_manifest(run).run_id; transition_state(run,'scoped','authorized-operator')
+            c=self.client(td,'tok'); h={'X-Outrider-Control-Token':'tok'}
+            view=c.get(f'/api/runs/{rid}/contracts').json(); rev=view['contract_revision']
+            self.assertIn('request_action_types', view); self.assertIn('known_skills', view)
+            self.assertEqual(c.post(f'/api/runs/{rid}/contracts/requests', json={}, headers={}).status_code,403)
+            body={'expected_revision':rev,'expected_state':'scoped','skill':'recon-asset-discovery','actor':'authorized-operator','objective':'Public lookup','action_type':'public_source_lookup','candidate':'EXAMPLE.COM','input_evidence_ids':[],'max_items':100,'notes':None}
+            ok=c.post(f'/api/runs/{rid}/contracts/requests', json=body, headers=h)
+            self.assertEqual(ok.status_code,201,ok.text); req=ok.json()['request']; self.assertEqual(req['candidate'],'example.com')
+            self.assertNotEqual(ok.json()['contracts']['contract_revision'], rev)
+            val=c.post(f'/api/runs/{rid}/contracts/requests/{req["request_id"]}/validate', json={'expected_revision':ok.json()['contracts']['contract_revision']}, headers=h)
+            self.assertEqual(val.status_code,200,val.text); self.assertEqual(val.json()['validation_report']['overall_status'],'valid')
+            self.assertIn(c.post(f'/api/runs/{rid}/contracts/results', json={}, headers=h).status_code, (404,405))
