@@ -85,7 +85,7 @@ class Audit:
         schemas={p.name: json.loads(p.read_text()).get('properties',{}).get('schema_version',{}).get('const') for p in (self.root/'contracts').glob('*.schema.json')}
         return {'python_package':py['project']['version'],'claude_plugin':plugin['version'],'skills':skills,'schemas':schemas,'manifest_schema':1,'state_event_schema':1,'evidence_schema':1,'approval_schema':1,'finding_schema':schemas.get('finding-v1.schema.json')}
     def run(self):
-        self.check_required_files(); self.check_parse(); self.check_versions(); self.check_skills(); self.check_schemas(); self.check_package_data(); self.check_static(); self.check_adrs(); self.check_artifacts(); self.check_security_patterns(); self.check_docs_versions(); self.check_changelog(); self.check_release_workflow(); self.check_mcp(); return self
+        self.check_required_files(); self.check_parse(); self.check_versions(); self.check_skills(); self.check_schemas(); self.check_package_data(); self.check_static(); self.check_adrs(); self.check_artifacts(); self.check_security_patterns(); self.check_docs_versions(); self.check_changelog(); self.check_lint_workflow(); self.check_release_workflow(); self.check_mcp(); return self
 
     def check_versions(self):
         versions = self.versions()
@@ -249,6 +249,39 @@ class Audit:
             self.ok('unreleased changelog cleanup','released entries are not duplicated under Unreleased')
         else:
             self.fail('unreleased changelog cleanup','released entries remain under Unreleased')
+
+
+    def check_lint_workflow(self):
+        if self.is_bundle_root():
+            self.ok('lint workflow exclusion','release bundle intentionally excludes .github workflow files')
+            return
+        path=self.root/'.github/workflows/lint.yml'
+        text=path.read_text(errors='ignore') if path.exists() else ''
+        try:
+            import yaml
+            jobs=yaml.safe_load(text)['jobs']
+            core=jobs['python-core-tests']; web=jobs['web-control-tests']; release=jobs['release-readiness']
+            versions=core['strategy']['matrix']['python-version']
+            core_runs='\n'.join(str(step.get('run','')) for step in core.get('steps',[]))
+            web_runs='\n'.join(str(step.get('run','')) for step in web.get('steps',[]))
+            web_setup=next(step for step in web.get('steps',[]) if step.get('uses') == 'actions/setup-python@v5')
+            release_setup=next(step for step in release.get('steps',[]) if step.get('uses') == 'actions/setup-python@v5')
+            no_continue=all('continue-on-error' not in job for job in jobs.values())
+        except Exception as e:
+            self.fail('lint workflow test structure','workflow does not parse with expected jobs: '+str(e)); return
+        problems=[]
+        if versions != ['3.10','3.11','3.12']: problems.append('core matrix versions')
+        if 'python -m pip install -e .' not in core_runs or '.[web]' in core_runs: problems.append('core base install boundary')
+        if 'python -m unittest discover -s tests -p "test_*.py"' not in core_runs: problems.append('core unittest discovery')
+        if web_setup.get('with',{}).get('python-version') != '3.12': problems.append('web Python 3.12')
+        if 'python -m pip install -e ".[web]"' not in web_runs: problems.append('web extra install')
+        if 'python -c "import fastapi, httpx, uvicorn"' not in web_runs: problems.append('web dependency import check')
+        if 'python -m unittest tests.test_web_view tests.test_web_app' not in web_runs: problems.append('focused web tests')
+        if 'python -m unittest discover -s tests -p "test_*.py"' not in web_runs: problems.append('web full discovery')
+        if release_setup.get('with',{}).get('python-version') != '3.12': problems.append('release-readiness Python 3.12')
+        if not no_continue: problems.append('continue-on-error forbidden')
+        if problems: self.fail('lint workflow test structure','missing or invalid '+', '.join(problems))
+        else: self.ok('lint workflow test structure','base matrix, dedicated web job, and release-readiness job are configured')
 
     def check_release_workflow(self):
         if self.is_bundle_root():

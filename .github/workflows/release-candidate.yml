@@ -83,9 +83,12 @@ jobs:
               assert health.json() == {
                   "ok": True,
                   "service": "outrider-web",
-                  "mode": "read-only",
+                  "mode": "limited-control",
                   "network_scope": "loopback-only",
               }
+
+              session = client.get("/api/session")
+              assert session.status_code == 200
 
               assert client.get("/").status_code == 200
               assert client.get("/static/app.css").status_code == 200

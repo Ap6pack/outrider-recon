@@ -39,6 +39,41 @@ def populate(run):
 class WebAppTests(unittest.TestCase):
     def client(self, root, token='tok'): return TestClient(create_app(root, control_token=token))
 
+
+    def test_focused_control_plane_smoke_transition(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs_root = Path(td) / 'runs'
+            runs_root.mkdir()
+            run = make_run(runs_root)
+            rid = load_manifest(run).run_id
+            c = self.client(runs_root, token='fixture')
+
+            health = c.get('/api/health')
+            self.assertEqual(health.status_code, 200)
+            self.assertEqual(health.json()['mode'], 'limited-control')
+            self.assertEqual(c.get('/api/session').status_code, 200)
+            self.assertEqual(c.get('/').status_code, 200)
+            self.assertEqual(c.get('/static/app.css').status_code, 200)
+            self.assertEqual(c.get('/static/app.js').status_code, 200)
+
+            body = {
+                'expected_state': 'initialized',
+                'new_state': 'scoped',
+                'actor': 'authorized-operator',
+                'reason': None,
+            }
+            self.assertEqual(c.post(f'/api/runs/{rid}/state/transition', json=body).status_code, 403)
+            ok = c.post(
+                f'/api/runs/{rid}/state/transition',
+                json=body,
+                headers={'X-Outrider-Control-Token': 'fixture'},
+            )
+            self.assertEqual(ok.status_code, 200, ok.text)
+            self.assertEqual(ok.json()['state']['current_state'], 'scoped')
+            refreshed = c.get(f'/api/runs/{rid}/state')
+            self.assertEqual(refreshed.status_code, 200)
+            self.assertEqual(refreshed.json()['current_state'], 'scoped')
+
     def test_health_runs_details_headers_and_static_ui(self):
         with tempfile.TemporaryDirectory() as td:
             c=self.client(td)

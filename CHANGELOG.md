@@ -13,6 +13,10 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Added the first guarded web mutation capability: process-local-token-protected workflow-state transitions that reuse the deterministic Python state policy.
 
+### Changed
+
+- Split base Python compatibility testing from the optional web control-plane integration suite so web behavior is tested once on Python 3.12 while core compatibility remains covered on Python 3.10–3.12.
+
 ### Documentation
 
 - Updated public documentation after publication of the Python 0.2.0 and Claude plugin/content 3.0.1 GitHub releases, including release links, installation guidance, checksum instructions, and implementation-status corrections.
