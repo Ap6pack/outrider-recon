@@ -60,8 +60,8 @@ class ReleaseReadinessTests(unittest.TestCase):
 
     def test_version_inventory_and_independent_domains(self):
         versions=release_audit.Audit(ROOT).versions()
-        self.assertEqual(versions['python_package'],'0.1.0')
-        self.assertEqual(versions['claude_plugin'],'3.0.0')
+        self.assertEqual(versions['python_package'],'0.2.0')
+        self.assertEqual(versions['claude_plugin'],'3.0.1')
         self.assertNotEqual(versions['python_package'], versions['claude_plugin'])
         self.assertEqual(set(versions['schemas'].values()), {1})
 
@@ -80,7 +80,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             self.assertEqual(json.loads((ROOT/'contracts'/name).read_text()), schema_json(name))
         for name in ['index.html','app.css','app.js']:
             self.assertTrue(web_static_path(name).exists())
-        self.assertEqual(json.loads((ROOT/'.claude-plugin/plugin.json').read_text())['version'], '3.0.0')
+        self.assertEqual(json.loads((ROOT/'.claude-plugin/plugin.json').read_text())['version'], '3.0.1')
         for i in range(1,8):
             self.assertTrue(list((ROOT/'docs/adr').glob(f'{i:04d}-*.md')))
 
@@ -127,7 +127,46 @@ class ReleaseReadinessTests(unittest.TestCase):
             cp=subprocess.run(cmd, cwd=ROOT, text=True, capture_output=True)
             self.assertEqual(cp.returncode, 0, cp.stderr+cp.stdout)
         from outrider.cli import package_version
-        self.assertRegex(package_version(), r'^\d+\.\d+\.\d+')
+        self.assertEqual(package_version(), '0.2.0')
+
+
+    def test_release_notes_changelog_and_workflow(self):
+        changelog=(ROOT/'CHANGELOG.md').read_text()
+        self.assertIn('## [Unreleased]', changelog)
+        self.assertRegex(changelog, r'## \[Python 0\.2\.0\] -- \d{4}-\d{2}-\d{2}')
+        self.assertRegex(changelog, r'## \[Claude plugin/content 3\.0\.1\] -- \d{4}-\d{2}-\d{2}')
+        unreleased=changelog.split('## [Unreleased]',1)[1].split('---',1)[0]
+        self.assertNotIn('deterministic scope checks', unreleased)
+        for rel in ['README.md','python-0.2.0.md','plugin-3.0.1.md','release-checklist.md']:
+            self.assertTrue((ROOT/'docs/releases'/rel).exists())
+        py_notes=(ROOT/'docs/releases/python-0.2.0.md').read_text().lower()
+        self.assertNotIn('pip install outrider-recon==0.2.0', py_notes)
+        plugin_notes=(ROOT/'docs/releases/plugin-3.0.1.md').read_text()
+        self.assertIn('Python 0.2.0 is a separate version domain', plugin_notes)
+        docs='\n'.join(p.read_text(errors='ignore') for p in [ROOT/'README.md', ROOT/'docs/installation.md', ROOT/'docs/architecture.md'])
+        self.assertNotIn('Python package version `3.0.1`', docs)
+        wf=(ROOT/'.github/workflows/release-candidate.yml').read_text()
+        import yaml
+        parsed=yaml.safe_load(wf)
+        self.assertIsInstance(parsed, dict)
+        self.assertIn('workflow_dispatch:', wf)
+        self.assertNotIn('pull_request:', wf)
+        self.assertNotIn('push:', wf)
+        self.assertIn('contents: read', wf)
+        for bad in ['contents: write','packages: write','id-token: write','actions: write','twine upload','gh release create','git tag','git push','secrets.']:
+            self.assertNotIn(bad, wf)
+        for needed in ['tools/release_audit.py','unittest discover','compileall','python -m build','twine check','tools/build_release_bundle.py','SHA256SUMS','Clean base install','Clean web install','actions/upload-artifact@v4']:
+            self.assertIn(needed, wf)
+
+    def test_skill_and_schema_version_preservation(self):
+        expected={
+            'analysis-and-reporting': '1.0.0', 'cloud-and-infra': '1.1.0', 'identity-fabric': '1.0.0',
+            'offensive-osint': '2.1.1', 'osint-methodology': '2.2', 'people-breach-intel': '1.0.0',
+            'post-discovery': '1.0.0', 'recon-asset-discovery': '1.0.0', 'report-template': '1.0.0',
+            'secrets-and-dorks': '1.0.0', 'web-surface': '1.0.0'}
+        self.assertEqual(release_audit.Audit(ROOT).versions()['skills'], expected)
+        self.assertNotIn('_shared', expected)
+        self.assertEqual(set(release_audit.Audit(ROOT).versions()['schemas'].values()), {1})
 
     def test_audit_is_read_only_and_no_network(self):
         before={p: p.stat().st_mtime_ns for p in ROOT.rglob('*') if p.is_file() and '.git' not in p.parts}

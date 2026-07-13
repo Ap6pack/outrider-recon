@@ -9,7 +9,7 @@
 | Mode | Status | Notes |
 | --- | --- | --- |
 | Claude skill/content bundle | ready_with_limitations | 11 shipped skills plus `_shared` contract guidance; skills provide methodology and do not bypass deterministic controls. |
-| Base Python CLI | ready | Package version remains `0.1.0`; base runtime depends on PyYAML and provides deterministic run, scope, state, evidence, approval, contract, finding, and discoverability commands. |
+| Base Python CLI | ready | Package version remains `0.2.0`; base runtime depends on PyYAML and provides deterministic run, scope, state, evidence, approval, contract, finding, and discoverability commands. |
 | Optional MCP server | ready_with_limitations | Source-checkout companion with five guarded tools; not included as a base wheel dependency. |
 | Optional local web review plane | ready_with_limitations | Installed with `.[web]`; loopback-only, read-only, no artifact download route, no write route, no Node build. |
 
@@ -19,7 +19,7 @@ Status: **ready**. The package builds as a wheel and source distribution with Py
 
 ## Claude plugin/content status
 
-Status: **ready_with_limitations**. The Claude plugin/content bundle remains version `3.0.0`, independent of the Python package version `0.1.0`. The metadata describes authorized recon methodology and deterministic controls without claiming unrestricted autonomous exploitation.
+Status: **ready_with_limitations**. The Claude plugin/content bundle remains version `3.0.1`, independent of the Python package version `0.2.0`. The metadata describes authorized recon methodology and deterministic controls without claiming unrestricted autonomous exploitation.
 
 ## Skill catalog status
 
@@ -55,7 +55,7 @@ Status: **ready_with_limitations**. Unit tests continue on Python 3.10 and 3.11,
 
 ## Known limitations
 
-- The Python package is still `0.1.0` and should be treated as pre-release until a dedicated version/release PR updates metadata.
+- The Python package is still `0.2.0` and should be treated as pre-release until a dedicated version/release PR updates metadata.
 - The MCP server is a source-checkout companion, not a separately published wheel component.
 - The web review plane has no authentication and is intended for loopback-only local review.
 - Claude skill capabilities are methodology/content capabilities; they are not equivalent to autonomous execution in the Python CLI.
@@ -77,9 +77,20 @@ None identified after this audit. Remaining items are release limitations, not b
 
 **ready_with_limitations:** a version/release PR may proceed after acknowledging the limitations above and after all GitHub Actions jobs pass.
 
-## Version-domain recommendation
+## Historical version-domain recommendation (applied by release preparation)
 
 - **Python package:** next change should be a **minor** version, recommended `0.2.0`, because packaging resources, CLI discoverability, and installed-wheel behavior are materially improved while preserving current semantics.
 - **Claude plugin/content bundle:** next change should be a **patch** version, recommended `3.0.1`, because metadata/documentation truth is corrected without changing skill semantics or skill versions.
 - **Individual skills:** **no version change** is recommended for this audit because skill content semantics are unchanged.
 - **JSON schemas:** **no version change** is recommended because schema semantics remain version `1`.
+
+
+## Applied version decision for release preparation
+
+- Python package `0.2.0` is applied as a minor pre-1.0 release candidate for backward-compatible deterministic control-plane functionality.
+- Claude plugin/content `3.0.1` is applied as a patch release candidate for metadata and documentation truth corrections.
+- Individual skill frontmatter versions are unchanged.
+- Manifest, state-event, evidence, approval, skill-request, skill-result, and finding schemas remain at version `1`.
+- Deterministic candidate artifacts can be built locally or through the manual unsigned release-candidate workflow.
+- No Git tags, GitHub releases, PyPI publication, or Claude plugin publication have occurred in this preparation PR.
+- Status remains **ready_with_limitations** because MCP is source-checkout based, the web plane is loopback-only and unauthenticated, and publication is manual.

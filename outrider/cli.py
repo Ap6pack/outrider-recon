@@ -3,6 +3,7 @@ from __future__ import annotations
 import argparse
 import json
 from importlib.metadata import PackageNotFoundError, version
+import tomllib
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Iterable
@@ -54,7 +55,8 @@ def package_version() -> str:
     try:
         return version("outrider-recon")
     except PackageNotFoundError:  # pragma: no cover - source tree fallback
-        return "0.1.0"
+        pyproject = Path(__file__).resolve().parents[1] / "pyproject.toml"
+        return tomllib.loads(pyproject.read_text(encoding="utf-8"))["project"]["version"]
 
 def _valid_web_port(value: str) -> int:
     try:

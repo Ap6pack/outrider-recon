@@ -1,0 +1,93 @@
+name: Unsigned release candidates
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-candidates:
+    name: Build unsigned release candidates
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out selected commit
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Install build tooling
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install build twine
+      - name: Install local package with web extras
+        run: python -m pip install -e ".[web]"
+      - name: Run release audit
+        run: python tools/release_audit.py
+      - name: Run unit tests
+        run: python -m unittest discover -s tests -p "test_*.py"
+      - name: Compile Python sources
+        run: python -m compileall outrider tests mcp-server tools
+      - name: Remove old build output safely
+        run: rm -rf dist build *.egg-info
+      - name: Build wheel and source distribution
+        run: python -m build
+      - name: Check Python distributions
+        run: python -m twine check dist/*
+      - name: Build deterministic plugin/content bundle
+        run: python tools/build_release_bundle.py --output-dir dist --source-date-epoch 1783900800
+      - name: Generate SHA256SUMS
+        run: |
+          cd dist
+          sha256sum outrider_recon-0.2.0-py3-none-any.whl outrider_recon-0.2.0.tar.gz outrider-recon-bundle-3.0.1.zip | sort -k2 > SHA256SUMS
+          sha256sum -c SHA256SUMS
+      - name: Inspect archive contents
+        run: |
+          python -m zipfile -l dist/outrider-recon-bundle-3.0.1.zip
+          python - <<'PY'
+          import zipfile
+          names=zipfile.ZipFile('dist/outrider-recon-bundle-3.0.1.zip').namelist()
+          assert not any('/tests/' in n or '/.github/' in n or '__pycache__' in n for n in names)
+          PY
+      - name: Verify artifact version names
+        run: |
+          test -f dist/outrider_recon-0.2.0-py3-none-any.whl
+          test -f dist/outrider_recon-0.2.0.tar.gz
+          test -f dist/outrider-recon-bundle-3.0.1.zip
+      - name: Clean base install smoke
+        run: |
+          python -m venv /tmp/outrider-base
+          /tmp/outrider-base/bin/python -m pip install dist/outrider_recon-0.2.0-py3-none-any.whl
+          /tmp/outrider-base/bin/outrider --version | grep '0.2.0'
+          /tmp/outrider-base/bin/python -m outrider --version | grep '0.2.0'
+      - name: Clean web install smoke
+        run: |
+          python -m venv /tmp/outrider-web
+          /tmp/outrider-web/bin/python -m pip install "dist/outrider_recon-0.2.0-py3-none-any.whl[web]"
+          /tmp/outrider-web/bin/python - <<'PY'
+          from fastapi.testclient import TestClient
+          from outrider.web_app import create_app
+          c=TestClient(create_app())
+          assert c.get('/').status_code in (200, 404)
+          PY
+      - name: Verify bundle manifest
+        run: |
+          python - <<'PY'
+          import json, zipfile
+          with zipfile.ZipFile('dist/outrider-recon-bundle-3.0.1.zip') as z:
+              m=json.loads(z.read('outrider-recon-bundle-3.0.1/RELEASE-MANIFEST.json'))
+          assert m['python_version']=='0.2.0'
+          assert m['plugin_version']=='3.0.1'
+          assert m['skill_count']==11
+          PY
+      - name: Upload unsigned candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: outrider-release-candidates-python-0.2.0-plugin-3.0.1
+          path: |
+            dist/outrider_recon-0.2.0-py3-none-any.whl
+            dist/outrider_recon-0.2.0.tar.gz
+            dist/outrider-recon-bundle-3.0.1.zip
+            dist/SHA256SUMS
+          retention-days: 7

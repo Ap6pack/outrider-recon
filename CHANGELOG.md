@@ -9,38 +9,57 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-- Added deterministic release-readiness audit tooling, package-build and clean-install validation, installed skill-catalog validation, schema and web-resource packaging validation, and documentation/metadata corrections without a release, tag, publication, or version change.
+No unreleased changes.
 
-- Added an optional local loopback-only, read-only web review plane with a dashboard and run detail views for scope, state, evidence, approvals, contracts, findings, and integrity summaries; it serves no artifacts and performs no run mutations.
+---
+
+## [Python 0.2.0] -- 2026-07-13
+
+### Added
+
+- Added deterministic scope checks with exact-domain, wildcard-subdomain, exact-IP, CIDR, out-of-scope precedence, default-deny decisions, and the offline `outrider scope-check` CLI.
+- Added stable UUID-backed run manifests, durable workflow state, append-only schema-versioned state events, validated workflow transitions, and legacy-run bootstrap commands.
+- Added an evidence registry with SHA-256 and size recording, local artifact verification, path containment, symlink protections, and `outrider evidence` CLI commands.
+- Added approval records, time-bounded grants, revocations, derived approval status, action-policy decisions, permanently prohibited action categories, and `outrider approval` / `outrider action-check` CLI commands.
+- Added MCP guard integration for fixed action mappings, pre-request scope/state/approval checks, exact active DNS approval enforcement, structured policy envelopes, and zero network or DNS activity for denied calls.
+- Added structured skill request/result contracts, a packaged skill catalog, packaged schemas, and deterministic finding promotion from `finding_candidate` records to evidence-backed findings.
+- Added an optional local loopback-only, read-only web review plane with packaged web resources for scope, state, evidence, approvals, contracts, findings, and integrity summaries.
+- Added clean-install validation, release-readiness tooling, package-build checks, CLI `--version`, and `python -m outrider` support.
+
+### Changed
+
+- Prepared the Python package as `0.2.0`, a minor pre-1.0 release for substantial backward-compatible control-plane functionality; this does not claim API stability beyond pre-1.0 expectations.
+- Kept MCP as an optional source-checkout companion and kept web dependencies in optional extras rather than base runtime dependencies.
+- Updated CI and packaging validation to install declared dependencies before compiling and running the complete unittest suite.
+
+### Fixed
 
 - Restored append-only approval records and bounded action-policy evaluation after the approval-layer revert.
 - Reconciled MCP tool-boundary enforcement with the restored approval layer and exact active DNS approval checks.
 - Restored approval and MCP regression coverage for policy decisions, CLI exits, and denied zero-network paths.
-- Updated CI to install declared Python dependencies before compiling and running the complete unittest suite.
 
-### Added
+### Security
 
-- Enforce explicit MCP run context with fixed action mappings, pre-request scope/state/approval policy checks, exact DNS approval enforcement, structured policy response envelopes, and zero network or DNS activity for denied calls.
-
-- Time-bounded approval grants, append-only revocations, derived approval status, scope/state/approval action-policy checks, permanently prohibited action categories, and `outrider approval` / `outrider action-check` CLI commands.
-
-- Append-only evidence registration, SHA-256 and size recording, local artifact verification, artifact path-containment and symlink protections, and `outrider evidence` CLI commands.
-
-- Stable UUID-backed run manifests, append-only schema-versioned workflow state events, validated workflow transitions, and explicit legacy-run bootstrap commands.
-
-- Add deterministic scope-file validation with exact-domain, wildcard-subdomain, exact-IP, and CIDR matching.
-- Add out-of-scope precedence, default-deny scope decisions, and the offline `outrider scope-check` CLI command.
-
-### Fixed
-
-- Repair Markdown lint by using a real configuration file, update the action for Node 24, format Markdown content for lint, and update installer skill counting to avoid `ls` while passing ShellCheck.
+- Enforced deterministic no-network denial paths for out-of-scope or unapproved MCP requests and preserved local artifact integrity checks.
 
 ### Documentation
 
-- Add automated CLI tests and pull-request CI coverage.
-- Clarify implementation status across Claude skills, Python CLI scaffolding, optional MCP enrichment, and the planned web UI control/review plane.
-- Document separate version domains for the plugin/content release, Python CLI package, individual skill frontmatter, and MCP server implementation.
-- Reconcile stale installation and security-policy references to older plugin/content release lines without creating a new numbered release.
+- Documented separate Python, plugin/content, skill-frontmatter, schema, and MCP version domains.
+- Clarified implementation status across Claude skills, Python CLI controls, optional MCP enrichment, optional web review, packaging resources, and release-readiness limitations.
+
+---
+
+## [Claude plugin/content 3.0.1] -- 2026-07-13
+
+### Changed
+
+- Prepared the Claude plugin/content bundle as `3.0.1`, a patch release because the existing 3.0 methodology and capability set remain unchanged.
+- Corrected plugin metadata and documentation so they accurately describe deterministic Python controls, guarded MCP enrichment, and the local read-only web plane.
+- Clarified skill/Python/MCP/web responsibility boundaries, shared structured-run contract guidance, discovery-does-not-expand-scope guidance, and the `finding_candidate` versus `validated_finding` boundary.
+
+### Documentation
+
+- Corrected installation, security, architecture, and release-readiness wording without changing individual skill methodology, individual skill frontmatter versions, or capability count.
 
 ---
 
