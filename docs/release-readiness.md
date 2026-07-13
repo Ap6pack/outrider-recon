@@ -4,6 +4,12 @@
 - **Audited commit:** 57b452d4688cac280f17f3d35867e9129dc3706e plus this audit branch's committed changes
 - **Overall status:** ready_with_limitations
 
+## Post-release status
+
+After the historical audit below, maintainers completed the release from commit `2ff9db995e7d2cb78024cbeea09bf526888626da`. Python `0.2.0` is published as GitHub release tag `python-v0.2.0` (<https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0>), and Claude plugin/content `3.0.1` is published as GitHub release tag `plugin-v3.0.1` (<https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1>). Both tags point to the release commit.
+
+Maintainer verification confirmed successful checksum verification for `outrider_recon-0.2.0-py3-none-any.whl`, `outrider_recon-0.2.0.tar.gz`, and `outrider-recon-bundle-3.0.1.zip`; successful clean base-wheel installation; successful optional web installation; and installed-wheel FastAPI TestClient checks for `/api/health`, `/`, `/static/app.css`, and `/static/app.js`. PyPI publication is not claimed. Claude Marketplace publication is not claimed. Published artifacts are checksum-verifiable but are not claimed to be cryptographically signed.
+
 ## Supported execution modes
 
 | Mode | Status | Notes |
@@ -55,7 +61,7 @@ Status: **ready_with_limitations**. Unit tests continue on Python 3.10 and 3.11,
 
 ## Known limitations
 
-- The Python package is still `0.2.0` and should be treated as pre-release until a dedicated version/release PR updates metadata.
+- The Python package remains pre-1.0 at `0.2.0`; this does not claim stable post-1.0 API guarantees.
 - The MCP server is a source-checkout companion, not a separately published wheel component.
 - The web review plane has no authentication and is intended for loopback-only local review.
 - Claude skill capabilities are methodology/content capabilities; they are not equivalent to autonomous execution in the Python CLI.
@@ -75,7 +81,7 @@ None identified after this audit. Remaining items are release limitations, not b
 
 ## Release recommendation
 
-**ready_with_limitations:** a version/release PR may proceed after acknowledging the limitations above and after all GitHub Actions jobs pass.
+**historical recommendation completed:** the version/release preparation proceeded, and maintainers subsequently published the GitHub releases described in the post-release status above. Future release PRs should acknowledge current limitations and wait for all GitHub Actions jobs to pass.
 
 ## Historical version-domain recommendation (applied by release preparation)
 
@@ -84,12 +90,12 @@ None identified after this audit. Remaining items are release limitations, not b
 - **Individual skills:** **no version change** is recommended for this audit because skill content semantics are unchanged.
 - **JSON schemas:** **no version change** is recommended because schema semantics remain version `1`.
 
-## Applied version decision for release preparation
+## Historical applied version decision for release preparation
 
-- Python package `0.2.0` is applied as a minor pre-1.0 release candidate for backward-compatible deterministic control-plane functionality.
-- Claude plugin/content `3.0.1` is applied as a patch release candidate for metadata and documentation truth corrections.
+- Python package `0.2.0` was applied as a minor pre-1.0 release candidate for backward-compatible deterministic control-plane functionality during release preparation; it was subsequently published as the GitHub release noted above.
+- Claude plugin/content `3.0.1` was applied as a patch release candidate for metadata and documentation truth corrections during release preparation; it was subsequently published as the GitHub release noted above.
 - Individual skill frontmatter versions are unchanged.
 - Manifest, state-event, evidence, approval, skill-request, skill-result, and finding schemas remain at version `1`.
 - Deterministic candidate artifacts can be built locally or through the manual unsigned release-candidate workflow.
-- No Git tags, GitHub releases, PyPI publication, or Claude plugin publication have occurred in this preparation PR.
+- At the time of the preparation PR, release tags and release records had not yet been created; maintainers later created the two GitHub release records described in the post-release status. PyPI publication and Claude Marketplace publication are still not claimed.
 - Status remains **ready_with_limitations** because MCP is source-checkout based, the web plane is loopback-only and unauthenticated, and publication is manual.

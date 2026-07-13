@@ -5,13 +5,13 @@
 This document describes both implemented behavior and architectural design intent. The current implementation is intentionally split across separate domains:
 
 - **Claude plugin/content release**: Implemented as the skill bundle, plugin manifest, docs, examples, install scripts, and optional MCP companion listed in the changelog. Version source: `CHANGELOG.md` and `.claude-plugin/plugin.json`. This release domain tracks the packaged Claude-facing content.
-- **Python CLI package**: Implemented as run-folder scaffolding, deterministic scope validation, stable run manifests, append-only workflow-state events, validated state transitions, append-only evidence registration, SHA-256 artifact integrity verification, append-only approval records, and bounded offline action-policy decisions. Version source: `pyproject.toml` and `outrider/__init__.py`. The CLI validates local scope, workflow state, approvals, and evidence integrity; the optional MCP server enforces tool-boundary policy for the existing five enrichment tools. It does not implement recon orchestration, authenticated approvers, finding validation, Claude skill-contract enforcement, automatic evidence capture, or concurrent-writer protection.
+- **Python CLI package**: Implemented as run-folder scaffolding, deterministic scope validation, stable run manifests, append-only workflow-state events, validated state transitions, append-only evidence registration, SHA-256 artifact integrity verification, append-only approval records, and bounded offline action-policy decisions. Version source: `pyproject.toml` and `outrider/__init__.py`. The CLI validates local scope, workflow state, approvals, evidence integrity, skill request/result contracts, and human-reviewed finding promotion; the optional MCP server enforces tool-boundary policy for the existing five enrichment tools. It does not implement autonomous recon orchestration, authenticated approvers, automatic evidence capture from every skill, unrestricted skill execution, or concurrent-writer protection.
 - **Individual skill frontmatter**: Implemented per `skills/*/SKILL.md`. Version source: each skill's YAML `version:` field. Skill versions may differ from the plugin/content release and from the Python package version.
 - **MCP server**: Implemented as optional live enrichment. Version source: MCP server files and dependency metadata. The MCP server provides five live enrichment tools and enforces explicit run context, fixed action mappings, scope, workflow-state, and approval decisions before HTTP or DNS activity.
 
 These version domains do not have to use the same number. A plugin/content release can advance independently from the Python CLI package, individual skill frontmatter, or MCP implementation.
 
-The asset graph, output schema, sidecar coordination, validator discipline, and approval/scope concepts below are the intended architecture. Some are implemented as Claude skill instructions and documentation today; deterministic Python enforcement now covers scope validation, workflow-state validation, evidence integrity, approval/action-policy decisions, and MCP tool-boundary enforcement where explicitly described in code. Skill-contract enforcement, authenticated approvers, finding validation, recon orchestration, automatic evidence capture, concurrent-writer protection, and a web UI are not implemented.
+The asset graph, output schema, sidecar coordination, validator discipline, and approval/scope concepts below are the intended architecture. Deterministic Python controls now implement scope validation, stable run manifests, workflow-state events and transitions, evidence registration and integrity verification, approval records and action-policy evaluation, MCP tool-boundary enforcement, skill request/result contract creation and validation, deterministic human-reviewed finding promotion and verification, the packaged skill catalog and schemas, and optional local loopback-only read-only web review. Still not implemented: autonomous recon orchestration by the Python CLI, authenticated approver identity, automatic evidence capture from every skill, unrestricted skill execution by Python, concurrent multi-writer coordination, public or authenticated web deployment, or artifact download/mutation through the web plane. Skills cannot self-certify `validated_finding`; human reviewer attribution is recorded metadata, not authenticated identity.
 
 ## The router + sub-skill split
 
@@ -220,7 +220,7 @@ For individual skills:
 - **MINOR** — new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-The prepared plugin/content release candidate is v3.0.1. The Python CLI package and individual skill versions are separate domains and may use different numbers.
+The published plugin/content GitHub release is v3.0.1. The Python CLI package and individual skill versions are separate domains and may use different numbers.
 
 ## Renumbering policy
 
@@ -340,7 +340,7 @@ The contract layer does not implement automatic skill execution, automatic evide
 
 Outrider implements deterministic scope validation, durable run identity and workflow state, evidence integrity, approval policy evaluation, MCP boundary enforcement, skill request/result contracts, and append-only evidence-backed finding promotion. Finding promotion records human-reviewed `validated_finding` entries in `findings.jsonl` with source-result SHA-256 provenance, source-claim snapshots, current-scope checks at promotion time, and local evidence verification.
 
-The architecture does not implement automatic vulnerability validation, exploitation, automatic candidate promotion, finding lifecycle updates, automatic Markdown rendering, client acceptance workflow, authenticated reviewers, concurrent-writer protection.
+The architecture does not implement automatic vulnerability validation, exploitation, automatic candidate promotion, finding lifecycle updates, automatic Markdown rendering, client acceptance workflow, authenticated reviewer identity, concurrent-writer protection.
 
 ## Local web review plane
 

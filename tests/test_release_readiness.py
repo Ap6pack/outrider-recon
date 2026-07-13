@@ -174,6 +174,56 @@ class ReleaseReadinessTests(unittest.TestCase):
         for needed in ['tools/release_audit.py','unittest discover','compileall','python -m build','twine check','tools/build_release_bundle.py','SHA256SUMS','Clean base install','Clean web install','actions/upload-artifact@v4']:
             self.assertIn(needed, wf)
 
+
+    def test_post_release_documentation_truth_alignment(self):
+        py_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0'
+        plugin_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1'
+        readme = (ROOT/'README.md').read_text()
+        self.assertIn('## Current releases', readme)
+        self.assertIn(py_link, readme)
+        self.assertIn(plugin_link, readme)
+        self.assertIn('does not publish automatically', readme)
+        release_index = (ROOT/'docs/releases/README.md').read_text()
+        self.assertIn('2ff9db995e7d2cb78024cbeea09bf526888626da', release_index)
+        self.assertIn('python-v0.2.0', release_index)
+        self.assertIn('plugin-v3.0.1', release_index)
+        self.assertIn('workflow_dispatch', release_index)
+        self.assertIn('does not automatically tag, publish GitHub releases, upload to PyPI', release_index)
+        py_notes = (ROOT/'docs/releases/python-0.2.0.md').read_text()
+        self.assertIn('minor pre-1.0 GitHub release', py_notes)
+        self.assertNotIn('minor pre-1.0 release candidate', py_notes)
+        self.assertIn(py_link, py_notes)
+        self.assertIn('This release note does not claim PyPI availability for `outrider-recon==0.2.0`.', py_notes)
+        plugin_notes = (ROOT/'docs/releases/plugin-3.0.1.md').read_text()
+        self.assertIn('published GitHub release', plugin_notes)
+        self.assertNotIn('patch release candidate', plugin_notes)
+        self.assertNotIn('Do not treat the unsigned candidate' + ' as an official release', plugin_notes)
+        self.assertIn(plugin_link, plugin_notes)
+        self.assertIn('No Claude Marketplace publication is claimed', plugin_notes)
+        readiness = (ROOT/'docs/release-readiness.md').read_text()
+        self.assertIn('## Post-release status', readiness)
+        self.assertIn('**Audit date:** 2026-07-13', readiness)
+        self.assertIn('**Audited commit:** 57b452d4688cac280f17f3d35867e9129dc3706e', readiness)
+        self.assertIn('historical recommendation completed', readiness)
+        checklist = (ROOT/'docs/releases/release-checklist.md').read_text()
+        self.assertIn('## Completed release record: 2026-07-13', checklist)
+        self.assertIn('PyPI publication is not marked complete', checklist)
+        self.assertIn('Claude Marketplace publication is not marked complete', checklist)
+        install = (ROOT/'docs/installation.md').read_text()
+        self.assertIn('python -m pip install ./outrider_recon-0.2.0-py3-none-any.whl', install)
+        self.assertIn('deterministic local run, scope, state, evidence, approval, action-policy, contract, finding, and review controls', install)
+        self.assertIn('Denied MCP decisions perform no HTTP or DNS request', install)
+        architecture = (ROOT/'docs/architecture.md').read_text()
+        self.assertIn('skill request/result contract creation and validation', architecture)
+        self.assertIn('deterministic human-reviewed finding promotion and verification', architecture)
+        self.assertIn('optional local loopback-only read-only web review', architecture)
+        self.assertNotIn('finding validation, Claude skill-contract enforcement', architecture)
+        self.assertNotIn('web UI are' + ' not implemented', architecture)
+        combined = '\n'.join((ROOT/p).read_text(errors='ignore') for p in ['README.md','docs/releases/README.md','docs/releases/python-0.2.0.md','docs/releases/plugin-3.0.1.md','docs/installation.md'])
+        self.assertIn('The same `SHA256SUMS` file covers all three', combined)
+        self.assertIn("grep 'outrider-recon-bundle-3.0.1.zip' SHA256SUMS | sha256sum -c -", combined)
+        self.assertIn("grep -E 'outrider_recon-0.2.0-py3-none-any.whl|outrider_recon-0.2.0.tar.gz' SHA256SUMS | sha256sum -c -", combined)
+
     def test_skill_and_schema_version_preservation(self):
         expected={
             'analysis-and-reporting': '1.0.0', 'cloud-and-infra': '1.1.0', 'identity-fabric': '1.0.0',

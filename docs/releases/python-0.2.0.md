@@ -1,6 +1,22 @@
 # Python 0.2.0 release notes
 
-Python 0.2.0 is a minor pre-1.0 release candidate for the Outrider Python control plane. It adds substantial backward-compatible functionality without claiming API stability beyond pre-1.0 expectations.
+Python 0.2.0 is a minor pre-1.0 GitHub release for the Outrider Python control plane. It adds substantial backward-compatible functionality without claiming stable post-1.0 API guarantees.
+
+- Release tag: `python-v0.2.0`
+- Release page: <https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0>
+- Release commit: `2ff9db995e7d2cb78024cbeea09bf526888626da`
+- Published artifacts: `outrider_recon-0.2.0-py3-none-any.whl`, `outrider_recon-0.2.0.tar.gz`, and `SHA256SUMS`
+
+## Verification results
+
+Maintainer verification confirmed that checksum verification passed for the wheel and source distribution, the base wheel installed successfully in a clean Python 3.12 environment, and both commands reported `outrider-recon 0.2.0`:
+
+```bash
+outrider --version
+python -m outrider --version
+```
+
+The optional web installation also succeeded in a clean environment, and installed-wheel FastAPI TestClient checks passed for `/api/health`, `/`, `/static/app.css`, and `/static/app.js`.
 
 ## Major features
 
@@ -17,35 +33,35 @@ Python 0.2.0 is a minor pre-1.0 release candidate for the Outrider Python contro
 
 ## Security and control boundaries
 
-Python remains authoritative for deterministic scope, state, evidence, approval, action-policy, contract, and finding promotion checks. Denied MCP requests must not perform live network or DNS activity.
+Python remains authoritative for deterministic scope, state, evidence, approval, action-policy, contract, and finding promotion checks. Denied MCP requests must not perform live network or DNS activity. Python does not execute the recon methodology itself.
 
-## Installation from local artifacts
+## Installation from GitHub release artifacts
 
-Base install from a downloaded wheel:
-
-```bash
-python -m pip install outrider_recon-0.2.0-py3-none-any.whl
-```
-
-Optional web review dependencies from a downloaded wheel:
+Download the wheel from the Python 0.2.0 GitHub release page into an artifact directory, then install it directly:
 
 ```bash
-python -m pip install "outrider_recon-0.2.0-py3-none-any.whl[web]"
+python -m pip install ./outrider_recon-0.2.0-py3-none-any.whl
 ```
 
-This release note does not claim that `outrider-recon==0.2.0` has been published to PyPI.
+Optional web review dependencies can be installed from the downloaded wheel with:
+
+```bash
+python -m pip install "./outrider_recon-0.2.0-py3-none-any.whl[web]"
+```
+
+This release note does not claim PyPI availability for `outrider-recon==0.2.0`.
 
 ## MCP companion limitation
 
-The MCP server remains an optional source-checkout companion. It is not required for the base wheel and is not advertised as an installed console script in this candidate.
+The MCP server remains an optional source-checkout companion. It is not required for the base wheel and is not advertised as an installed console script.
 
 ## Supported Python versions
 
-The project CI covers Python 3.10, 3.11, and 3.12.
+The project CI covers Python 3.10, 3.11, and 3.12. Clean-install release verification was confirmed with Python 3.12.
 
 ## Upgrade notes from 0.1.0
 
-Upgrade local wheel installs by replacing the installed 0.1.0 wheel with the 0.2.0 candidate. Existing deterministic run-folder schemas remain version 1.
+Upgrade local wheel installs by replacing the installed 0.1.0 wheel with the downloaded 0.2.0 wheel. Existing deterministic run-folder schemas remain version 1.
 
 ## Compatibility notes
 
@@ -55,30 +71,21 @@ Upgrade local wheel installs by replacing the installed 0.1.0 wheel with the 0.2
 
 ## Known limitations
 
-- Release publication, Git tags, and GitHub release records are manual maintainer actions.
+- Future release publication, tags, and GitHub release records remain maintainer-operated actions.
 - Web review is loopback-only and unauthenticated; bind it only to trusted local interfaces.
 - MCP enrichment remains optional and source-checkout based.
-
-## Verification commands
-
-```bash
-outrider --version
-python -m outrider --version
-python tools/release_audit.py
-python -m twine check dist/*
-sha256sum -c dist/SHA256SUMS
-```
-
-## Artifact names
-
-- `outrider_recon-0.2.0-py3-none-any.whl`
-- `outrider_recon-0.2.0.tar.gz`
-- `SHA256SUMS`
+- Published artifacts are checksum-verifiable but are not claimed to be cryptographically signed.
 
 ## Checksum verification
 
-Place the artifacts and `SHA256SUMS` in the same directory, then run:
+The same `SHA256SUMS` file covers all three artifacts across the Python and plugin/content release domains. If all artifacts from both release pages are present in the current artifact directory, run:
 
 ```bash
 sha256sum -c SHA256SUMS
+```
+
+If only the Python artifacts are present, filter to the wheel and sdist entries so the plugin bundle is not reported as missing:
+
+```bash
+grep -E 'outrider_recon-0.2.0-py3-none-any.whl|outrider_recon-0.2.0.tar.gz' SHA256SUMS | sha256sum -c -
 ```

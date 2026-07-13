@@ -22,18 +22,31 @@ Outrider uses independent version domains. The Python package remains `0.2.0`; t
 
 The base Python package installs the deterministic local controls and CLI with PyYAML only. Web review support is optional via the `web` extra, and MCP server dependencies are installed separately from `mcp-server/requirements.txt` in a source checkout.
 
-## Current repository release candidates
+## Current releases
 
-Prepared release versions in this repository are Python package release candidate: 0.2.0 and Claude plugin/content release candidate: 3.0.1. Individual skill versions remain independent, and JSON schema versions remain at `1`. These candidates are not published releases until maintainers create tags, GitHub release records, and any optional PyPI publication.
+Python 0.2.0 is published as a GitHub release under tag `python-v0.2.0`: <https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0>. Claude plugin/content 3.0.1 is published as a GitHub release under tag `plugin-v3.0.1`: <https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1>. These tags identify independent version domains; individual skill versions remain independent, and JSON contract schemas remain version `1`. PyPI publication is not claimed, and Claude Marketplace publication is not claimed.
 
-Release-readiness commands:
+Python release artifacts:
+
+- `outrider_recon-0.2.0-py3-none-any.whl`
+- `outrider_recon-0.2.0.tar.gz`
+- `SHA256SUMS`
+
+Plugin/content release artifacts:
+
+- `outrider-recon-bundle-3.0.1.zip`
+- `SHA256SUMS`
+
+The shared `SHA256SUMS` file covers all three release artifacts across both release domains. Published GitHub release artifacts remain checksum-verifiable, but this repository does not claim cryptographic signing.
+
+Release-readiness commands for future work:
 
 ```bash
 python tools/release_audit.py
 python tools/build_release_bundle.py --output-dir dist --source-date-epoch 1783900800
 ```
 
-The manual `release-candidate.yml` workflow can be triggered through GitHub Actions `workflow_dispatch` to build unsigned candidate artifacts. Publication remains a maintainer action.
+The manual `release-candidate.yml` workflow remains available through GitHub Actions `workflow_dispatch` for future releases. It builds unsigned candidate artifacts for maintainer review only and does not publish automatically.
 
 ## Optional MCP policy enforcement
 
