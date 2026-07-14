@@ -9,80 +9,52 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
-### Added
-
-- Added explicitly enabled, guarded browser invocation of the five fixed Outrider MCP enrichment tools with current state, scope, and approval policy checks.
-- Added network-free enrichment preflight and bounded transient result review without automatic artifacts, evidence, contracts, findings, or execution chaining.
-- Added guarded browser review and explicit human promotion of evidence-backed `finding_candidate` claims into append-only `validated_finding` records.
-- Added point-in-time browser verification of finding source provenance, claim snapshots, evidence integrity, and current scope.
-
-- Added guarded browser registration of existing files beneath a run's `artifacts/` directory as hash-and-size-backed evidence records.
-- Added bounded artifact metadata inventory and point-in-time browser evidence integrity verification without artifact upload, preview, or download.
-
-- Added guarded atomic run creation through the local web control plane.
-- Added initialized-only scope replacement with exact-file revision checks, server-managed change attribution, and browser scope evaluation.
-- Added guarded browser approval grants and revocations using exact-file registry revision checks and the existing deterministic approval policy.
-- Added browser action-policy evaluation for current state, scope, and exact matching approval status without executing actions.
-
-- Added the first guarded web mutation capability: process-local-token-protected workflow-state transitions that reuse the deterministic Python state policy.
-
-### Changed
-
-- Split base Python compatibility testing from the optional web control-plane integration suite so web behavior is tested once on Python 3.12 while core compatibility remains covered on Python 3.10–3.12.
-
-### Documentation
-
-- Updated public documentation after publication of the Python 0.2.0 and Claude plugin/content 3.0.1 GitHub releases, including release links, installation guidance, checksum instructions, and implementation-status corrections.
-
 ---
 
-## [Python 0.2.0] -- 2026-07-13
+## [Python 0.3.0] -- 2026-07-14
 
 ### Added
 
-- Added deterministic scope checks with exact-domain, wildcard-subdomain, exact-IP, CIDR, out-of-scope precedence, default-deny decisions, and the offline `outrider scope-check` CLI.
-- Added stable UUID-backed run manifests, durable workflow state, append-only schema-versioned state events, validated workflow transitions, and legacy-run bootstrap commands.
-- Added an evidence registry with SHA-256 and size recording, local artifact verification, path containment, symlink protections, and `outrider evidence` CLI commands.
-- Added approval records, time-bounded grants, revocations, derived approval status, action-policy decisions, permanently prohibited action categories, and `outrider approval` / `outrider action-check` CLI commands.
-- Added MCP guard integration for fixed action mappings, pre-request scope/state/approval checks, exact active DNS approval enforcement, structured policy envelopes, and zero network or DNS activity for denied calls.
-- Added structured skill request/result contracts, a packaged skill catalog, packaged schemas, and deterministic finding promotion from `finding_candidate` records to evidence-backed findings.
-- Added an optional local loopback-only, read-only web review plane with packaged web resources for scope, state, evidence, approvals, contracts, findings, and integrity summaries.
-- Added clean-install validation, release-readiness tooling, package-build checks, CLI `--version`, and `python -m outrider` support.
+- Added deterministic complete web-control-plane acceptance coverage.
+- Added guarded run creation, workflow-state transitions, initialized-only scope replacement, scope checks, approval controls, action-policy checks, evidence controls, contract controls, human finding promotion, and finding verification to the optional local web plane.
+- Added fixed five-tool MCP catalog review, network-free preflight, and explicitly enabled transient invocation through the shared policy-gated enrichment module.
+- Added isolated clean-install validation for base, web, enrichment, combined web/enrichment, MCP, full optional, and source-checkout MCP requirements installations.
 
 ### Changed
 
-- Prepared the Python package as `0.2.0`, a minor pre-1.0 release for substantial backward-compatible control-plane functionality; this does not claim API stability beyond pre-1.0 expectations.
-- Kept MCP as an optional source-checkout companion and kept web dependencies in optional extras rather than base runtime dependencies.
-- Updated CI and packaging validation to install declared dependencies before compiling and running the complete unittest suite.
+- Prepared the Python package as `0.3.0`, a minor pre-1.0 release for substantial backward-compatible expansion from read-only review into a guarded local control plane.
+- Kept FastAPI, Uvicorn, HTTPX, MCP, and DNS-related dependencies out of the mandatory base install.
+- Updated release-candidate workflow, deterministic bundle construction, package artifact names, release audit assumptions, and release-readiness assertions for Python 0.3.0.
 
 ### Fixed
 
-- Restored append-only approval records and bounded action-policy evaluation after the approval-layer revert.
-- Reconciled MCP tool-boundary enforcement with the restored approval layer and exact active DNS approval checks.
-- Restored approval and MCP regression coverage for policy decisions, CLI exits, and denied zero-network paths.
+- Removed the accidental forbidden HTTP client typo from optional dependency declarations and CI assertions.
+- Reconciled current documentation and plugin metadata that still described the present web plane as read-only.
 
 ### Security
 
-- Enforced deterministic no-network denial paths for out-of-scope or unapproved MCP requests and preserved local artifact integrity checks.
+- Preserved loopback-only, unauthenticated, token-guarded mutation semantics and no-CORS/no-docs web defaults.
+- Verified MCP enrichment remains disabled by default and creates no artifacts, evidence, contracts, findings, reports, jobs, or state events.
 
 ### Documentation
 
-- Documented separate Python, plugin/content, skill-frontmatter, schema, and MCP version domains.
-- Clarified implementation status across Claude skills, Python CLI controls, optional MCP enrichment, optional web review, packaging resources, and release-readiness limitations.
+- Added Python 0.3.0 release notes with upgrade, artifact, checksum, optional-extra, and limitation guidance.
+- Updated installation, usage, architecture, security, release-readiness, MCP, contract, and web-control-plane documentation for the completed implementation.
 
 ---
 
-## [Claude plugin/content 3.0.1] -- 2026-07-13
+## [Claude plugin/content 3.1.0] -- 2026-07-14
 
 ### Changed
 
-- Prepared the Claude plugin/content bundle as `3.0.1`, a patch release because the existing 3.0 methodology and capability set remain unchanged.
-- Corrected plugin metadata and documentation so they accurately describe deterministic Python controls, guarded MCP enrichment, and the local read-only web plane.
-- Clarified skill/Python/MCP/web responsibility boundaries, shared structured-run contract guidance, discovery-does-not-expand-scope guidance, and the `finding_candidate` versus `validated_finding` boundary.
+- Prepared the Claude plugin/content bundle as `3.1.0`; the bundle now includes Python 0.3.0 and the completed local control plane resources.
+- Updated deterministic bundle metadata, artifact names, MCP implementation references, and current documentation.
+- Corrected plugin metadata to describe 11 Claude-native skills, deterministic Python controls, the optional loopback-only limited-control web plane, human-reviewed finding promotion, optional fixed policy-gated MCP enrichment, and no autonomous recon orchestration.
 
 ### Documentation
 
-- Corrected installation, security, architecture, and release-readiness wording without changing individual skill methodology, individual skill frontmatter versions, or capability count.
+- Added plugin/content 3.1.0 release notes.
+- Preserved all 11 individual skill frontmatter versions and all schema versions.
 
 ---
 

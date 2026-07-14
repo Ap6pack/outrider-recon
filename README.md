@@ -26,7 +26,7 @@ Outrider is intentionally not an exploitation framework. It is a navigation and 
 - [Installation](#installation)
 - [Implementation status](#implementation-status)
 - [Releases and versioning](#releases-and-versioning)
-- [Current releases](#current-releases)
+- [Current release candidates](#current-release-candidates)
 - [Documentation](#documentation)
 - [Project structure](#project-structure)
 - [Authorization and security](#authorization-and-security)
@@ -163,9 +163,9 @@ Use [docs/installation.md](docs/installation.md) for supported install patterns,
 Outrider currently has four implementation domains:
 
 - **Claude skill layer:** implemented and used as the primary operator-facing capability layer.
-- **Python CLI controls:** implemented for run scaffolding, local scope/state/evidence/approval/contract/finding checks, and read-only review support.
+- **Python CLI controls:** implemented for run scaffolding, local scope/state/evidence/approval/contract/finding checks, and guarded local review and control support.
 - **Optional MCP enrichment:** implemented for bounded, policy-gated enrichment tools that require explicit run context before network or DNS activity.
-- **Local web control plane:** implemented as a loopback-only control interface with guarded run creation, initialized-only scope replacement, browser scope checks, guarded workflow-state transitions, guarded approval grant/revocation, action-policy checks, metadata-only artifact inventory, existing-artifact evidence registration, evidence-integrity verification, guarded skill request creation, and request/result contract validation; artifact transfer, evidence editing/deletion, result creation/upload, finding promotion, MCP, and recon remain unsupported in the browser.
+- **Local web control plane:** implemented as a loopback-only control interface with guarded run creation, initialized-only scope replacement, browser scope checks, guarded workflow-state transitions, guarded approval grant/revocation, action-policy checks, metadata-only artifact inventory, existing-artifact evidence registration, evidence-integrity verification, guarded skill request creation, and request/result contract validation; artifact transfer, evidence editing/deletion, result creation/upload, automatic finding promotion, finding editing/deletion, result upload, skill execution, report generation, exports, arbitrary MCP servers, and recon remain unsupported in the browser. Explicit human finding promotion and explicitly enabled fixed MCP invocation are supported.
 
 The repository does not claim to execute full automated recon on its own. It is a controlled harness for authorized recon workflows and safe handoff. See [Architecture](docs/architecture.md), [Web review plane](docs/web-review-plane.md), and [Release readiness](docs/release-readiness.md) for the current product boundary.
 
@@ -175,20 +175,20 @@ The repository does not claim to execute full automated recon on its own. It is 
 
 Outrider uses independent version domains:
 
-- Python package: `0.2.0`
-- Claude plugin/content bundle: `3.0.1`
+- Python package: `0.3.0`
+- Claude plugin/content bundle: `3.1.0`
 - individual skill frontmatter versions: independent
 - JSON contract schema version: `1`
 
-Do not assume the Python package version and Claude plugin/content version move together. Published GitHub release artifacts are checksum-verifiable, but this repository does not claim cryptographic signing or PyPI / Claude Marketplace publication.
+Do not assume the Python package version and Claude plugin/content version move together. Future GitHub release artifacts are checksum-verifiable, but this repository does not claim cryptographic signing or PyPI / Claude Marketplace publication in this PR.
 
 See [Release documentation](docs/releases/README.md) for version domains, artifacts, checksums, and release notes. See [Release readiness](docs/release-readiness.md) for maintainer-facing release checks.
 
 ---
 
-## Current releases
+## Current release candidates
 
-Python 0.2.0 is published as a GitHub release under tag [`python-v0.2.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0), and Claude plugin/content 3.0.1 is published under tag [`plugin-v3.0.1`](https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1). The same `SHA256SUMS` file covers all three release artifacts across both release domains; future release-candidate workflow runs produce unsigned candidate artifacts for maintainer review; the workflow does not publish automatically.
+Python 0.3.0 and Claude plugin/content 3.1.0 are prepared as unsigned release candidates. Future tags are [`python-v0.3.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.3.0) and [`plugin-v3.1.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.1.0). The same `SHA256SUMS` file covers all three candidate artifacts across both release domains; the manual release-candidate workflow does not publish automatically.
 
 ---
 
@@ -252,7 +252,3 @@ Outrider codifies external attack-surface tradecraft into Claude-native skills, 
 **License:** [MIT](LICENSE) — use freely, attribution appreciated.
 
 > _Raw recon tells you what exists. Outrider helps decide what matters first._
-
-The optional local web control plane now supports guarded candidate review, explicit human finding promotion, and point-in-time finding verification without adding execution, result upload, reporting, export, or artifact-transfer capabilities.
-
-The optional loopback web control plane can expose explicitly enabled, fixed, policy-gated MCP enrichment controls with `outrider web serve ./runs --enable-mcp-enrichment` after installing `python -m pip install -e ".[web,enrichment]"`. Enrichment is disabled by default; results are transient and do not create artifacts, evidence, contracts, findings, reports, jobs, or arbitrary MCP access.

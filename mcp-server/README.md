@@ -12,7 +12,7 @@ python -m pip install -r mcp-server/requirements.txt
 
 `mcp-server/requirements.txt` installs:
 
-- the local Outrider package (`-e ..`);
+- the local Outrider package with enrichment dependencies (`-e .[enrichment]` when installed from the repository root);
 - `mcp` for the MCP server framework;
 - `httpx` for the fixed HTTP lookups.
 

@@ -11,7 +11,7 @@ This document describes both implemented behavior and architectural design inten
 
 These version domains do not have to use the same number. A plugin/content release can advance independently from the Python CLI package, individual skill frontmatter, or MCP implementation.
 
-The asset graph, output schema, sidecar coordination, validator discipline, and approval/scope concepts below are the intended architecture. Deterministic Python controls now implement scope validation, stable run manifests, workflow-state events and transitions, evidence registration and integrity verification, approval records and action-policy evaluation, MCP tool-boundary enforcement, skill request/result contract creation and validation, deterministic human-reviewed finding promotion and verification, the packaged skill catalog and schemas, and optional local loopback-only web review plus guarded workflow-state transitions, guarded run creation, initialized-only scope replacement, browser scope checks, approval grant/revocation, and action-policy checks. Still not implemented: autonomous recon orchestration by the Python CLI, authenticated approver identity, automatic evidence capture from every skill, unrestricted skill execution by Python, concurrent multi-writer coordination, public or authenticated web deployment, or artifact download/mutation through the web plane. Skills cannot self-certify `validated_finding`; human reviewer attribution is recorded metadata, not authenticated identity.
+The asset graph, output schema, sidecar coordination, validator discipline, and approval/scope concepts below are the intended architecture. Deterministic Python controls now implement scope validation, stable run manifests, workflow-state events and transitions, evidence registration and integrity verification, approval records and action-policy evaluation, MCP tool-boundary enforcement, skill request/result contract creation and validation, deterministic human-reviewed finding promotion and verification, the packaged skill catalog and schemas, and optional local loopback-only web control plane with guarded workflow-state transitions, guarded run creation, initialized-only scope replacement, browser scope checks, approval grant/revocation, action-policy checks, evidence controls, contract controls, explicit human finding promotion, finding verification, and fixed policy-gated MCP enrichment controls. Still not implemented: autonomous recon orchestration by the Python CLI, authenticated approver identity, automatic evidence capture from every skill, unrestricted skill execution by Python, concurrent multi-writer coordination, public or authenticated web deployment, report/export generation, arbitrary MCP servers, result upload, skill execution, or artifact download/mutation through the web plane. Skills cannot self-certify `validated_finding`; human reviewer attribution is recorded metadata, not authenticated identity.
 
 ## The router + sub-skill split
 
@@ -220,7 +220,7 @@ For individual skills:
 - **MINOR** — new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-The published plugin/content GitHub release is v3.0.1. The Python CLI package and individual skill versions are separate domains and may use different numbers.
+The published plugin/content GitHub release is v3.1.0. The Python CLI package and individual skill versions are separate domains and may use different numbers.
 
 ## Renumbering policy
 

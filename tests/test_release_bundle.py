@@ -14,26 +14,26 @@ class ReleaseBundleTests(unittest.TestCase):
     def test_bundle_contents_manifest_and_determinism(self):
         with tempfile.TemporaryDirectory() as td1, tempfile.TemporaryDirectory() as td2:
             cp=self.build(td1); self.assertEqual(cp.returncode,0,cp.stderr+cp.stdout)
-            archive=Path(td1)/'outrider-recon-bundle-3.0.1.zip'
+            archive=Path(td1)/'outrider-recon-bundle-3.1.0.zip'
             self.assertTrue(archive.exists())
             with zipfile.ZipFile(archive) as z:
                 names=z.namelist()
-                self.assertTrue(all(n.startswith('outrider-recon-bundle-3.0.1/') for n in names))
+                self.assertTrue(all(n.startswith('outrider-recon-bundle-3.1.0/') for n in names))
                 self.assertFalse(any('/tests/' in n or '/.github/' in n or '__pycache__' in n or '/dist/' in n or n.startswith('/') or '..' in Path(n).parts for n in names))
                 for required in ['README.md','.claude-plugin/plugin.json','pyproject.toml','outrider/skill_catalog.json','contracts/skill-request-v1.schema.json','skills/_shared/run-contract.md','tools/build_release_bundle.py']:
-                    self.assertIn('outrider-recon-bundle-3.0.1/'+required, names)
+                    self.assertIn('outrider-recon-bundle-3.1.0/'+required, names)
                 skills={Path(n).parts[2] for n in names if n.endswith('/SKILL.md') and Path(n).parts[1]=='skills' and Path(n).parts[2] != '_shared'}
                 self.assertEqual(len(skills),11)
-                manifest=json.loads(z.read('outrider-recon-bundle-3.0.1/RELEASE-MANIFEST.json'))
-                self.assertEqual(manifest['python_version'],'0.2.0')
-                self.assertEqual(manifest['plugin_version'],'3.0.1')
+                manifest=json.loads(z.read('outrider-recon-bundle-3.1.0/RELEASE-MANIFEST.json'))
+                self.assertEqual(manifest['python_version'],'0.3.0')
+                self.assertEqual(manifest['plugin_version'],'3.1.0')
                 self.assertEqual(manifest['skill_count'],11)
                 self.assertEqual(set(manifest['schema_versions'].values()), {1})
                 paths=[f['path'] for f in manifest['files']]
                 self.assertEqual(paths, sorted(paths))
                 self.assertNotIn('RELEASE-MANIFEST.json', paths)
                 for entry in manifest['files'][:25]:
-                    data=z.read('outrider-recon-bundle-3.0.1/'+entry['path'])
+                    data=z.read('outrider-recon-bundle-3.1.0/'+entry['path'])
                     self.assertEqual(hashlib.sha256(data).hexdigest(), entry['sha256'])
                     self.assertEqual(len(data), entry['size_bytes'])
             cp2=self.build(td2); self.assertEqual(cp2.returncode,0,cp2.stderr+cp2.stdout)
@@ -48,7 +48,7 @@ class ReleaseBundleTests(unittest.TestCase):
             cp=self.build(td,'--force','--json')
             self.assertEqual(cp.returncode,0,cp.stderr+cp.stdout)
             data=json.loads(cp.stdout)
-            self.assertEqual(data['bundle_filename'],'outrider-recon-bundle-3.0.1.zip')
+            self.assertEqual(data['bundle_filename'],'outrider-recon-bundle-3.1.0.zip')
             self.assertRegex(data['bundle_sha256'], r'^[0-9a-f]{64}$')
 
     def test_rejects_unexpected_symlink(self):
