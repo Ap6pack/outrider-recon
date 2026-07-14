@@ -255,3 +255,7 @@ rm -rf ~/.claude/skills/analysis-and-reporting \
 ```
 
 Or remove the symlinks if you used method 2 above.
+
+## Optional web enrichment extra
+
+Install browser review controls plus fixed MCP enrichment providers with `python -m pip install -e ".[web,enrichment]"`. The base package remains importable without FastAPI, Uvicorn, HTTPX, MCP, or dnspython. The MCP companion can still be installed with `python -m pip install -r mcp-server/requirements.txt`.

@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 REQUIRED_FILES = ['pyproject.toml','README.md','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','LICENSE','install.sh','uninstall.sh','.gitignore','.mcp.json','.claude-plugin/plugin.json','.github/workflows/lint.yml','.github/workflows/release-candidate.yml','tools/build_release_bundle.py','docs/releases/README.md','docs/releases/python-0.2.0.md','docs/releases/plugin-3.0.1.md','docs/releases/release-checklist.md']
 SCHEMAS = ['skill-request-v1.schema.json','skill-result-v1.schema.json','finding-v1.schema.json']
 WEB_STATIC = ['index.html','app.css','app.js']
-ADRS = [f'docs/adr/{i:04d}-{name}.md' for i,name in [(1,'run-manifest-and-state-log'),(2,'evidence-registry-and-integrity'),(3,'approval-registry-and-action-policy'),(4,'mcp-tool-boundary-enforcement'),(5,'skill-python-interchange-contracts'),(6,'deterministic-finding-promotion'),(7,'local-web-review-plane'),(8,'guarded-web-state-transitions'),(9,'web-run-creation-and-scope-management'),(10,'web-approval-controls'),(11,'web-evidence-controls'),(12,'web-contract-controls')]]
+ADRS = [f'docs/adr/{i:04d}-{name}.md' for i,name in [(1,'run-manifest-and-state-log'),(2,'evidence-registry-and-integrity'),(3,'approval-registry-and-action-policy'),(4,'mcp-tool-boundary-enforcement'),(5,'skill-python-interchange-contracts'),(6,'deterministic-finding-promotion'),(7,'local-web-review-plane'),(8,'guarded-web-state-transitions'),(9,'web-run-creation-and-scope-management'),(10,'web-approval-controls'),(11,'web-evidence-controls'),(12,'web-contract-controls'),(13,'web-finding-promotion-controls'),(14,'web-mcp-enrichment-controls')]]
 
 def load_pyproject(path: Path) -> dict[str, object]:
     """Parse the small pyproject subset this audit needs using only stdlib."""
@@ -152,14 +152,14 @@ class Audit:
         self.ok('package-data declarations','web static, schemas, and skill catalog are package data') if not miss else self.fail('package-data declarations','missing '+', '.join(miss))
         deps=py['project'].get('dependencies',[]); opt=py['project'].get('optional-dependencies',{})
         if any('fastapi' in d.lower() or 'uvicorn' in d.lower() or 'httpx' in d.lower() for d in deps): self.fail('base dependency boundary','web dependencies are mandatory')
-        elif all(k in opt.get('web',[]) or any(k in d for d in opt.get('web',[])) for k in ['fastapi','uvicorn','httpx']): self.ok('base dependency boundary','web dependencies remain optional')
+        elif all(any(k in d.lower() for d in opt.get('web',[]) + opt.get('enrichment',[])) for k in ['fastapi','uvicorn','httpx']): self.ok('base dependency boundary','web and enrichment dependencies remain optional')
         else: self.fail('base dependency boundary','web extra is incomplete')
     def check_static(self):
         miss=[n for n in WEB_STATIC if not (self.root/'outrider/web_static'/n).exists()]
         self.ok('web static-resource presence','index.html, app.css, and app.js are present') if not miss else self.fail('web static-resource presence','missing '+', '.join(miss))
     def check_adrs(self):
         miss=[a for a in ADRS if not (self.root/a).exists()]
-        self.ok('required ADR sequence','ADR 0001 through 0013 are present') if not miss else self.fail('required ADR sequence','missing '+', '.join(miss))
+        self.ok('required ADR sequence','ADR 0001 through 0014 are present') if not miss else self.fail('required ADR sequence','missing '+', '.join(miss))
     def tracked_files(self):
         import subprocess
         try: return subprocess.check_output(['git','ls-files'], cwd=self.root, text=True, stderr=subprocess.DEVNULL).splitlines()
@@ -276,7 +276,7 @@ class Audit:
         if 'python -m compileall outrider tests mcp-server tools' not in core: problems.append('core compile command')
         if 'python -m unittest discover -s tests -p "test_*.py"' not in core: problems.append('core unittest discovery')
         if not re.search(r'python-version:\s*[\'\"]?3\.12[\'\"]?', web): problems.append('web Python 3.12')
-        if 'python -m pip install -e ".[web]"' not in web: problems.append('web extra install')
+        if 'python -m pip install -e ".[web,enrichment]"' not in web: problems.append('web enrichment extra install')
         if 'python -c "import fastapi, httpx, uvicorn"' not in web: problems.append('web dependency import check')
         if 'python -m compileall outrider tests tools' not in web: problems.append('web compile command')
         if 'python -m unittest tests.test_web_view tests.test_web_app' not in web: problems.append('focused web tests')
@@ -317,7 +317,7 @@ class Audit:
     def check_mcp(self):
         s=(self.root/'mcp-server/server.py').read_text()
         tools=s.count('@mcp.tool')
-        if tools==5 and 'run_dir' in s and 'authorize_mcp_tool' in s: self.ok('MCP tool-boundary enforcement','five tools and policy guard references detected')
+        if tools==5 and 'run_dir' in s and 'mcp_call' in s: self.ok('MCP tool-boundary enforcement','five tools delegate to shared policy-gated enrichment')
         else: self.fail('MCP tool-boundary enforcement',f'expected five guarded tools, found {tools}')
 
 def parse_frontmatter(text):

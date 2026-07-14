@@ -351,3 +351,7 @@ It does not provide user authentication, multiuser access, remote hosting, artif
 evidence integrity verification, guarded skill request contract creation, and point-in-time request/result contract validation
 
 The local web plane also includes bounded finding-candidate inventory, guarded explicit human finding promotion, finding-registry stale-review tokens, dependency revision checks, and point-in-time finding integrity verification while preserving the no-execution and no-artifact-transfer boundary.
+
+## Shared MCP enrichment implementation
+
+`outrider.mcp_enrichment` centralizes the fixed catalog, argument validation, provider dispatch, bounds, and policy authorization used by both `mcp-server/server.py` and the web control plane. The module delegates state, scope, approval, and action-class decisions to existing policy modules and does not add arbitrary MCP discovery.

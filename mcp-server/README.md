@@ -118,3 +118,7 @@ Returned certificate names, URLs, domains, DNS records, hosts, IPs, and exposure
 ## Actor and approval limitations
 
 The MCP server does not authenticate callers and does not infer authorization from MCP client identity, run state, or authorization references. Approval actor fields are operator-supplied attribution metadata, not authenticated identities or digital signatures.
+
+## Shared enrichment implementation
+
+The MCP server remains a thin adapter exposing `crtsh_lookup`, `hudsonrock_lookup`, `epss_score`, `wayback_urls`, and `dns_records` with their existing signatures. Provider logic and bounds are shared with the web control plane through `outrider.mcp_enrichment`; every call still requires explicit `run_dir` and current policy authorization.
