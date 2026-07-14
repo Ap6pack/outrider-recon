@@ -80,6 +80,20 @@ class WebViewTests(unittest.TestCase):
             (run/ev.path).write_text('changed', encoding='utf-8')
             self.assertNotEqual(web_view.view_for_run_id(td,rid,'integrity')['evidence_verification_counts']['mismatch'],0)
 
+    def test_contract_view_reports_unsafe_contract_directory_without_crashing(self):
+        with tempfile.TemporaryDirectory() as td:
+            run=make_run(td); rid=load_manifest(run).run_id
+            target=Path(td)/'external-requests'; target.mkdir()
+            requests=run/'contracts'/'requests'
+            requests.rmdir()
+            requests.symlink_to(target, target_is_directory=True)
+            data=web_view.view_for_run_id(td,rid,'contracts')
+            self.assertIsInstance(data, dict)
+            self.assertFalse(data['valid'])
+            self.assertIsNone(data['contract_revision'])
+            self.assertTrue(any('contracts/requests is a symbolic link' in e['message'] for e in data['errors']))
+            self.assertNotIn(td, serial(data))
+
     def test_symlink_root_rejected_and_no_write_functions_or_network(self):
         with tempfile.TemporaryDirectory() as td:
             root=Path(td); runs=root/'runs'; runs.mkdir(); link=root/'runs-link'; link.symlink_to(runs, target_is_directory=True)
