@@ -349,3 +349,5 @@ The optional local web control plane provides run overview, scope review, state 
 It does not provide user authentication, multiuser access, remote hosting, artifact upload/download/preview/content serving, evidence editing/deletion, browser-based finding promotion, skill execution, recon orchestration, MCP invocation, artifact transfer, generic action execution, or automatic evidence capture. Operators must not perform simultaneous CLI and web mutations against the same run.
 
 evidence integrity verification, guarded skill request contract creation, and point-in-time request/result contract validation
+
+The local web plane also includes bounded finding-candidate inventory, guarded explicit human finding promotion, finding-registry stale-review tokens, dependency revision checks, and point-in-time finding integrity verification while preserving the no-execution and no-artifact-transfer boundary.

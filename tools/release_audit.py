@@ -159,7 +159,7 @@ class Audit:
         self.ok('web static-resource presence','index.html, app.css, and app.js are present') if not miss else self.fail('web static-resource presence','missing '+', '.join(miss))
     def check_adrs(self):
         miss=[a for a in ADRS if not (self.root/a).exists()]
-        self.ok('required ADR sequence','ADR 0001 through 0012 are present') if not miss else self.fail('required ADR sequence','missing '+', '.join(miss))
+        self.ok('required ADR sequence','ADR 0001 through 0013 are present') if not miss else self.fail('required ADR sequence','missing '+', '.join(miss))
     def tracked_files(self):
         import subprocess
         try: return subprocess.check_output(['git','ls-files'], cwd=self.root, text=True, stderr=subprocess.DEVNULL).splitlines()

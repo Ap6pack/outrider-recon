@@ -11,6 +11,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added guarded browser review and explicit human promotion of evidence-backed `finding_candidate` claims into append-only `validated_finding` records.
+- Added point-in-time browser verification of finding source provenance, claim snapshots, evidence integrity, and current scope.
+
 - Added guarded browser registration of existing files beneath a run's `artifacts/` directory as hash-and-size-backed evidence records.
 - Added bounded artifact metadata inventory and point-in-time browser evidence integrity verification without artifact upload, preview, or download.
 
