@@ -226,7 +226,13 @@ def validation_context(run_dir: str | Path) -> dict[str, Any]:
     current_state = None
     try: current_state = load_state(run_dir).current_state
     except Exception: pass
-    return {"current_state": current_state, "contract_revision": contract_revision(run_dir), "scope_revision": scope_revision(run_dir), "approval_revision": approval_revision(run_dir), "evidence_revision": evidence_revision(run_dir)}
+    revision_error = None
+    try:
+        revision = contract_revision(run_dir)
+    except SkillContractValidationError as exc:
+        revision = None
+        revision_error = _clean(exc)
+    return {"current_state": current_state, "contract_revision": revision, "contract_revision_error": revision_error, "scope_revision": scope_revision(run_dir), "approval_revision": approval_revision(run_dir), "evidence_revision": evidence_revision(run_dir)}
 
 
 def _evidence_options(run_dir: Path) -> list[dict[str, Any]]:
@@ -270,6 +276,8 @@ def contract_view(run_dir: str | Path) -> dict[str, Any]:
     invalid_req=sum(1 for i in inventory["requests"] if i.get("error"))
     invalid_res=sum(1 for i in inventory["results"] if i.get("error"))
     ctx=validation_context(run)
+    if ctx.get("contract_revision_error"):
+        errors.append(ViewError("contracts", ctx["contract_revision_error"]))
     return {"valid": not errors, "current_state": ctx["current_state"], "contract_revision": ctx["contract_revision"], "validation_context": ctx, "known_skills": list(list_known_skills()), "request_action_types": request_action_catalog(), "evidence_options": _evidence_options(run), "request_count": len(requests), "result_count": len(results), "invalid_request_count": invalid_req, "invalid_result_count": invalid_res, "requests": requests, "results": results, "errors": [e.to_dict() for e in errors], "notice": "Point-in-time contract summaries only. Request creation does not execute skills; result validation does not promote finding_candidate claims."}
 
 
