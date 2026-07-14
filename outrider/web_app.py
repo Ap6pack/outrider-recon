@@ -13,6 +13,7 @@ from outrider.state import InvalidTransitionError, StateValidationError, load_ma
 from outrider.scope import ScopeValidationError, evaluate_scope, load_scope, replace_scope_rules_atomic, scope_revision
 from outrider.run_setup import RunConflictError, RunSetupError, WebRunRequest, create_web_run_atomic
 from outrider.skill_contract import (REQUEST_ACTIONS, SkillContractValidationError, contract_revision, create_skill_request, find_skill_request_by_id, find_skill_result_by_id, list_known_skills, load_skill_request, load_skill_result, validate_skill_request, validate_skill_result)
+from outrider.finding import (PROMOTED_CONFIDENCES, SEVERITIES, VALIDATION_BASES, FindingPromotionRefusal, FindingValidationError, finding_revision, promote_finding_by_ids, verify_all_findings)
 
 TOKEN_HEADER = "X-Outrider-Control-Token"
 
@@ -71,11 +72,11 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}}
+        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_invocation": False, "recon_execution": False}}
 
     @app.get("/api/session")
     def session():
-        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_promotion": False, "mcp_invocation": False, "recon_execution": False}})
+        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_invocation": False, "recon_execution": False}})
 
 
     async def read_json_object(request: Request):
@@ -532,6 +533,88 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
                 return error(409, "state transition rejected")
             except Exception:
                 return error(500, "state transition failed")
+
+
+    @app.get("/api/runs/{run_id}/findings/candidates")
+    def finding_candidates(run_id: str):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        try: return json(web_view.finding_candidate_view(run_dir))
+        except Exception: return error(500, "candidate inventory failed")
+
+    def _hex(v, field):
+        import re
+        if not isinstance(v,str) or not re.fullmatch(r"[0-9a-f]{64}", v): raise ValueError(f"{field} must be a lowercase SHA-256")
+        return v
+    def _text(body, field, maxlen, nullable=False):
+        v=body.get(field)
+        if v is None and nullable: return None
+        if not isinstance(v,str) or isinstance(v,bool) or not v.strip() or len(v)>maxlen: raise ValueError(f"{field} must be a non-empty string")
+        return v
+
+    @app.post("/api/runs/{run_id}/findings")
+    async def promote_finding_api(run_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        allowed={"expected_finding_revision","expected_contract_revision","expected_scope_revision","expected_evidence_revision","expected_state","result_id","claim_id","expected_source_sha256","actor","title","candidate","severity","confidence","validation_basis","validation_reason","impact","remediation","location","notes","supplementary_evidence_ids"}
+        if set(body)-allowed: return error(422,"unknown field")
+        try:
+            for f in ("expected_finding_revision","expected_contract_revision","expected_scope_revision","expected_evidence_revision","expected_source_sha256"): _hex(body.get(f), f)
+            expected_state=_text(body,"expected_state",64)
+            rid=str(UUID(body.get("result_id"))); cid=str(UUID(body.get("claim_id")))
+            if body.get("severity") not in SEVERITIES: return error(422,"unsupported severity")
+            if body.get("confidence") not in PROMOTED_CONFIDENCES: return error(422,"unsupported promoted confidence")
+            if body.get("validation_basis") not in VALIDATION_BASES: return error(422,"unsupported validation_basis")
+            supp=body.get("supplementary_evidence_ids",[])
+            if not isinstance(supp,list): return error(422,"supplementary_evidence_ids must be an array")
+            supp=[str(UUID(x)) for x in supp]
+            if len(set(supp)) != len(supp): return error(422,"duplicate supplementary evidence IDs")
+            args={"actor":_text(body,"actor",200),"title":_text(body,"title",500),"candidate":_text(body,"candidate",512),"severity":body["severity"],"confidence":body["confidence"],"validation_basis":body["validation_basis"],"validation_reason":_text(body,"validation_reason",4000),"impact":_text(body,"impact",8000),"remediation":_text(body,"remediation",8000),"location":_text(body,"location",2000,True),"notes":_text(body,"notes",4000,True),"supplementary_evidence_ids":supp,"expected_source_sha256":body["expected_source_sha256"]}
+        except Exception:
+            return error(422,"promotion request is invalid")
+        with mutation_lock:
+            try:
+                ctx=web_view.validation_context(run_dir)
+                if finding_revision(run_dir)!=body["expected_finding_revision"] or ctx["contract_revision"]!=body["expected_contract_revision"] or ctx["scope_revision"]!=body["expected_scope_revision"] or ctx["evidence_revision"]!=body["expected_evidence_revision"]: return error(409,"stale review revision")
+                if load_state(run_dir).current_state != expected_state: return error(409,"expected state is stale")
+                rec=promote_finding_by_ids(run_dir,rid,cid,**args)
+                view=web_view.finding_view(run_dir)
+                projected=next(f for f in view["findings"] if f["finding_id"]==rec.finding_id)
+                return JSONResponse({"ok":True,"finding":projected,"findings":view}, status_code=201, headers={"Location":f"/api/runs/{run_id}/findings"})
+            except FindingValidationError as exc: return error(422, str(exc))
+            except FindingPromotionRefusal as exc:
+                msg=str(exc)
+                if "unknown source result" in msg or "not found" in msg: return error(404,msg)
+                return error(409,msg)
+            except Exception: return error(500,"finding promotion failed")
+
+    @app.post("/api/runs/{run_id}/findings/verify")
+    async def verify_findings_api(run_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        if set(body)-{"finding_id"}: return error(422,"unknown field")
+        fid=body.get("finding_id")
+        if fid is not None:
+            try: fid=str(UUID(fid))
+            except Exception: return error(422,"finding_id must be a UUID")
+        with mutation_lock:
+            results=verify_all_findings(run_dir,fid)
+            if fid is not None and len(results)==1 and results[0].overall_status=="invalid" and results[0].reason=="finding_id is not registered": return error(404,"finding not found")
+            counts={}
+            for r in results: counts[r.overall_status]=counts.get(r.overall_status,0)+1
+            return json({"finding_revision":finding_revision(run_dir),"verification_scope":"one" if fid else "all","results":[r.to_dict() for r in results],"counts":counts,"validation_context":{**web_view.validation_context(run_dir),"finding_revision":finding_revision(run_dir)},"notice":"Point-in-time verification only; status is not persisted and current-scope status does not by itself change overall integrity."})
 
     @app.get("/api/runs/{run_id}/overview")
     def overview(run_id: str): return detail(run_id, "overview")

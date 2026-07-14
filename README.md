@@ -253,4 +253,5 @@ Outrider codifies external attack-surface tradecraft into Claude-native skills, 
 
 > _Raw recon tells you what exists. Outrider helps decide what matters first._
 
-browser scope checks, workflow-state transitions, approval controls, action-policy checks, artifact metadata inventory, evidence registration, evidence integrity verification, guarded skill request creation, and request/result contract validation
+
+The optional local web control plane now supports guarded candidate review, explicit human finding promotion, and point-in-time finding verification without adding execution, result upload, reporting, export, or artifact-transfer capabilities.

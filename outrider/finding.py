@@ -13,7 +13,7 @@ from uuid import UUID, uuid4
 
 from outrider.evidence import EvidenceValidationError, load_evidence_registry, verify_all_evidence
 from outrider.scope import evaluate_scope_path
-from outrider.skill_contract import SkillContractValidationError, load_skill_request, load_skill_result, validate_skill_result
+from outrider.skill_contract import SkillContractValidationError, find_skill_request_by_id, find_skill_result_by_id, load_skill_request, load_skill_result, validate_skill_result, list_contract_inventory
 from outrider.state import StateValidationError, load_manifest, load_state
 
 SCHEMA_VERSION = 1
@@ -177,12 +177,32 @@ def validate_source_result_path(run_dir: str | Path, result_file: str | Path) ->
     if not full.is_file(): raise FindingValidationError("source result must be a regular file")
     return (PurePosixPath("contracts/results")/PurePosixPath(*rel.parts)).as_posix(), full
 
-def _hash_file(path: Path) -> str:
+def stable_sha256_file(path: Path) -> str:
+    try:
+        before=os.stat(path, follow_symlinks=False)
+    except FileNotFoundError as exc:
+        raise FindingValidationError("source result is missing") from exc
+    if stat.S_ISLNK(before.st_mode): raise FindingValidationError("source result path contains a symbolic link")
+    if not stat.S_ISREG(before.st_mode): raise FindingValidationError("source result must be a regular file")
     h=hashlib.sha256()
     with path.open("rb") as handle:
         for chunk in iter(lambda: handle.read(_CHUNK), b""):
             h.update(chunk)
+    after=os.stat(path, follow_symlinks=False)
+    attrs=("st_dev","st_ino","st_mode","st_size","st_mtime_ns")
+    if tuple(getattr(before,a) for a in attrs) != tuple(getattr(after,a) for a in attrs):
+        raise FindingPromotionRefusal("source result changed while hashing")
     return h.hexdigest()
+
+def _hash_file(path: Path) -> str:
+    return stable_sha256_file(path)
+
+def finding_revision(run_dir: str | Path) -> str:
+    """Return SHA-256 of current findings.jsonl bytes as an optimistic stale-write token, not a signature."""
+    path=Path(run_dir)/REGISTRY
+    if not path.exists(): return hashlib.sha256(b"").hexdigest()
+    rel, full = validate_source_result_path(Path(run_dir), path) if False else (None, path)
+    return stable_sha256_file(full)
 
 def _verify_ids(run_dir: Path, ids: list[str]) -> None:
     registry=load_evidence_registry(run_dir); known={r.evidence_id for r in registry.records}
@@ -199,7 +219,7 @@ def _claim_snapshot(claim: dict[str, Any]) -> FindingClaimSnapshot:
 def promote_finding(run_dir: str | Path, result_file: str | Path, claim_id: str, *, actor: str, title: str, candidate: str, severity: str, confidence: str, validation_basis: str, validation_reason: str, impact: str, remediation: str, location: str | None=None, notes: str | None=None, supplementary_evidence_ids: list[str] | None=None) -> FindingRecord:
     run=Path(run_dir); manifest=load_manifest(run); state=load_state(run)
     if state.current_state not in PROMOTION_STATES: raise FindingPromotionRefusal(f"finding promotion is not permitted while run is {state.current_state}")
-    registry=load_finding_registry(run); ensure_finding_registry(run)
+    registry=load_finding_registry(run)
     actor=_nonempty(actor,"actor"); title=_nonempty(title,"title"); validation_reason=_nonempty(validation_reason,"validation_reason"); impact=_nonempty(impact,"impact"); remediation=_nonempty(remediation,"remediation"); location=_optional(location,"location"); notes=_optional(notes,"notes")
     if severity not in SEVERITIES: raise FindingValidationError("unsupported severity")
     if confidence not in PROMOTED_CONFIDENCES: raise FindingPromotionRefusal("low confidence findings cannot be promoted")
@@ -211,7 +231,10 @@ def promote_finding(run_dir: str | Path, result_file: str | Path, claim_id: str,
     if report.overall_status != "valid": raise FindingPromotionRefusal("source result evidence does not verify: "+"; ".join(report.errors))
     result=load_skill_result(run, full)
     if result.status not in {"completed", "partial"}: raise FindingPromotionRefusal("blocked or failed results cannot be promoted")
-    req=load_skill_request(run, run/"contracts"/"requests"/f"{result.request_id}.json")
+    lookup=find_skill_request_by_id(run,result.request_id)
+    if lookup.status == "not_found": raise FindingValidationError("linked request not found")
+    if lookup.status == "ambiguous": raise FindingPromotionRefusal("linked request ID is ambiguous")
+    req=load_skill_request(run, lookup.relative_path)
     if req.request_id != result.request_id or req.run_id != result.run_id or req.skill != result.skill: raise FindingValidationError("result does not match linked request")
     claim=next((c for c in result.claims if c["claim_id"] == cid), None)
     if claim is None: raise FindingPromotionRefusal("selected claim_id was not found")
@@ -225,9 +248,56 @@ def promote_finding(run_dir: str | Path, result_file: str | Path, claim_id: str,
     if decision.decision != "allow": raise FindingPromotionRefusal(decision.reason)
     sha=_hash_file(full)
     record=FindingRecord(SCHEMA_VERSION, registry.finding_count+1, EVENT_TYPE, str(uuid4()), str(uuid4()), manifest.run_id, utc_now(), actor, CLASSIFICATION, title, decision.normalized_candidate or candidate, decision.candidate_type or "domain", location, severity, confidence, validation_basis, validation_reason, impact, remediation, FindingSource(result.result_id, result.request_id, result.skill, rel, sha, cid, _claim_snapshot(claim)), evidence_ids, notes)
+    ensure_finding_registry(run)
     with (run/REGISTRY).open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(record.to_dict(), sort_keys=True)+"\n"); handle.flush(); os.fsync(handle.fileno())
     return record
+
+
+def promote_finding_by_ids(run_dir: str | Path, result_id: str, claim_id: str, *, actor: str, title: str, candidate: str, severity: str, confidence: str, validation_basis: str, validation_reason: str, impact: str, remediation: str, location: str | None=None, notes: str | None=None, supplementary_evidence_ids: list[str] | None=None, expected_source_sha256: str | None=None) -> FindingRecord:
+    rid=_uuid4(result_id,"result_id"); cid=_uuid4(claim_id,"claim_id")
+    lookup=find_skill_result_by_id(run_dir,rid)
+    if lookup.status == "not_found": raise FindingPromotionRefusal("unknown source result")
+    if lookup.status == "ambiguous": raise FindingPromotionRefusal("source result ID is ambiguous")
+    rel, full=validate_source_result_path(run_dir, lookup.relative_path)
+    sha=stable_sha256_file(full)
+    if expected_source_sha256 is not None:
+        if not isinstance(expected_source_sha256,str) or not _SHA256.fullmatch(expected_source_sha256): raise FindingValidationError("expected_source_sha256 must contain 64 lowercase hexadecimal characters")
+        if sha != expected_source_sha256: raise FindingPromotionRefusal("source result SHA-256 is stale")
+    return promote_finding(run_dir, rel, cid, actor=actor, title=title, candidate=candidate, severity=severity, confidence=confidence, validation_basis=validation_basis, validation_reason=validation_reason, impact=impact, remediation=remediation, location=location, notes=notes, supplementary_evidence_ids=supplementary_evidence_ids)
+
+def list_finding_candidates(run_dir: str | Path, *, max_results:int=1000, max_claims:int=5000) -> dict[str,Any]:
+    run=Path(run_dir); candidates=[]; skipped=[]; truncated=False; claims_seen=0
+    promoted={(r.source.result_id,r.source.claim_id):r.finding_id for r in load_finding_registry(run).records}
+    inv=list_contract_inventory(run, max_files=max_results)
+    for item in inv.get("skipped",[]): skipped.append(item)
+    for item in inv.get("results",[])[:max_results]:
+        if claims_seen >= max_claims: truncated=True; break
+        rel=item.get("relative_path")
+        try:
+            result=load_skill_result(run, rel); report=validate_skill_result(run, rel); _,full=validate_source_result_path(run, rel); sha=stable_sha256_file(full)
+        except Exception as exc:
+            skipped.append({"section":"results","message":str(exc)}); continue
+        ev_checks={v.evidence_id:v for v in verify_all_evidence(run)}
+        for claim in result.claims:
+            if claim.get("classification") != SOURCE_CLASSIFICATION: continue
+            claims_seen += 1
+            if claims_seen > max_claims: truncated=True; break
+            eids=list(claim.get("evidence_ids",[])); reasons=[]
+            if result.status in {"blocked","failed"}: reasons.append(f"result status is {result.status}")
+            if report.overall_status != "valid": reasons.append("source result validation is not valid")
+            dec=evaluate_scope_path(run, claim.get("subject",""));
+            if dec.decision != "allow": reasons.append("candidate is currently outside scope")
+            assessments=[]
+            for eid in eids:
+                v=ev_checks.get(eid); status=getattr(v,"status","missing")
+                assessments.append({"evidence_id":eid,"verification_status":status})
+                if status != "verified": reasons.append(f"evidence {eid} verification {status}")
+            existing=promoted.get((result.result_id, claim["claim_id"]))
+            if existing: reasons.append("already promoted")
+            candidates.append({"result_id":result.result_id,"request_id":result.request_id,"skill":result.skill,"result_status":result.status,"completed_at":result.completed_at,"result_summary":result.summary,"source_result_sha256":sha,"source_result_validation":{"overall_status":report.overall_status,"structural_valid":report.structural_valid,"evidence_verified":report.evidence_verified},"claim_id":claim["claim_id"],"classification":claim["classification"],"subject":claim["subject"],"statement":claim["statement"],"source_confidence":claim["confidence"],"suggested_severity":claim.get("suggested_severity"),"evidence_ids":eids,"evidence_assessments":assessments,"subject_scope_decision":{"decision":dec.decision},"already_promoted":existing is not None,"existing_finding_id":existing,"promotion_eligible":not reasons,"promotion_disabled_reasons":sorted(set(reasons))})
+    candidates.sort(key=lambda c:(c["result_id"],c["claim_id"]))
+    return {"candidates":candidates,"candidate_count":len(candidates),"truncated":truncated or len(inv.get("results",[]))>max_results,"max_results":max_results,"max_claims":max_claims,"skipped":skipped}
 
 def list_findings(run_dir: str | Path) -> FindingRegistrySummary: load_state(run_dir); return load_finding_registry(run_dir)
 
