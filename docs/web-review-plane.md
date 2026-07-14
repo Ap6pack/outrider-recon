@@ -80,7 +80,6 @@ Active approvals can be revoked through the browser with the same token, origin,
 
 The mutation lock is process-local. Revision checks serialize guarded web mutations within one app process, but operators must avoid simultaneous CLI and web mutations, multiple web server processes, and direct registry edits against the same run.
 
-
 ## Finding candidate review
 
 The web plane lists metadata-only `finding_candidate` claims, supports explicit human promotion into append-only `validated_finding` records, and verifies findings point-in-time against source result bytes, source claim snapshots, evidence integrity, and current scope. It does not automatically promote, edit, delete, export, generate reports, execute skills, invoke MCP, upload results, or transfer artifacts.
