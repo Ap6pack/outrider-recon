@@ -152,7 +152,7 @@ class Audit:
         self.ok('package-data declarations','web static, schemas, and skill catalog are package data') if not miss else self.fail('package-data declarations','missing '+', '.join(miss))
         deps=py['project'].get('dependencies',[]); opt=py['project'].get('optional-dependencies',{})
         if any('fastapi' in d.lower() or 'uvicorn' in d.lower() or 'httpx' in d.lower() for d in deps): self.fail('base dependency boundary','web dependencies are mandatory')
-        elif all(any(k in d.lower() for d in opt.get('web',[]) + opt.get('enrichment',[])) for k in ['fastapi','uvicorn','httpx']): self.ok('base dependency boundary','web and enrichment dependencies remain optional')
+        elif all(any(k in d.lower() for d in opt.get('web',[]) + opt.get('enrichment',[])) for k in ['fastapi','uvicorn','httpx','httpx2']): self.ok('base dependency boundary','web and enrichment dependencies remain optional')
         else: self.fail('base dependency boundary','web extra is incomplete')
     def check_static(self):
         miss=[n for n in WEB_STATIC if not (self.root/'outrider/web_static'/n).exists()]
@@ -277,7 +277,7 @@ class Audit:
         if 'python -m unittest discover -s tests -p "test_*.py"' not in core: problems.append('core unittest discovery')
         if not re.search(r'python-version:\s*[\'\"]?3\.12[\'\"]?', web): problems.append('web Python 3.12')
         if 'python -m pip install -e ".[web,enrichment]"' not in web: problems.append('web enrichment extra install')
-        if 'python -c "import fastapi, httpx, uvicorn"' not in web: problems.append('web dependency import check')
+        if 'python -c "import fastapi, httpx, httpx2, uvicorn"' not in web: problems.append('web dependency import check')
         if 'python -m compileall outrider tests tools' not in web: problems.append('web compile command')
         if 'python -m unittest tests.test_web_view tests.test_web_app' not in web: problems.append('focused web tests')
         if 'python -m unittest discover -s tests -p "test_*.py"' not in web: problems.append('web full discovery')
