@@ -39,7 +39,6 @@ stealer-logs/
 *.pfx
 keys.yaml
 config.local.yaml
-~/.claude-osint/
 
 # Build / dist
 dist/
@@ -65,3 +64,5 @@ node_modules/
 *.synced
 CLAUDE.md
 docs/OWASP_WSTG_Checklist.xlsx
+~/.claude-osint/
+.claude/*
