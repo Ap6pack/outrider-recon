@@ -9,7 +9,7 @@ from uuid import uuid4
 from outrider.skill_contract import utc_now
 from outrider.state import load_manifest
 
-TOKEN = "acceptance-token"
+CONTROL_VALUE = "acceptance-token"
 
 @dataclass
 class Stage:
@@ -56,8 +56,8 @@ def run_acceptance() -> dict:
         root=Path(td)/'runs'; root.mkdir()
         fake=FakeExecutor()
         default=TestClient(create_app(root, enrichment_executor=fake))
-        client=TestClient(create_app(root, control_token=TOKEN, mcp_enrichment_enabled=True, enrichment_executor=fake))
-        h={'X-Outrider-Control-Token': TOKEN}
+        client=TestClient(create_app(root, control_token=CONTROL_VALUE, mcp_enrichment_enabled=True, enrichment_executor=fake))
+        h={'X-Outrider-Control-Token': CONTROL_VALUE}
         ctx={}
         def s1():
             health=default.get('/api/health').json(); session=default.get('/api/session').json()
@@ -148,7 +148,7 @@ def run_acceptance() -> dict:
             html=client.get('/').text; css=client.get('/static/app.css').text; js=client.get('/static/app.js').text; alltxt=html+css+js
             for term in ['Overview','Scope','State','Evidence','Approvals','Contracts','Findings','Integrity','MCP']:
                 assert_ok(term in alltxt, f'tab/control {term}')
-            for bad in ['<script>', 'http://', 'https://', 'innerHTML', 'eval(', 'localStorage', 'sessionStorage', TOKEN, 'Run recon', 'Upload result']:
+            for bad in ['<script>', 'http://', 'https://', 'innerHTML', 'eval(', 'localStorage', 'sessionStorage', CONTROL_VALUE, 'Run recon', 'Upload result']:
                 assert_ok(bad not in alltxt, f'absent {bad}')
             for term in ['disabled by default','transient','unauthenticated attribution']:
                 assert_ok(term.lower() in alltxt.lower(), f'ui text {term}')
