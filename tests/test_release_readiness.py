@@ -60,8 +60,8 @@ class ReleaseReadinessTests(unittest.TestCase):
 
     def test_version_inventory_and_independent_domains(self):
         versions=release_audit.Audit(ROOT).versions()
-        self.assertEqual(versions['python_package'],'0.2.0')
-        self.assertEqual(versions['claude_plugin'],'3.0.1')
+        self.assertEqual(versions['python_package'],'0.3.0')
+        self.assertEqual(versions['claude_plugin'],'3.1.0')
         self.assertNotEqual(versions['python_package'], versions['claude_plugin'])
         self.assertEqual(set(versions['schemas'].values()), {1})
 
@@ -80,7 +80,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             self.assertEqual(json.loads((ROOT/'contracts'/name).read_text()), schema_json(name))
         for name in ['index.html','app.css','app.js']:
             self.assertTrue(web_static_path(name).exists())
-        self.assertEqual(json.loads((ROOT/'.claude-plugin/plugin.json').read_text())['version'], '3.0.1')
+        self.assertEqual(json.loads((ROOT/'.claude-plugin/plugin.json').read_text())['version'], '3.1.0')
         for i in range(1,8):
             self.assertTrue(list((ROOT/'docs/adr').glob(f'{i:04d}-*.md')))
 
@@ -127,7 +127,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             cp=subprocess.run(cmd, cwd=ROOT, text=True, capture_output=True)
             self.assertEqual(cp.returncode, 0, cp.stderr+cp.stdout)
         from outrider.cli import package_version
-        self.assertEqual(package_version(), '0.2.0')
+        self.assertEqual(package_version(), '0.3.0')
 
 
     def test_lint_workflow_separates_core_and_web_tests(self):
@@ -159,7 +159,7 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertEqual(setup['with']['python-version'], '3.12')
         web_steps = '\n'.join(str(step.get('run', '')) for step in web['steps'])
         self.assertIn('python -m pip install -e ".[web,enrichment]"', web_steps)
-        self.assertIn('python -c "import fastapi, httpx, httpx2, uvicorn"', web_steps)
+        self.assertIn('python -c "import fastapi, httpx, uvicorn"', web_steps)
         self.assertIn('python -m unittest tests.test_web_view tests.test_web_app', web_steps)
         self.assertIn('python -m unittest discover -s tests -p "test_*.py"', web_steps)
 
@@ -181,18 +181,18 @@ class ReleaseReadinessTests(unittest.TestCase):
     def test_release_notes_changelog_and_workflow(self):
         changelog=(ROOT/'CHANGELOG.md').read_text()
         self.assertIn('## [Unreleased]', changelog)
-        self.assertRegex(changelog, r'## \[Python 0\.2\.0\] -- \d{4}-\d{2}-\d{2}')
-        self.assertRegex(changelog, r'## \[Claude plugin/content 3\.0\.1\] -- \d{4}-\d{2}-\d{2}')
+        self.assertRegex(changelog, r'## \[Python 0\.3\.0\] -- 2026-07-14')
+        self.assertRegex(changelog, r'## \[Claude plugin/content 3\.1\.0\] -- 2026-07-14')
         unreleased=changelog.split('## [Unreleased]',1)[1].split('---',1)[0]
         self.assertNotIn('deterministic scope checks', unreleased)
-        for rel in ['README.md','python-0.2.0.md','plugin-3.0.1.md','release-checklist.md']:
+        for rel in ['README.md','python-0.3.0.md','plugin-3.1.0.md','release-checklist.md']:
             self.assertTrue((ROOT/'docs/releases'/rel).exists())
-        py_notes=(ROOT/'docs/releases/python-0.2.0.md').read_text().lower()
-        self.assertNotIn('pip install outrider-recon==0.2.0', py_notes)
-        plugin_notes=(ROOT/'docs/releases/plugin-3.0.1.md').read_text()
-        self.assertIn('Python 0.2.0 is a separate version domain', plugin_notes)
+        py_notes=(ROOT/'docs/releases/python-0.3.0.md').read_text().lower()
+        self.assertIn('outrider_recon-0.3.0-py3-none-any.whl', py_notes)
+        plugin_notes=(ROOT/'docs/releases/plugin-3.1.0.md').read_text()
+        self.assertIn('Python 0.3.0 is a separate version domain', plugin_notes)
         docs='\n'.join(p.read_text(errors='ignore') for p in [ROOT/'README.md', ROOT/'docs/installation.md', ROOT/'docs/architecture.md'])
-        self.assertNotIn('Python package version `3.0.1`', docs)
+        self.assertNotIn('Python package version `3.1.0`', docs)
         wf=(ROOT/'.github/workflows/release-candidate.yml').read_text()
         import yaml
         parsed=yaml.safe_load(wf)
@@ -225,53 +225,43 @@ class ReleaseReadinessTests(unittest.TestCase):
 
 
     def test_post_release_documentation_truth_alignment(self):
-        py_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0'
-        plugin_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1'
+        py_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.3.0'
+        plugin_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.1.0'
         readme = (ROOT/'README.md').read_text()
-        self.assertIn('## Current releases', readme)
+        self.assertIn('## Current release candidates', readme)
         self.assertIn(py_link, readme)
         self.assertIn(plugin_link, readme)
         self.assertIn('does not publish automatically', readme)
+        self.assertNotIn('published as a GitHub release', readme)
+        self.assertTrue(readme.rstrip().endswith('> _Raw recon tells you what exists. Outrider helps decide what matters first._'))
         release_index = (ROOT/'docs/releases/README.md').read_text()
-        self.assertIn('2ff9db995e7d2cb78024cbeea09bf526888626da', release_index)
-        self.assertIn('python-v0.2.0', release_index)
-        self.assertIn('plugin-v3.0.1', release_index)
+        self.assertIn('python-v0.3.0', release_index)
+        self.assertIn('plugin-v3.1.0', release_index)
         self.assertIn('workflow_dispatch', release_index)
         self.assertIn('does not automatically tag, publish GitHub releases, upload to PyPI', release_index)
-        py_notes = (ROOT/'docs/releases/python-0.2.0.md').read_text()
-        self.assertIn('minor pre-1.0 GitHub release', py_notes)
-        self.assertNotIn('minor pre-1.0 release candidate', py_notes)
-        self.assertIn(py_link, py_notes)
-        self.assertIn('This release note does not claim PyPI availability for `outrider-recon==0.2.0`.', py_notes)
-        plugin_notes = (ROOT/'docs/releases/plugin-3.0.1.md').read_text()
-        self.assertIn('published GitHub release', plugin_notes)
-        self.assertNotIn('patch release candidate', plugin_notes)
-        self.assertNotIn('Do not treat the unsigned candidate' + ' as an official release', plugin_notes)
-        self.assertIn(plugin_link, plugin_notes)
-        self.assertIn('No Claude Marketplace publication is claimed', plugin_notes)
+        py_notes = (ROOT/'docs/releases/python-0.3.0.md').read_text()
+        self.assertIn('Python 0.3.0', py_notes)
+        self.assertIn('outrider_recon-0.3.0-py3-none-any.whl', py_notes)
+        self.assertIn('loopback-only', py_notes)
+        self.assertIn(py_link.split('/tag/')[1], py_notes)
+        plugin_notes = (ROOT/'docs/releases/plugin-3.1.0.md').read_text()
+        self.assertIn('Python 0.3.0 is a separate version domain', plugin_notes)
+        self.assertIn('unchanged', plugin_notes.lower())
+        self.assertIn('outrider-recon-bundle-3.1.0.zip', plugin_notes)
         readiness = (ROOT/'docs/release-readiness.md').read_text()
-        self.assertIn('## Post-release status', readiness)
-        self.assertIn('**Audit date:** 2026-07-13', readiness)
-        self.assertIn('**Audited commit:** 57b452d4688cac280f17f3d35867e9129dc3706e', readiness)
-        self.assertIn('historical recommendation completed', readiness)
-        checklist = (ROOT/'docs/releases/release-checklist.md').read_text()
-        self.assertIn('## Completed release record: 2026-07-13', checklist)
-        self.assertIn('PyPI publication is not marked complete', checklist)
-        self.assertIn('Claude Marketplace publication is not marked complete', checklist)
+        self.assertIn('**Audit date:** 2026-07-14', readiness)
+        self.assertIn('This preparation PR does not create release tags or release records', readiness)
         install = (ROOT/'docs/installation.md').read_text()
-        self.assertIn('python -m pip install ./outrider_recon-0.2.0-py3-none-any.whl', install)
         self.assertIn('deterministic local run, scope, state, evidence, approval, action-policy, contract, finding, and review controls', install)
         self.assertIn('Denied MCP decisions perform no HTTP or DNS request', install)
         architecture = (ROOT/'docs/architecture.md').read_text()
         self.assertIn('skill request/result contract creation and validation', architecture)
         self.assertIn('deterministic human-reviewed finding promotion and verification', architecture)
-        self.assertIn('optional local loopback-only web review plus guarded workflow-state transitions', architecture)
-        self.assertNotIn('finding validation, Claude skill-contract enforcement', architecture)
         self.assertNotIn('web UI are' + ' not implemented', architecture)
-        combined = '\n'.join((ROOT/p).read_text(errors='ignore') for p in ['README.md','docs/releases/README.md','docs/releases/python-0.2.0.md','docs/releases/plugin-3.0.1.md','docs/installation.md'])
+        combined = '\n'.join((ROOT/p).read_text(errors='ignore') for p in ['README.md','docs/releases/README.md','docs/releases/python-0.3.0.md','docs/releases/plugin-3.1.0.md','docs/installation.md'])
         self.assertIn('The same `SHA256SUMS` file covers all three', combined)
-        self.assertIn("grep 'outrider-recon-bundle-3.0.1.zip' SHA256SUMS | sha256sum -c -", combined)
-        self.assertIn("grep -E 'outrider_recon-0.2.0-py3-none-any.whl|outrider_recon-0.2.0.tar.gz' SHA256SUMS | sha256sum -c -", combined)
+        self.assertIn("grep 'outrider-recon-bundle-3.1.0.zip' SHA256SUMS | sha256sum -c -", combined)
+        self.assertIn("grep -E 'outrider_recon-0.3.0-py3-none-any.whl|outrider_recon-0.3.0.tar.gz' SHA256SUMS | sha256sum -c -", combined)
 
     def test_skill_and_schema_version_preservation(self):
         expected={

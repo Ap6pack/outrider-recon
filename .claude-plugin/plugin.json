@@ -1,7 +1,7 @@
 {
   "name": "outrider-recon",
-  "version": "3.0.1",
-  "description": "Claude-native authorized external recon and ASM methodology bundle with 90 documented capabilities across 11 skills, plus deterministic Python controls for run state, scope, evidence, approvals, skill contracts, finding promotion, optional guarded MCP enrichment, and optional local read-only web review. It does not provide unrestricted autonomous exploitation.",
+  "version": "3.1.0",
+  "description": "Claude-native authorized external recon and ASM methodology bundle with 90 documented capabilities across 11 skills, deterministic Python controls, an optional loopback-only limited-control web plane, explicit human-reviewed finding promotion, and optional fixed policy-gated MCP enrichment. It does not provide unrestricted exploitation or autonomous recon orchestration.",
   "author": {
     "name": "Adam Rhys Heaton (Ap6pack)",
     "url": "https://github.com/Ap6pack"

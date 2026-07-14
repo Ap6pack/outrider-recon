@@ -12,8 +12,8 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON_VERSION = "0.2.0"
-PLUGIN_VERSION = "3.0.1"
+PYTHON_VERSION = "0.3.0"
+PLUGIN_VERSION = "3.1.0"
 BUNDLE = "outrider-recon"
 ARCHIVE_NAME = f"{BUNDLE}-bundle-{PLUGIN_VERSION}.zip"
 ROOT_DIR = f"{BUNDLE}-bundle-{PLUGIN_VERSION}"

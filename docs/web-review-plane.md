@@ -28,9 +28,9 @@ The dashboard lists run target, workflow state, evidence count, active approval 
 
 ## Mutation boundary
 
-The web plane supports guarded run creation, initialized-only scope management, scope checks, workflow-state transitions, approval grant/revocation, action-policy checks, bounded artifact metadata inventory, existing-artifact evidence registration, and evidence-integrity verification. State transitions call the Python state layer; evidence registration calls the Python evidence layer. The web layer does not modify `run.jsonl` or `evidence.jsonl` directly, duplicate domain rules, invoke the CLI, or construct state/evidence events.
+The web plane supports guarded run creation, initialized-only scope management, scope checks, workflow-state transitions, approval grant/revocation, action-policy checks, bounded artifact metadata inventory, existing-artifact evidence registration, evidence-integrity verification, guarded skill-request creation, request/result validation, finding-candidate review, explicit human finding promotion, finding verification, fixed MCP catalog, network-free MCP preflight, and explicitly enabled bounded MCP invocation. State transitions call the Python state layer; evidence registration calls the Python evidence layer. The web layer does not modify `run.jsonl` or `evidence.jsonl` directly, duplicate domain rules, invoke the CLI, or construct state/evidence events.
 
-The web plane remains limited-control. It does not upload, preview, download, serve, edit, or delete artifact contents; it does not edit/delete evidence, mutate contracts, promote findings, invoke MCP, run recon, generate reports, or execute generic actions.
+The web plane remains limited-control. It does not upload, preview, download, serve, edit, or delete artifact contents; it does not edit/delete evidence, upload results, execute skills, automatically promote findings, edit/delete findings, run recon, generate reports, export data, use arbitrary MCP servers, or execute generic actions.
 
 ## Loopback restriction
 

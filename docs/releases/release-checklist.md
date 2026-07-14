@@ -4,11 +4,11 @@ This checklist is reusable for future maintainer-operated releases. The post-rel
 
 ## Completed release record: 2026-07-13
 
-- Python package `0.2.0` was released from commit `2ff9db995e7d2cb78024cbeea09bf526888626da` with tag `python-v0.2.0` and a GitHub release record.
-- Claude plugin/content `3.0.1` was released from the same commit with tag `plugin-v3.0.1` and a GitHub release record.
-- Published artifacts were accepted as `outrider_recon-0.2.0-py3-none-any.whl`, `outrider_recon-0.2.0.tar.gz`, `outrider-recon-bundle-3.0.1.zip`, and shared `SHA256SUMS`.
+- Python package `0.3.0` was released from commit `2ff9db995e7d2cb78024cbeea09bf526888626da` with tag `python-v0.3.0` and a GitHub release record.
+- Claude plugin/content `3.1.0` was released from the same commit with tag `plugin-v3.1.0` and a GitHub release record.
+- Published artifacts were accepted as `outrider_recon-0.3.0-py3-none-any.whl`, `outrider_recon-0.3.0.tar.gz`, `outrider-recon-bundle-3.1.0.zip`, and shared `SHA256SUMS`.
 - Checksum verification passed for all three release artifacts.
-- Clean base-wheel installation passed, and `outrider --version` plus `python -m outrider --version` reported `outrider-recon 0.2.0`.
+- Clean base-wheel installation passed, and `outrider --version` plus `python -m outrider --version` reported `outrider-recon 0.3.0`.
 - Clean optional web installation passed, including installed-wheel FastAPI TestClient checks for `/api/health`, `/`, `/static/app.css`, and `/static/app.js`.
 - PyPI publication is not marked complete.
 - Claude Marketplace publication is not marked complete.

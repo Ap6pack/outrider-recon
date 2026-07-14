@@ -6,7 +6,7 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUIRED_FILES = ['pyproject.toml','README.md','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','LICENSE','install.sh','uninstall.sh','.gitignore','.mcp.json','.claude-plugin/plugin.json','.github/workflows/lint.yml','.github/workflows/release-candidate.yml','tools/build_release_bundle.py','docs/releases/README.md','docs/releases/python-0.2.0.md','docs/releases/plugin-3.0.1.md','docs/releases/release-checklist.md']
+REQUIRED_FILES = ['pyproject.toml','README.md','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','LICENSE','install.sh','uninstall.sh','.gitignore','.mcp.json','.claude-plugin/plugin.json','.github/workflows/lint.yml','.github/workflows/release-candidate.yml','tools/build_release_bundle.py','docs/releases/README.md','docs/releases/python-0.3.0.md','docs/releases/plugin-3.1.0.md','docs/releases/release-checklist.md']
 SCHEMAS = ['skill-request-v1.schema.json','skill-result-v1.schema.json','finding-v1.schema.json']
 WEB_STATIC = ['index.html','app.css','app.js']
 ADRS = [f'docs/adr/{i:04d}-{name}.md' for i,name in [(1,'run-manifest-and-state-log'),(2,'evidence-registry-and-integrity'),(3,'approval-registry-and-action-policy'),(4,'mcp-tool-boundary-enforcement'),(5,'skill-python-interchange-contracts'),(6,'deterministic-finding-promotion'),(7,'local-web-review-plane'),(8,'guarded-web-state-transitions'),(9,'web-run-creation-and-scope-management'),(10,'web-approval-controls'),(11,'web-evidence-controls'),(12,'web-contract-controls'),(13,'web-finding-promotion-controls'),(14,'web-mcp-enrichment-controls')]]
@@ -85,7 +85,7 @@ class Audit:
         schemas={p.name: json.loads(p.read_text()).get('properties',{}).get('schema_version',{}).get('const') for p in (self.root/'contracts').glob('*.schema.json')}
         return {'python_package':py['project']['version'],'claude_plugin':plugin['version'],'skills':skills,'schemas':schemas,'manifest_schema':1,'state_event_schema':1,'evidence_schema':1,'approval_schema':1,'finding_schema':schemas.get('finding-v1.schema.json')}
     def run(self):
-        self.check_required_files(); self.check_parse(); self.check_versions(); self.check_skills(); self.check_schemas(); self.check_package_data(); self.check_static(); self.check_adrs(); self.check_artifacts(); self.check_security_patterns(); self.check_docs_versions(); self.check_changelog(); self.check_lint_workflow(); self.check_release_workflow(); self.check_mcp(); return self
+        self.check_required_files(); self.check_parse(); self.check_versions(); self.check_skills(); self.check_schemas(); self.check_package_data(); self.check_static(); self.check_adrs(); self.check_artifacts(); self.check_no_forbidden_http_client_typo(); self.check_security_patterns(); self.check_docs_versions(); self.check_changelog(); self.check_lint_workflow(); self.check_release_workflow(); self.check_mcp(); return self
 
     def check_versions(self):
         versions = self.versions()
@@ -94,8 +94,8 @@ class Audit:
             'offensive-osint': '2.1.1', 'osint-methodology': '2.2', 'people-breach-intel': '1.0.0',
             'post-discovery': '1.0.0', 'recon-asset-discovery': '1.0.0', 'report-template': '1.0.0',
             'secrets-and-dorks': '1.0.0', 'web-surface': '1.0.0'}
-        if versions['python_package'] == '0.2.0' and versions['claude_plugin'] == '3.0.1' and versions['python_package'] != versions['claude_plugin']:
-            self.ok('independent release versions','Python 0.2.0 and plugin/content 3.0.1 are distinct')
+        if versions['python_package'] == '0.3.0' and versions['claude_plugin'] == '3.1.0' and versions['python_package'] != versions['claude_plugin']:
+            self.ok('independent release versions','Python 0.3.0 and plugin/content 3.1.0 are distinct')
         else:
             self.fail('independent release versions',f"unexpected versions: {versions['python_package']} / {versions['claude_plugin']}")
         if versions['skills'] == expected_skills:
@@ -152,7 +152,8 @@ class Audit:
         self.ok('package-data declarations','web static, schemas, and skill catalog are package data') if not miss else self.fail('package-data declarations','missing '+', '.join(miss))
         deps=py['project'].get('dependencies',[]); opt=py['project'].get('optional-dependencies',{})
         if any('fastapi' in d.lower() or 'uvicorn' in d.lower() or 'httpx' in d.lower() for d in deps): self.fail('base dependency boundary','web dependencies are mandatory')
-        elif all(any(k in d.lower() for d in opt.get('web',[]) + opt.get('enrichment',[])) for k in ['fastapi','uvicorn','httpx','httpx2']): self.ok('base dependency boundary','web and enrichment dependencies remain optional')
+        elif any('httpx' + '2' in d.lower() for d in deps + opt.get('web',[]) + opt.get('enrichment',[]) + opt.get('mcp',[])): self.fail('forbidden HTTP client typo dependency exclusion','forbidden HTTP client typo must not appear in dependencies')
+        elif all(any(k in d.lower() for d in opt.get('web',[]) + opt.get('enrichment',[]) + opt.get('mcp',[])) for k in ['fastapi','uvicorn','httpx']) and not any('fastapi' in d.lower() or 'uvicorn' in d.lower() or 'mcp' == d.lower() for d in deps): self.ok('base dependency boundary','web, enrichment, and MCP dependencies remain optional and forbidden HTTP client typo is absent')
         else: self.fail('base dependency boundary','web extra is incomplete')
     def check_static(self):
         miss=[n for n in WEB_STATIC if not (self.root/'outrider/web_static'/n).exists()]
@@ -171,6 +172,20 @@ class Audit:
             if f.startswith(('dist/','build/')) or f.endswith(('.pyc','.egg-info/PKG-INFO')) or '__pycache__' in parts or '.venv' in parts: bad.append(f)
             if Path(f).name in {'approvals.jsonl','findings.jsonl','manifest.json'} and not f.startswith(('outrider/','tests/')): bad.append(f)
         self.ok('no obvious tracked run/build artifacts','no tracked run folders, build output, caches, or virtualenvs detected') if not bad else self.fail('no obvious tracked run/build artifacts','unexpected tracked artifacts: '+', '.join(bad[:20]))
+
+    def check_no_forbidden_http_client_typo(self):
+        hits=[]
+        for f in self.tracked_files():
+            if f.startswith(('docs/releases/python-0.2.0.md','docs/releases/plugin-3.0.1.md')):
+                continue
+            text=(self.root/f).read_text(errors='ignore')
+            if ('httpx' + '2') in text:
+                hits.append(f)
+        if hits:
+            self.fail('forbidden HTTP client typo exclusion','forbidden HTTP client typo appears in '+', '.join(sorted(set(hits))[:20]))
+        else:
+            self.ok('forbidden HTTP client typo exclusion','dependency declarations, workflows, runtime imports, tests, and release instructions omit the forbidden HTTP client typo')
+
     def check_security_patterns(self):
         patterns=[re.compile(r'-----BEGIN (?:RSA |OPENSSH |EC |DSA )?PRIVATE KEY-----'), re.compile(r'ghp_[A-Za-z0-9_]{20,}'), re.compile(r'AKIA[0-9A-Z]{16}'), re.compile(r'(?i)(password|api[_-]?key|token)\s*[:=]\s*[\"\'][^\"\']{8,}')]
         hits=[]
@@ -187,14 +202,14 @@ class Audit:
     def check_docs_versions(self):
         doc_paths = [
             'README.md', 'docs/installation.md', 'docs/architecture.md', 'docs/release-readiness.md',
-            'docs/releases/README.md', 'docs/releases/python-0.2.0.md',
-            'docs/releases/plugin-3.0.1.md', 'docs/releases/release-checklist.md', 'CHANGELOG.md'
+            'docs/releases/README.md', 'docs/releases/python-0.3.0.md',
+            'docs/releases/plugin-3.1.0.md', 'docs/releases/release-checklist.md', 'CHANGELOG.md'
         ]
         docs = {p: (self.root / p).read_text(errors='ignore') for p in doc_paths if (self.root / p).exists()}
         combined = '\n'.join(docs.values())
-        py_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0'
-        plugin_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1'
-        if py_link in combined and plugin_link in combined and 'python-v0.2.0' in combined and 'plugin-v3.0.1' in combined:
+        py_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.3.0'
+        plugin_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.1.0'
+        if py_link in combined and plugin_link in combined and 'python-v0.3.0' in combined and 'plugin-v3.1.0' in combined:
             self.ok('published release documentation links','current docs link both GitHub release tags')
         else:
             self.fail('published release documentation links','missing release tag links or tag names')
@@ -228,8 +243,8 @@ class Audit:
             'unsigned candidate artifacts for maintainer review',
             'does not publish automatically',
             'The same `SHA256SUMS` file covers all three',
-            "grep 'outrider-recon-bundle-3.0.1.zip' SHA256SUMS | sha256sum -c -",
-            "grep -E 'outrider_recon-0.2.0-py3-none-any.whl|outrider_recon-0.2.0.tar.gz' SHA256SUMS | sha256sum -c -",
+            "grep 'outrider-recon-bundle-3.1.0.zip' SHA256SUMS | sha256sum -c -",
+            "grep -E 'outrider_recon-0.3.0-py3-none-any.whl|outrider_recon-0.3.0.tar.gz' SHA256SUMS | sha256sum -c -",
         ]
         missing=[term for term in required if term not in combined]
         if missing:
@@ -240,11 +255,11 @@ class Audit:
     def check_changelog(self):
         text=(self.root/'CHANGELOG.md').read_text(errors='ignore')
         unreleased=text.split('## [Unreleased]',1)[1].split('---',1)[0] if '## [Unreleased]' in text else ''
-        if re.search(r'## \[Python 0\.2\.0\] -- \d{4}-\d{2}-\d{2}', text) and re.search(r'## \[Claude plugin/content 3\.0\.1\] -- \d{4}-\d{2}-\d{2}', text):
-            self.ok('release-domain changelog sections','Python and plugin/content sections are dated')
+        if re.search(r'## \[Python 0\.3\.0\] -- 2026-07-14', text) and re.search(r'## \[Claude plugin/content 3\.1\.0\] -- 2026-07-14', text):
+            self.ok('release-domain changelog sections','Python and plugin/content 3.1.0 sections are dated')
         else:
             self.fail('release-domain changelog sections','missing dated release-domain sections')
-        released_terms=['deterministic scope checks','Claude plugin/content bundle as `3.0.1`','Python package as `0.2.0`']
+        released_terms=['deterministic scope checks','Claude plugin/content bundle as `3.1.0`','Python package as `0.3.0`']
         if not any(term in unreleased for term in released_terms):
             self.ok('unreleased changelog cleanup','released entries are not duplicated under Unreleased')
         else:
@@ -277,7 +292,7 @@ class Audit:
         if 'python -m unittest discover -s tests -p "test_*.py"' not in core: problems.append('core unittest discovery')
         if not re.search(r'python-version:\s*[\'\"]?3\.12[\'\"]?', web): problems.append('web Python 3.12')
         if 'python -m pip install -e ".[web,enrichment]"' not in web: problems.append('web enrichment extra install')
-        if 'python -c "import fastapi, httpx, httpx2, uvicorn"' not in web: problems.append('web dependency import check')
+        if 'python -c "import fastapi, httpx, uvicorn"' not in web: problems.append('web dependency import check')
         if 'python -m compileall outrider tests tools' not in web: problems.append('web compile command')
         if 'python -m unittest tests.test_web_view tests.test_web_app' not in web: problems.append('focused web tests')
         if 'python -m unittest discover -s tests -p "test_*.py"' not in web: problems.append('web full discovery')
@@ -307,7 +322,7 @@ class Audit:
             self.ok('release-candidate workflow non-publication','no publication, tag, push, or secret usage detected')
         else:
             self.fail('release-candidate workflow non-publication','forbidden terms: '+', '.join(hits))
-        required=['tools/release_audit.py','unittest discover','compileall','python -m build','twine check','tools/build_release_bundle.py','SHA256SUMS','actions/upload-artifact@v4']
+        required=['tools/release_audit.py','tools/release_audit.py --json','tools/web_acceptance.py','unittest discover','compileall','python -m build','twine check','tools/build_release_bundle.py','SHA256SUMS','actions/upload-artifact@v4','outrider-release-candidates-python-0.3.0-plugin-3.1.0']
         missing=[x for x in required if x not in text]
         if not missing:
             self.ok('release-candidate workflow steps','candidate workflow builds, tests, checks, bundles, checksums, and uploads unsigned candidates')

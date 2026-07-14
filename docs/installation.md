@@ -23,22 +23,22 @@ The MCP server is optional -- all skills work without it.
 
 ## Python package installation
 
-The Python package version is `0.2.0` and is independent of the Claude plugin/content version `3.0.1`.
+The Python package version is `0.3.0` and is independent of the Claude plugin/content version `3.1.0`.
 
 ### Install from the published GitHub release wheel
 
-1. Open the Python 0.2.0 GitHub release page: <https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.2.0>.
-2. Download `outrider_recon-0.2.0-py3-none-any.whl` into an artifact directory.
+1. Open the Python 0.3.0 GitHub release page: <https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.3.0>.
+2. Download `outrider_recon-0.3.0-py3-none-any.whl` into an artifact directory.
 3. Install the downloaded base wheel:
 
 ```bash
-python -m pip install ./outrider_recon-0.2.0-py3-none-any.whl
+python -m pip install ./outrider_recon-0.3.0-py3-none-any.whl
 ```
 
 1. To install optional local web review dependencies from the downloaded wheel, run:
 
 ```bash
-python -m pip install "./outrider_recon-0.2.0-py3-none-any.whl[web]"
+python -m pip install "./outrider_recon-0.3.0-py3-none-any.whl[web]"
 ```
 
 1. Verify the installed version:
@@ -48,7 +48,7 @@ outrider --version
 python -m outrider --version
 ```
 
-The release documentation does not claim PyPI publication for `outrider-recon==0.2.0`.
+The release documentation does not claim PyPI publication for `outrider-recon==0.3.0`.
 
 ### Install from a source checkout
 
@@ -58,7 +58,7 @@ From a repository checkout, install the base CLI with:
 python -m pip install .
 ```
 
-The base installation provides deterministic local run, scope, state, evidence, approval, action-policy, contract, finding, and review controls. It does not install FastAPI, Uvicorn, httpx, or the MCP SDK, and it does not execute the recon methodology itself. To install the optional local read-only web review plane from a source checkout, use:
+The base installation provides deterministic local run, scope, state, evidence, approval, action-policy, contract, finding, and review controls. It does not install FastAPI, Uvicorn, httpx, or the MCP SDK, and it does not execute the recon methodology itself. To install the optional local limited-control web plane from a source checkout, use:
 
 ```bash
 python -m pip install ".[web]"
@@ -76,18 +76,18 @@ Re-running `install.sh` updates the Claude skill symlinks from the current repos
 
 ### Plugin/content release bundle
 
-Open the plugin/content 3.0.1 GitHub release page: <https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.0.1>. Download `outrider-recon-bundle-3.0.1.zip`, verify the relevant checksum entry, extract it into a review directory, inspect `RELEASE-MANIFEST.json`, and then follow the Claude skill installation method for your Claude surface. No Claude Marketplace publication is claimed.
+Open the plugin/content 3.1.0 GitHub release page: <https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.1.0>. Download `outrider-recon-bundle-3.1.0.zip`, verify the relevant checksum entry, extract it into a review directory, inspect `RELEASE-MANIFEST.json`, and then follow the Claude skill installation method for your Claude surface. No Claude Marketplace publication is claimed.
 
 If only the plugin bundle is present in your artifact directory, verify just that checksum entry:
 
 ```bash
-grep 'outrider-recon-bundle-3.0.1.zip' SHA256SUMS | sha256sum -c -
+grep 'outrider-recon-bundle-3.1.0.zip' SHA256SUMS | sha256sum -c -
 ```
 
 If only the Python artifacts are present, verify just the Python entries:
 
 ```bash
-grep -E 'outrider_recon-0.2.0-py3-none-any.whl|outrider_recon-0.2.0.tar.gz' SHA256SUMS | sha256sum -c -
+grep -E 'outrider_recon-0.3.0-py3-none-any.whl|outrider_recon-0.3.0.tar.gz' SHA256SUMS | sha256sum -c -
 ```
 
 An unfiltered `sha256sum -c SHA256SUMS` expects every artifact named in the shared checksum file to exist in the current artifact directory.
