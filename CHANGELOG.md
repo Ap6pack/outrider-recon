@@ -11,6 +11,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- Added explicitly enabled, guarded browser invocation of the five fixed Outrider MCP enrichment tools with current state, scope, and approval policy checks.
+- Added network-free enrichment preflight and bounded transient result review without automatic artifacts, evidence, contracts, findings, or execution chaining.
 - Added guarded browser review and explicit human promotion of evidence-backed `finding_candidate` claims into append-only `validated_finding` records.
 - Added point-in-time browser verification of finding source provenance, claim snapshots, evidence integrity, and current scope.
 
@@ -342,6 +344,8 @@ Major rewrite for external red-team posture. Both skills tagged `version: 2.0`.
 This project is a fork of [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT).
 
 ## Unreleased
+
+### Added
 
 - Added append-only `findings.jsonl` validated-finding records with human-reviewed promotion from evidence-backed `finding_candidate` claims, source-result/source-claim provenance, source-result SHA-256 recording, evidence-integrity enforcement, current-scope and workflow-state checks, and finding list/show/verify CLI commands without automatic execution or automatic promotion.
 

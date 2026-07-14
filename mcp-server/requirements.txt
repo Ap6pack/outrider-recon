@@ -1,3 +1,2 @@
--e ..
+-e ..[enrichment]
 mcp
-httpx

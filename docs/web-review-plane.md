@@ -83,3 +83,7 @@ The mutation lock is process-local. Revision checks serialize guarded web mutati
 ## Finding candidate review
 
 The web plane lists metadata-only `finding_candidate` claims, supports explicit human promotion into append-only `validated_finding` records, and verifies findings point-in-time against source result bytes, source claim snapshots, evidence integrity, and current scope. It does not automatically promote, edit, delete, export, generate reports, execute skills, invoke MCP, upload results, or transfer artifacts.
+
+## Fixed MCP enrichment controls
+
+When started with `--enable-mcp-enrichment`, the loopback web plane exposes the server-derived catalog for the five fixed Outrider MCP enrichment tools, a network-free preflight, and one explicitly confirmed bounded invocation. It remains disabled by default; results are transient and no artifacts, evidence, contracts, findings, reports, queues, cancellation, orchestration, skill execution, or arbitrary MCP support are added.

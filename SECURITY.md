@@ -72,3 +72,7 @@ If you used these skills during an authorized engagement and found a vulnerabili
 The process-local control token gates mutations; it is not authentication. Contract actor and created_by values are unauthenticated attribution. Valid request or result contracts do not prove skill execution, exploitation, vulnerability, client acceptance, or finding status.
 
 The browser may inventory `finding_candidate` metadata, explicitly promote a reviewed candidate into an append-only local finding, and verify finding provenance point-in-time. It still provides no automatic promotion, finding edit/delete, reports, exports, execution, MCP, recon, result upload, or artifact transfer.
+
+## Web MCP enrichment boundary
+
+Browser MCP enrichment is disabled by default and must be explicitly enabled on a loopback-only web server. It exposes only five fixed Outrider tools, rechecks current state, scope, and approvals immediately before transport, and returns transient bounded output. It is not authentication, not remote hosting, not arbitrary MCP, not evidence capture, and not proof of authorization, vulnerability, exploitation, or client acceptance.

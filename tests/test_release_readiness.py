@@ -158,8 +158,8 @@ class ReleaseReadinessTests(unittest.TestCase):
         setup = next(step for step in web['steps'] if step.get('uses') == 'actions/setup-python@v5')
         self.assertEqual(setup['with']['python-version'], '3.12')
         web_steps = '\n'.join(str(step.get('run', '')) for step in web['steps'])
-        self.assertIn('python -m pip install -e ".[web]"', web_steps)
-        self.assertIn('python -c "import fastapi, httpx, uvicorn"', web_steps)
+        self.assertIn('python -m pip install -e ".[web,enrichment]"', web_steps)
+        self.assertIn('python -c "import fastapi, httpx, httpx2, uvicorn"', web_steps)
         self.assertIn('python -m unittest tests.test_web_view tests.test_web_app', web_steps)
         self.assertIn('python -m unittest discover -s tests -p "test_*.py"', web_steps)
 

@@ -88,7 +88,13 @@ def web_serve(args: argparse.Namespace) -> int:
         except ImportError:
             print('ERROR: web dependencies are not installed. Install them with: python -m pip install -e ".[web]"')
             return 2
-        app = create_app(root)
+        if getattr(args, "enable_mcp_enrichment", False):
+            try:
+                import httpx  # noqa: F401
+            except ImportError:
+                print('ERROR: enrichment dependencies are not installed. Install them with: python -m pip install -e ".[web,enrichment]"')
+                return 2
+        app = create_app(root, mcp_enrichment_enabled=getattr(args, "enable_mcp_enrichment", False))
         url = f"http://{args.host}:{args.port}" if args.host != "::1" else f"http://[::1]:{args.port}"
         print(f"Outrider local control plane: {url}")
         print("Runs root accepted.")
@@ -96,6 +102,15 @@ def web_serve(args: argparse.Namespace) -> int:
         print("Authentication: none provided.")
         print("Mutation protection: process-local control token and same-origin checks.")
         print("Network scope: restricted to the local machine (loopback only).")
+        if getattr(args, "enable_mcp_enrichment", False):
+            print("MCP enrichment: explicitly enabled.")
+            print("Five fixed policy-gated enrichment tools are available.")
+            print("The interface remains unauthenticated and loopback-only.")
+            print("Every invocation reloads current run policy before network activity.")
+            print("Results are transient and are not automatically persisted or registered as evidence.")
+        else:
+            print("MCP enrichment: disabled.")
+            print("No outbound HTTP or DNS activity is available from the browser.")
         print("Other control actions remain CLI-only.")
         uvicorn.run(app, host=args.host, port=args.port)
         return 0
@@ -892,6 +907,7 @@ def build_parser() -> argparse.ArgumentParser:
     web_serve_parser.add_argument("runs_root")
     web_serve_parser.add_argument("--host", default="127.0.0.1", choices=sorted(LOOPBACK_WEB_HOSTS))
     web_serve_parser.add_argument("--port", type=_valid_web_port, default=8765)
+    web_serve_parser.add_argument("--enable-mcp-enrichment", action="store_true", help="Explicitly enable five fixed policy-gated MCP enrichment tools in the loopback web UI.")
     web_serve_parser.set_defaults(func=web_serve)
 
     contract_parser = subcommands.add_parser("contract", help="Create and validate skill interchange contracts.")

@@ -125,9 +125,9 @@ jobs:
       - name: Upgrade pip
         run: python -m pip install --upgrade pip
       - name: Install package with web extra
-        run: python -m pip install -e ".[web]"
+        run: python -m pip install -e ".[web,enrichment]"
       - name: Verify optional web dependencies
-        run: python -c "import fastapi, httpx, uvicorn"
+        run: python -c "import fastapi, httpx, httpx2, uvicorn"
       - name: Compile package, tests, and tools
         run: python -m compileall outrider tests tools
       - name: Run focused web tests

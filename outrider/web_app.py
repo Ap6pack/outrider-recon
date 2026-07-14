@@ -1,5 +1,7 @@
 import secrets
 import threading
+import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from uuid import UUID
 
@@ -14,11 +16,12 @@ from outrider.scope import ScopeValidationError, evaluate_scope, load_scope, rep
 from outrider.run_setup import RunConflictError, RunSetupError, WebRunRequest, create_web_run_atomic
 from outrider.skill_contract import (REQUEST_ACTIONS, SkillContractValidationError, contract_revision, create_skill_request, find_skill_request_by_id, find_skill_result_by_id, list_known_skills, load_skill_request, load_skill_result, validate_skill_request, validate_skill_result)
 from outrider.finding import (PROMOTED_CONFIDENCES, SEVERITIES, VALIDATION_BASES, FindingPromotionRefusal, FindingValidationError, finding_revision, promote_finding_by_ids, verify_all_findings)
+from outrider.mcp_enrichment import EnrichmentError, InputError, FixedEnrichmentExecutor, catalog as mcp_catalog, preflight as mcp_preflight, invoke as mcp_invoke, _SCOPE_NOTE, _NOTICE
 
 TOKEN_HEADER = "X-Outrider-Control-Token"
 
 
-def create_app(runs_root: str | Path, *, control_token: str | None = None):
+def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_enrichment_enabled: bool = False, enrichment_executor=None):
     try:
         from fastapi import FastAPI, HTTPException, Request
         from fastapi.responses import FileResponse, JSONResponse
@@ -29,6 +32,9 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
     root = Path(runs_root)
     token = control_token if control_token is not None else secrets.token_urlsafe(32)
     mutation_lock = threading.Lock()
+    enrichment_executor = enrichment_executor
+    enrichment_lock = threading.Lock()
+    logger = logging.getLogger(__name__)
     app = FastAPI(docs_url=None, redoc_url=None, openapi_url=None, debug=False)
     static_dir = Path(__file__).with_name("web_static")
 
@@ -72,11 +78,11 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_invocation": False, "recon_execution": False}}
+        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_catalog": True, "mcp_preflight": True, "mcp_invocation": mcp_enrichment_enabled, "mcp_enrichment_enabled": mcp_enrichment_enabled, "fixed_outbound_enrichment_tools": 5, "recon_execution": False}}
 
     @app.get("/api/session")
     def session():
-        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_invocation": False, "recon_execution": False}})
+        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_catalog": True, "mcp_preflight": True, "mcp_invocation": mcp_enrichment_enabled, "mcp_enrichment_enabled": mcp_enrichment_enabled, "fixed_outbound_enrichment_tools": 5, "recon_execution": False}})
 
 
     async def read_json_object(request: Request):
@@ -615,6 +621,79 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None):
             counts={}
             for r in results: counts[r.overall_status]=counts.get(r.overall_status,0)+1
             return json({"finding_revision":finding_revision(run_dir),"verification_scope":"one" if fid else "all","results":[r.to_dict() for r in results],"counts":counts,"validation_context":{**web_view.validation_context(run_dir),"finding_revision":finding_revision(run_dir)},"notice":"Point-in-time verification only; status is not persisted and current-scope status does not by itself change overall integrity."})
+
+
+
+    def _run_or_error(run_id: str):
+        try: UUID(run_id)
+        except ValueError: return None, error(422, "run_id must be a UUID")
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return None, error(404, "run not found")
+        return run_dir, None
+
+    @app.get("/api/runs/{run_id}/mcp")
+    def mcp_catalog_route(run_id: str):
+        run_dir, err = _run_or_error(run_id)
+        if err: return err
+        return json({"enabled": mcp_enrichment_enabled, "current_state": load_state(run_dir).current_state, "scope_revision": scope_revision(run_dir), "approval_revision": approval_revision(run_dir), "tools": mcp_catalog(mcp_enrichment_enabled), "limitations": ["One synchronous invocation at a time", "Transient result only", "No automatic artifact or evidence creation"]})
+
+    @app.post("/api/runs/{run_id}/mcp/preflight")
+    async def mcp_preflight_route(run_id: str, request: Request):
+        require_mutation_guard(request)
+        run_dir, err = _run_or_error(run_id)
+        if err: return err
+        body, err = await read_json_object(request)
+        if err: return err
+        if set(body) - {"tool_name", "arguments"}: return error(422, "unknown field")
+        tool = body.get("tool_name")
+        if not isinstance(tool, str) or not tool.strip() or len(tool) > 64: return error(422, "tool_name must be a non-empty string")
+        try:
+            return json(await mcp_preflight(str(run_dir), tool.strip(), body.get("arguments")))
+        except InputError as exc:
+            return error(422, str(exc))
+        except Exception:
+            return error(500, "preflight failed")
+
+    @app.post("/api/runs/{run_id}/mcp/invoke")
+    async def mcp_invoke_route(run_id: str, request: Request):
+        require_mutation_guard(request)
+        if not mcp_enrichment_enabled: return error(503, "MCP enrichment is disabled")
+        if "application/json" not in request.headers.get("content-type", ""): return error(422, "JSON body required")
+        run_dir, err = _run_or_error(run_id)
+        if err: return err
+        body, err = await read_json_object(request)
+        if err: return err
+        allowed = {"expected_state", "expected_scope_revision", "expected_approval_revision", "tool_name", "arguments", "actor", "purpose", "confirmed"}
+        if set(body) - allowed: return error(422, "unknown field")
+        for field, limit in (("expected_state",64),("expected_scope_revision",128),("expected_approval_revision",128),("tool_name",64),("actor",200),("purpose",2000)):
+            if not isinstance(body.get(field), str) or not body[field].strip() or len(body[field]) > limit: return error(422, f"{field} must be a non-empty string")
+        if body.get("confirmed") is not True: return error(422, "confirmed must be true")
+        if not isinstance(body.get("arguments"), dict): return error(422, "arguments must be a JSON object")
+        if not enrichment_lock.acquire(blocking=False): return error(409, "another enrichment invocation is already active")
+        started = datetime.now(timezone.utc)
+        invocation_id = str(__import__('uuid').uuid4())
+        try:
+            with mutation_lock:
+                if load_state(run_dir).current_state != body["expected_state"].strip(): return error(409, "expected state is stale")
+                if scope_revision(run_dir) != body["expected_scope_revision"].strip(): return error(409, "scope revision is stale")
+                if approval_revision(run_dir) != body["expected_approval_revision"].strip(): return error(409, "approval revision is stale")
+                tool = body["tool_name"].strip()
+                args = body["arguments"]
+                logger.info("mcp_enrichment_start invocation_id=%s run_id=%s tool=%s actor=%s", invocation_id, run_id, tool, body["actor"].strip())
+                policy, result = await mcp_invoke(str(run_dir), tool, args, enrichment_executor or FixedEnrichmentExecutor(), web=True)
+                if policy.decision != "allow": return error(409, policy.reason)
+            completed = datetime.now(timezone.utc)
+            duration = int((completed-started).total_seconds()*1000)
+            logger.info("mcp_enrichment_finish invocation_id=%s run_id=%s tool=%s candidate=%s actor=%s status=ok duration_ms=%s result_count=%s truncated=%s", invocation_id, run_id, tool, policy.normalized_policy_candidate, body["actor"].strip(), duration, result.metadata.get("item_count"), result.metadata.get("truncated"))
+            return json({"ok": True, "invocation": {"invocation_id": invocation_id, "tool_name": tool, "actor": body["actor"].strip(), "purpose": body["purpose"].strip(), "started_at": started.isoformat(), "completed_at": completed.isoformat(), "duration_ms": duration, "transient": True}, "policy": policy.to_dict(), "result": result.result, "result_metadata": result.metadata, "scope_note": _SCOPE_NOTE, "notice": _NOTICE})
+        except InputError as exc:
+            return error(422, str(exc))
+        except EnrichmentError as exc:
+            return error(exc.status_code, exc.message)
+        except Exception:
+            return error(500, "enrichment invocation failed")
+        finally:
+            enrichment_lock.release()
 
     @app.get("/api/runs/{run_id}/overview")
     def overview(run_id: str): return detail(run_id, "overview")

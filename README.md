@@ -254,3 +254,5 @@ Outrider codifies external attack-surface tradecraft into Claude-native skills, 
 > _Raw recon tells you what exists. Outrider helps decide what matters first._
 
 The optional local web control plane now supports guarded candidate review, explicit human finding promotion, and point-in-time finding verification without adding execution, result upload, reporting, export, or artifact-transfer capabilities.
+
+The optional loopback web control plane can expose explicitly enabled, fixed, policy-gated MCP enrichment controls with `outrider web serve ./runs --enable-mcp-enrichment` after installing `python -m pip install -e ".[web,enrichment]"`. Enrichment is disabled by default; results are transient and do not create artifacts, evidence, contracts, findings, reports, jobs, or arbitrary MCP access.
