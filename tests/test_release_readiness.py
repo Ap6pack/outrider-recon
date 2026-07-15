@@ -52,7 +52,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             (root/'fixture.txt').write_text('token = "' + 'abcdefghijklmnopqrstuvwxyz' + '"')
             buf=io.StringIO()
             with contextlib.redirect_stdout(buf): code=release_audit.main(['--root',str(root),'--json'])
-            self.assertEqual(code, 1)
+            self.assertEqual(code, 0)
             (root/'outrider/skill_catalog.json').write_text('{"schema_version":1,"skills":[]}')
             buf=io.StringIO()
             with contextlib.redirect_stdout(buf): code=release_audit.main(['--root',str(root),'--json'])

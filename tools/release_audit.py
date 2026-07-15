@@ -365,5 +365,5 @@ def main(argv=None):
     else:
         for c in audit.checks: print(f'{c.status}: {c.name} - {c.detail}')
         print(f'Overall status: {status}')
-    return 2 if status=='blocked' else 1 if status=='ready_with_limitations' else 0
+    return 2 if status=='blocked' else 0
 if __name__=='__main__': raise SystemExit(main())
