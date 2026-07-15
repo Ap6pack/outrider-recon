@@ -131,7 +131,11 @@ jobs:
       - name: Compile package, tests, and tools
         run: python -m compileall outrider tests tools
       - name: Run focused web tests
-        run: python -m unittest tests.test_web_view tests.test_web_app
+        run: python -m unittest tests.test_web_view tests.test_web_app tests.test_workflow_guide tests.test_web_acceptance
+      - name: Validate packaged JavaScript
+        run: node --check outrider/web_static/app.js
+      - name: Run web acceptance harness
+        run: python tools/web_acceptance.py
       - name: Run complete unit test suite with web extra
         run: python -m unittest discover -s tests -p "test_*.py"
 
@@ -216,6 +220,7 @@ jobs:
                       assert client.get("/static/app.css").status_code == 200
                       assert client.get("/static/app.js").status_code == 200
                       assert web_static_path("index.html").exists()
+                      assert health.json()["capabilities"]["guided_workflow"] is True
               ''')
               subprocess.check_call([py, '-c', smoke])
           PY

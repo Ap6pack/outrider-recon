@@ -16,6 +16,7 @@ from outrider.state import (
     bootstrap_legacy_run,
     load_manifest,
     load_state,
+    state_revision,
     transition_state,
 )
 
@@ -55,6 +56,25 @@ class ManifestAndInitialEventTests(StateTestCase):
             self.run_cli("init", "example.com", "--output-dir", tmp, "--actor", "other")
             self.assertEqual(load_manifest(run).run_id, before_id)
             self.assertEqual(len((run / "run.jsonl").read_text().splitlines()), 1)
+
+    def test_state_revision_hashes_exact_event_log_and_rejects_missing_or_symlink(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = self.init_run(tmp)
+            expected = __import__('hashlib').sha256((run / 'run.jsonl').read_bytes()).hexdigest()
+            self.assertEqual(state_revision(run), expected)
+            before = state_revision(run)
+            transition_state(run, 'scoped', 'authorized-operator')
+            self.assertNotEqual(state_revision(run), before)
+            data = (run / 'run.jsonl').read_bytes()
+            (run / 'run.jsonl').write_bytes(data + b' ')
+            self.assertEqual(state_revision(run), __import__('hashlib').sha256((run / 'run.jsonl').read_bytes()).hexdigest())
+            (run / 'run.jsonl').unlink()
+            with self.assertRaises(StateValidationError):
+                state_revision(run)
+            target = run / 'target.jsonl'; target.write_text('x')
+            (run / 'run.jsonl').symlink_to(target)
+            with self.assertRaises(StateValidationError):
+                state_revision(run)
 
     def test_null_optional_metadata_accepted_and_bad_manifest_rejected(self):
         with tempfile.TemporaryDirectory() as tmp:

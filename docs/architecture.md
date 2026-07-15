@@ -1,6 +1,6 @@
 # Architecture
 
-The web-first increment makes the loopback browser portal the default human entry point while preserving the CLI as an automation and recovery surface. Engagement onboarding writes optional platform and traffic-identification metadata into existing run metadata and keeps enrichment disabled by default. & Design Philosophy
+Outrider is an external reconnaissance assistant built around deterministic local controls, human review, and explicit workflow boundaries. The web-first loopback portal is the default human entry point while the CLI remains available for automation and recovery.
 
 ## Implementation status
 

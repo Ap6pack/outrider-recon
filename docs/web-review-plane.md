@@ -89,3 +89,5 @@ The web plane lists metadata-only `finding_candidate` claims, supports explicit 
 ## Fixed MCP enrichment controls
 
 When started with `--enable-mcp-enrichment`, the loopback web plane exposes the server-derived catalog for the five fixed Outrider MCP enrichment tools, a network-free preflight, and one explicitly confirmed bounded invocation. It remains disabled by default; results are transient and no artifacts, evidence, contracts, findings, reports, queues, cancellation, orchestration, skill execution, or arbitrary MCP support are added.
+
+Guided workflow endpoints project progress from existing run data and use explicit guarded state transitions. They do not run discovery, capture evidence, execute skills, promote findings, or generate reports.
