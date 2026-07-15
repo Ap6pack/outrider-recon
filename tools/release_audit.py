@@ -6,10 +6,10 @@ from dataclasses import dataclass, asdict
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-REQUIRED_FILES = ['pyproject.toml','README.md','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','LICENSE','install.sh','uninstall.sh','.gitignore','.mcp.json','.claude-plugin/plugin.json','.github/workflows/lint.yml','.github/workflows/release-candidate.yml','tools/build_release_bundle.py','docs/releases/README.md','docs/releases/python-0.3.0.md','docs/releases/plugin-3.1.0.md','docs/releases/release-checklist.md']
+REQUIRED_FILES = ['pyproject.toml','README.md','CHANGELOG.md','SECURITY.md','CONTRIBUTING.md','LICENSE','install.sh','uninstall.sh','.gitignore','.mcp.json','.claude-plugin/plugin.json','.github/workflows/lint.yml','.github/workflows/release-candidate.yml','tools/build_release_bundle.py','docs/releases/README.md','docs/releases/python-0.3.0.md','docs/releases/plugin-3.1.0.md','docs/quick-start.md','docs/releases/release-checklist.md']
 SCHEMAS = ['skill-request-v1.schema.json','skill-result-v1.schema.json','finding-v1.schema.json']
 WEB_STATIC = ['index.html','app.css','app.js']
-ADRS = [f'docs/adr/{i:04d}-{name}.md' for i,name in [(1,'run-manifest-and-state-log'),(2,'evidence-registry-and-integrity'),(3,'approval-registry-and-action-policy'),(4,'mcp-tool-boundary-enforcement'),(5,'skill-python-interchange-contracts'),(6,'deterministic-finding-promotion'),(7,'local-web-review-plane'),(8,'guarded-web-state-transitions'),(9,'web-run-creation-and-scope-management'),(10,'web-approval-controls'),(11,'web-evidence-controls'),(12,'web-contract-controls'),(13,'web-finding-promotion-controls'),(14,'web-mcp-enrichment-controls')]]
+ADRS = [f'docs/adr/{i:04d}-{name}.md' for i,name in [(1,'run-manifest-and-state-log'),(2,'evidence-registry-and-integrity'),(3,'approval-registry-and-action-policy'),(4,'mcp-tool-boundary-enforcement'),(5,'skill-python-interchange-contracts'),(6,'deterministic-finding-promotion'),(7,'local-web-review-plane'),(8,'guarded-web-state-transitions'),(9,'web-run-creation-and-scope-management'),(10,'web-approval-controls'),(11,'web-evidence-controls'),(12,'web-contract-controls'),(13,'web-finding-promotion-controls'),(14,'web-mcp-enrichment-controls'),(15,'web-first-launch-and-onboarding')]]
 
 def load_pyproject(path: Path) -> dict[str, object]:
     """Parse the small pyproject subset this audit needs using only stdlib."""
@@ -85,7 +85,7 @@ class Audit:
         schemas={p.name: json.loads(p.read_text()).get('properties',{}).get('schema_version',{}).get('const') for p in (self.root/'contracts').glob('*.schema.json')}
         return {'python_package':py['project']['version'],'claude_plugin':plugin['version'],'skills':skills,'schemas':schemas,'manifest_schema':1,'state_event_schema':1,'evidence_schema':1,'approval_schema':1,'finding_schema':schemas.get('finding-v1.schema.json')}
     def run(self):
-        self.check_required_files(); self.check_parse(); self.check_versions(); self.check_skills(); self.check_schemas(); self.check_package_data(); self.check_static(); self.check_adrs(); self.check_artifacts(); self.check_no_forbidden_http_client_typo(); self.check_security_patterns(); self.check_docs_versions(); self.check_changelog(); self.check_lint_workflow(); self.check_release_workflow(); self.check_mcp(); return self
+        self.check_required_files(); self.check_parse(); self.check_versions(); self.check_skills(); self.check_schemas(); self.check_package_data(); self.check_static(); self.check_adrs(); self.check_web_first_onboarding(); self.check_artifacts(); self.check_no_forbidden_http_client_typo(); self.check_security_patterns(); self.check_docs_versions(); self.check_changelog(); self.check_lint_workflow(); self.check_release_workflow(); self.check_mcp(); return self
 
     def check_versions(self):
         versions = self.versions()
@@ -161,6 +161,41 @@ class Audit:
     def check_adrs(self):
         miss=[a for a in ADRS if not (self.root/a).exists()]
         self.ok('required ADR sequence','ADR 0001 through 0014 are present') if not miss else self.fail('required ADR sequence','missing '+', '.join(miss))
+
+    def check_web_first_onboarding(self):
+        cli = (self.root/'outrider/cli.py').read_text(encoding='utf-8')
+        web_app = (self.root/'outrider/web_app.py').read_text(encoding='utf-8')
+        app_js = (self.root/'outrider/web_static/app.js').read_text(encoding='utf-8')
+        docs = '\n'.join((self.root/p).read_text(encoding='utf-8') for p in ['README.md','docs/quick-start.md','docs/usage.md','docs/web-review-plane.md'])
+        if 'required=False' in cli and 'launch_local_portal' in cli and 'create_default_root=True' in cli and 'outrider web serve' in docs:
+            self.ok('web-first launcher documentation','no-subcommand launcher and advanced web serve are represented')
+        else:
+            self.fail('web-first launcher documentation','launcher behavior or docs are missing')
+        if '127.0.0.1' in cli and 'localhost' in cli and '::1' in cli and '0.0.0.0' not in cli:
+            self.ok('loopback host restriction','remote web host binding is not allowed')
+        else:
+            self.fail('loopback host restriction','remote host appears allowed')
+        if 'mcp_enrichment_enabled: bool = False' in web_app and 'Discovery enrichment: disabled' in cli:
+            self.ok('enrichment default disabled','web and launcher defaults keep enrichment disabled')
+        else:
+            self.fail('enrichment default disabled','enrichment default changed')
+        forbidden = ['localStorage','sessionStorage','document.cookie','innerHTML','eval(']
+        hits=[x for x in forbidden if x in app_js]
+        self.ok('browser storage and dynamic HTML exclusion','no browser storage, innerHTML, or eval in app.js') if not hits else self.fail('browser storage and dynamic HTML exclusion', ', '.join(hits))
+        html=(self.root/'outrider/web_static/index.html').read_text(encoding='utf-8')
+        if '<script src="/static/app.js" defer></script>' in html and 'http://' not in html and 'https://' not in html:
+            self.ok('static asset locality','no inline script or external static asset')
+        else:
+            self.fail('static asset locality','inline or external static asset detected')
+        if 'engagement_onboarding' in web_app and 'automatic_discovery' in web_app and 'guided_workflow' in web_app:
+            self.ok('onboarding capability projection','onboarding and negative capability fields exist')
+        else:
+            self.fail('onboarding capability projection','capability fields missing')
+        if 'guided discovery is complete' not in docs.lower() and 'skills execute in the browser' not in docs.lower():
+            self.ok('guided discovery claims','docs do not falsely claim guided discovery or browser skill execution')
+        else:
+            self.fail('guided discovery claims','false capability claim detected')
+
     def tracked_files(self):
         import subprocess
         try: return subprocess.check_output(['git','ls-files'], cwd=self.root, text=True, stderr=subprocess.DEVNULL).splitlines()
@@ -203,7 +238,7 @@ class Audit:
         doc_paths = [
             'README.md', 'docs/installation.md', 'docs/architecture.md', 'docs/release-readiness.md',
             'docs/releases/README.md', 'docs/releases/python-0.3.0.md',
-            'docs/releases/plugin-3.1.0.md', 'docs/releases/release-checklist.md', 'CHANGELOG.md'
+            'docs/releases/plugin-3.1.0.md','docs/quick-start.md', 'docs/releases/release-checklist.md', 'CHANGELOG.md'
         ]
         docs = {p: (self.root / p).read_text(errors='ignore') for p in doc_paths if (self.root / p).exists()}
         combined = '\n'.join(docs.values())

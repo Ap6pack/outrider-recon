@@ -13,13 +13,16 @@ from outrider.approval import (
 )
 from outrider.state import InvalidTransitionError, StateValidationError, load_manifest, load_state, transition_state
 from outrider.scope import ScopeValidationError, evaluate_scope, load_scope, replace_scope_rules_atomic, scope_revision
-from outrider.run_setup import RunConflictError, RunSetupError, WebRunRequest, create_web_run_atomic
+from outrider.run_setup import PLATFORM_OPTIONS, RunConflictError, RunSetupError, WebRunRequest, create_web_run_atomic
 from outrider.skill_contract import (REQUEST_ACTIONS, SkillContractValidationError, contract_revision, create_skill_request, find_skill_request_by_id, find_skill_result_by_id, list_known_skills, load_skill_request, load_skill_result, validate_skill_request, validate_skill_result)
 from outrider.finding import (PROMOTED_CONFIDENCES, SEVERITIES, VALIDATION_BASES, FindingPromotionRefusal, FindingValidationError, finding_revision, promote_finding_by_ids, verify_all_findings)
 from outrider.mcp_enrichment import EnrichmentError, InputError, FixedEnrichmentExecutor, catalog as mcp_catalog, preflight as mcp_preflight, invoke as mcp_invoke, _SCOPE_NOTE, _NOTICE
 
 TOKEN_HEADER = "X-Outrider-Control-Token"
 
+
+def _capabilities(mcp_enrichment_enabled: bool) -> dict:
+    return {"state_transition": True, "run_creation": True, "web_first_launcher": True, "engagement_onboarding": True, "engagement_creation": True, "engagement_resume": True, "guided_workflow": False, "automatic_discovery": False, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_catalog": True, "mcp_preflight": True, "mcp_invocation": mcp_enrichment_enabled, "mcp_enrichment_enabled": mcp_enrichment_enabled, "fixed_outbound_enrichment_tools": 5, "recon_execution": False}
 
 def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_enrichment_enabled: bool = False, enrichment_executor=None):
     try:
@@ -78,11 +81,16 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_e
 
     @app.get("/api/health")
     def health():
-        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_catalog": True, "mcp_preflight": True, "mcp_invocation": mcp_enrichment_enabled, "mcp_enrichment_enabled": mcp_enrichment_enabled, "fixed_outbound_enrichment_tools": 5, "recon_execution": False}}
+        return {"ok": True, "service": "outrider-web", "mode": "limited-control", "network_scope": "loopback-only", "authentication": "none", "capabilities": _capabilities(mcp_enrichment_enabled)}
 
     @app.get("/api/session")
     def session():
-        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": {"state_transition": True, "run_creation": True, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_catalog": True, "mcp_preflight": True, "mcp_invocation": mcp_enrichment_enabled, "mcp_enrichment_enabled": mcp_enrichment_enabled, "fixed_outbound_enrichment_tools": 5, "recon_execution": False}})
+        return json({"mode": "limited-control", "authentication": "none", "control_token": token, "capabilities": _capabilities(mcp_enrichment_enabled)})
+
+    @app.get("/api/onboarding")
+    def onboarding():
+        inventory = web_view.list_runs(root)
+        return json({"first_run": inventory.get("total", 0) == 0, "engagement_count": inventory.get("total", 0), "enrichment_enabled": mcp_enrichment_enabled, "platform_options": list(PLATFORM_OPTIONS), "capabilities": {"engagement_creation": True, "engagement_resume": True, "guided_workflow": False, "automatic_discovery": False}})
 
 
     async def read_json_object(request: Request):
@@ -101,23 +109,28 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_e
         require_mutation_guard(request)
         body, err = await read_json_object(request)
         if err: return err
-        allowed = {"target", "actor", "authorization_reference", "in_scope", "out_of_scope"}
+        allowed = {"target", "actor", "authorization_reference", "engagement_platform", "traffic_header", "in_scope", "out_of_scope", "confirmed"}
         if set(body) - allowed: return error(422, "unknown field")
         for field in ("target", "actor", "authorization_reference"):
             if not isinstance(body.get(field), str) or not body[field].strip():
                 return error(422, f"{field} must be a non-empty string")
+        if body.get("confirmed") is not True:
+            return error(422, "authorization confirmation is required")
+        for field, limit in (("actor", 200), ("authorization_reference", 500)):
+            if len(body[field]) > limit or any(ch in body[field] for ch in "\0\r\n"):
+                return error(422, f"{field} is invalid")
         if "in_scope" not in body or "out_of_scope" not in body:
             return error(422, "in_scope and out_of_scope are required")
         with mutation_lock:
             try:
-                run_dir = create_web_run_atomic(root, WebRunRequest(body["target"], body["actor"], body["authorization_reference"], body["in_scope"], body["out_of_scope"]))
+                run_dir = create_web_run_atomic(root, WebRunRequest(body["target"], body["actor"], body["authorization_reference"], body["in_scope"], body["out_of_scope"], body.get("engagement_platform"), body.get("traffic_header")))
                 manifest = load_manifest(run_dir)
                 payload = {"ok": True, "run": web_view.run_overview(run_dir), "scope": web_view.scope_view(run_dir)}
                 return JSONResponse(payload, status_code=201, headers={"Location": f"/api/runs/{manifest.run_id}/overview"})
             except RunConflictError:
-                return error(409, "run destination already exists")
-            except (RunSetupError, ScopeValidationError, ValueError):
-                return error(422, "run creation request is invalid")
+                return error(409, "An engagement for this target already exists. Resume the existing engagement or use a different target.")
+            except (RunSetupError, ScopeValidationError, ValueError) as exc:
+                return error(422, str(exc) or "run creation request is invalid")
             except Exception:
                 return error(500, "run creation failed")
 

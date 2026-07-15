@@ -59,6 +59,15 @@ Outrider Recon → ranked leads / technique cards → proxy-assisted testing, ma
 
 ## Quick start
 
+Install the web extra and run `outrider` to start the local browser portal:
+
+```bash
+python -m pip install -e ".[web]"
+outrider
+```
+
+The browser is the normal human interface. Use the guided wizard to create an authorized engagement, then choose **Review Scope**. CLI subcommands remain available for advanced automation and recovery. Discovery enrichment is disabled unless `outrider --enable-mcp-enrichment` is used.
+
 This is the minimum successful path. For complete setup options, see [Installation](docs/installation.md) and [Usage](docs/usage.md).
 
 ### 1. Install the Claude skills

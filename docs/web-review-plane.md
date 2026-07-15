@@ -1,5 +1,7 @@
 # Local web review plane
 
+Run `outrider` to launch the loopback portal with beginner onboarding. `outrider web serve RUNS_ROOT` remains supported for advanced explicit serving. Browser onboarding does not run discovery, enrichment, state transitions, skill execution, Claude execution, or evidence capture automatically.
+
 The local web review plane is an optional, limited-control interface for reviewing existing Outrider runs and applying guarded workflow-state transitions, guarded run creation, initialized-only scope replacement, and browser scope checks. It is intended for a single operator on the local machine.
 
 ## Architecture

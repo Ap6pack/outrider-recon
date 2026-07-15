@@ -70,82 +70,97 @@ def run_acceptance() -> dict:
             assert_ok(fake.http_calls==[] and fake.dns_calls==[],'no network calls')
             return 'default safety boundaries verified'
         stage('default safety', s1)
+        def s_onboarding():
+            ob=default.get('/api/onboarding')
+            assert_ok(ob.status_code==200, ob.text)
+            data=ob.json(); assert_ok(data['first_run'] is True and data['engagement_count']==0, 'welcome first run')
+            assert_ok(data['enrichment_enabled'] is False, 'enrichment disabled by default')
+            r=client.post('/api/runs',json={'target':'example.com','actor':'authorized-operator','authorization_reference':'opaque authorization reference','engagement_platform':'HackerOne','traffic_header':{'name':'X-Bug-Bounty','value':'H1-authorized-operator'},'in_scope':['example.com'],'out_of_scope':[],'confirmed':True},headers=h)
+            assert_ok(r.status_code==201,r.text); body=r.json(); ctx['onboard_id']=body['run']['run_id']; ctx['onboard_dir']=next(root.iterdir())
+            assert_ok(body['run']['current_state']=='initialized' and body['run']['next_action']=='Review Scope','post-create initialized review scope')
+            scope_doc=(ctx['onboard_dir']/'scope.yaml').read_text(); assert_ok('engagement_platform: HackerOne' in scope_doc and 'X-Bug-Bounty' in scope_doc and 'H1-authorized-operator' in scope_doc,'metadata stored')
+            inv=client.get('/api/runs').json(); assert_ok(inv['total']==1 and inv['runs'][0]['next_action']=='Review Scope','resume inventory')
+            assert_ok('opaque authorization reference' not in json.dumps(inv) and 'H1-authorized-operator' not in json.dumps(inv),'private metadata not in inventory')
+            assert_ok(fake.http_calls==[] and fake.dns_calls==[],'onboarding no network')
+            return 'browser onboarding API created engagement without CLI domain command'
+        stage('onboarding', s_onboarding)
         def s2():
-            r=client.post('/api/runs',json={'target':'https://example.com/path','actor':'authorized-operator','authorization_reference':'EXAMPLE-ROE-001','in_scope':['example.com','*.example.com'],'out_of_scope':[]},headers=h)
-            assert_ok(r.status_code==201,r.text); body=r.json(); ctx['rid']=body['run']['run_id']; ctx['run_dir']=next(root.iterdir())
-            assert_ok(str(ctx['run_dir']).startswith(str(root)) and body['run']['target']=='example.com','safe normalized run')
+            root2=Path(td)/'runs2'; root2.mkdir(); ctx['client2']=TestClient(create_app(root2, control_token=CONTROL_VALUE, mcp_enrichment_enabled=True, enrichment_executor=fake))
+            r=ctx['client2'].post('/api/runs',json={'target':'https://example.com/path','actor':'authorized-operator','authorization_reference':'EXAMPLE-ROE-001','engagement_platform':'HackerOne','traffic_header':{'name':'X-Bug-Bounty','value':'H1-authorized-operator'},'in_scope':['example.com','*.example.com'],'out_of_scope':[],'confirmed':True},headers=h)
+            assert_ok(r.status_code==201,r.text); body=r.json(); ctx['rid']=body['run']['run_id']; ctx['run_dir']=next(root2.iterdir())
+            assert_ok(str(ctx['run_dir']).startswith(str(root2)) and body['run']['target']=='example.com','safe normalized run')
             assert_ok((ctx['run_dir']/ 'artifacts').is_dir() and (ctx['run_dir']/ 'contracts'/'results').is_dir(),'scaffold')
-            sc=client.get(f"/api/runs/{ctx['rid']}/scope").json(); ctx['scope_rev']=sc['scope_revision']
-            assert_ok(client.post(f"/api/runs/{ctx['rid']}/scope/check",json={'candidate':'api.example.com'},headers=h).json()['decision']=='allow','scope allow')
-            rep=client.put(f"/api/runs/{ctx['rid']}/scope",json={'expected_revision':ctx['scope_rev'],'actor':'authorized-operator','reason':'accepted scope update','in_scope':['example.com','*.example.com','api.example.com'],'out_of_scope':['admin.example.com']},headers=h)
+            sc=ctx['client2'].get(f"/api/runs/{ctx['rid']}/scope").json(); ctx['scope_rev']=sc['scope_revision']
+            assert_ok(ctx['client2'].post(f"/api/runs/{ctx['rid']}/scope/check",json={'candidate':'api.example.com'},headers=h).json()['decision']=='allow','scope allow')
+            rep=ctx['client2'].put(f"/api/runs/{ctx['rid']}/scope",json={'expected_revision':ctx['scope_rev'],'actor':'authorized-operator','reason':'accepted scope update','in_scope':['example.com','*.example.com','api.example.com'],'out_of_scope':['admin.example.com']},headers=h)
             assert_ok(rep.status_code==200,rep.text); ctx['scope_rev']=rep.json()['scope']['scope_revision']
-            stale=client.put(f"/api/runs/{ctx['rid']}/scope",json={'expected_revision':'0'*64,'actor':'authorized-operator','reason':'stale','in_scope':['example.com'],'out_of_scope':[]},headers=h)
+            stale=ctx['client2'].put(f"/api/runs/{ctx['rid']}/scope",json={'expected_revision':'0'*64,'actor':'authorized-operator','reason':'stale','in_scope':['example.com'],'out_of_scope':[]},headers=h)
             assert_ok(stale.status_code==409,'stale rejected')
-            tr=client.post(f"/api/runs/{ctx['rid']}/state/transition",json={'expected_state':'initialized','new_state':'scoped','actor':'authorized-operator','reason':None},headers=h)
+            tr=ctx['client2'].post(f"/api/runs/{ctx['rid']}/state/transition",json={'expected_state':'initialized','new_state':'scoped','actor':'authorized-operator','reason':None},headers=h)
             assert_ok(tr.status_code==200,tr.text)
-            blocked=client.put(f"/api/runs/{ctx['rid']}/scope",json={'expected_revision':ctx['scope_rev'],'actor':'authorized-operator','reason':'late','in_scope':['example.com'],'out_of_scope':[]},headers=h)
+            blocked=ctx['client2'].put(f"/api/runs/{ctx['rid']}/scope",json={'expected_revision':ctx['scope_rev'],'actor':'authorized-operator','reason':'late','in_scope':['example.com'],'out_of_scope':[]},headers=h)
             assert_ok(blocked.status_code==409,'post-initialized scope rejected')
             return 'run creation, scope edit, stale rejection, and transition verified'
         stage('run creation and scope', s2)
         def s3():
-            appr=client.get(f"/api/runs/{ctx['rid']}/approvals").json(); ctx['approval_rev']=appr['approval_revision']
-            deny=client.post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'target_enumeration','candidate':'api.example.com'},headers=h).json(); assert_ok(deny['decision']=='deny','denied without approval')
-            gr=client.post(f"/api/runs/{ctx['rid']}/approvals",json={'expected_revision':ctx['approval_rev'],'expected_state':'scoped','action_type':'target_enumeration','candidate':'api.example.com','actor':'authorized-operator','reason':'DNS allowed by ROE','duration_minutes':30,'conditions':None},headers=h)
+            appr=ctx['client2'].get(f"/api/runs/{ctx['rid']}/approvals").json(); ctx['approval_rev']=appr['approval_revision']
+            deny=ctx['client2'].post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'target_enumeration','candidate':'api.example.com'},headers=h).json(); assert_ok(deny['decision']=='deny','denied without approval')
+            gr=ctx['client2'].post(f"/api/runs/{ctx['rid']}/approvals",json={'expected_revision':ctx['approval_rev'],'expected_state':'scoped','action_type':'target_enumeration','candidate':'api.example.com','actor':'authorized-operator','reason':'DNS allowed by ROE','duration_minutes':30,'conditions':None},headers=h)
             assert_ok(gr.status_code==201,gr.text); ctx['approval_id']=gr.json()['approval']['approval_id']; ctx['approval_rev']=gr.json()['approvals']['approval_revision']
-            assert_ok(client.post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'target_enumeration','candidate':'api.example.com'},headers=h).json()['decision']=='allow','exact allow')
-            assert_ok(client.post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'target_enumeration','candidate':'other.example.com'},headers=h).json()['decision']=='deny','different candidate deny')
-            assert_ok(client.post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'intrusive_validation','candidate':'api.example.com'},headers=h).json()['decision']=='deny','prohibited denied')
+            assert_ok(ctx['client2'].post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'target_enumeration','candidate':'api.example.com'},headers=h).json()['decision']=='allow','exact allow')
+            assert_ok(ctx['client2'].post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'target_enumeration','candidate':'other.example.com'},headers=h).json()['decision']=='deny','different candidate deny')
+            assert_ok(ctx['client2'].post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'intrusive_validation','candidate':'api.example.com'},headers=h).json()['decision']=='deny','prohibited denied')
             return 'approval grant and policy enforcement verified'
         stage('approvals and policy', s3)
         def s4():
             art=ctx['run_dir']/'artifacts'/'obs.txt'; art.write_text('api.example.com evidence',encoding='utf-8'); before=art.read_bytes()
-            inv=client.get(f"/api/runs/{ctx['rid']}/evidence/artifacts").json(); assert_ok('api.example.com evidence' not in json.dumps(inv),'metadata only inventory')
-            evv=client.get(f"/api/runs/{ctx['rid']}/evidence").json(); ctx['evidence_rev']=evv['evidence_revision']
-            reg=client.post(f"/api/runs/{ctx['rid']}/evidence",json={'expected_revision':ctx['evidence_rev'],'expected_state':'scoped','relative_artifact_path':'artifacts/obs.txt','actor':'authorized-operator','artifact_type':'text','media_type':'text/plain','source':'local fixture','note':'reviewed'},headers=h)
+            inv=ctx['client2'].get(f"/api/runs/{ctx['rid']}/evidence/artifacts").json(); assert_ok('api.example.com evidence' not in json.dumps(inv),'metadata only inventory')
+            evv=ctx['client2'].get(f"/api/runs/{ctx['rid']}/evidence").json(); ctx['evidence_rev']=evv['evidence_revision']
+            reg=ctx['client2'].post(f"/api/runs/{ctx['rid']}/evidence",json={'expected_revision':ctx['evidence_rev'],'expected_state':'scoped','relative_artifact_path':'artifacts/obs.txt','actor':'authorized-operator','artifact_type':'text','media_type':'text/plain','source':'local fixture','note':'reviewed'},headers=h)
             assert_ok(reg.status_code==201,reg.text); ctx['evidence_id']=reg.json()['evidence']['evidence_id']; ctx['evidence_rev']=reg.json()['evidence_view']['evidence_revision']
             assert_ok(reg.json()['evidence']['expected_sha256']==hashlib.sha256(before).hexdigest() and art.read_bytes()==before,'sha and bytes preserved')
-            ver=client.post(f"/api/runs/{ctx['rid']}/evidence/verify",json={'evidence_id':ctx['evidence_id']},headers=h).json(); assert_ok(ver['results'][0].get('overall_status', ver['results'][0].get('status'))=='verified','evidence verified')
-            assert_ok(client.get(f"/api/runs/{ctx['rid']}/evidence/artifacts/obs.txt").status_code in {404,405},'no content route')
+            ver=ctx['client2'].post(f"/api/runs/{ctx['rid']}/evidence/verify",json={'evidence_id':ctx['evidence_id']},headers=h).json(); assert_ok(ver['results'][0].get('overall_status', ver['results'][0].get('status'))=='verified','evidence verified')
+            assert_ok(ctx['client2'].get(f"/api/runs/{ctx['rid']}/evidence/artifacts/obs.txt").status_code in {404,405},'no content route')
             return 'artifact metadata, evidence registration, and verification verified'
         stage('evidence', s4)
         def s5():
-            cv=client.get(f"/api/runs/{ctx['rid']}/contracts").json(); ctx['contract_rev']=cv['contract_revision']
-            cr=client.post(f"/api/runs/{ctx['rid']}/contracts/requests",json={'expected_revision':ctx['contract_rev'],'expected_state':'scoped','skill':'recon-asset-discovery','actor':'authorized-operator','objective':'Review public source observation','action_type':'public_source_lookup','candidate':'api.example.com','input_evidence_ids':[ctx['evidence_id']],'max_items':10,'notes':'acceptance'},headers=h)
+            cv=ctx['client2'].get(f"/api/runs/{ctx['rid']}/contracts").json(); ctx['contract_rev']=cv['contract_revision']
+            cr=ctx['client2'].post(f"/api/runs/{ctx['rid']}/contracts/requests",json={'expected_revision':ctx['contract_rev'],'expected_state':'scoped','skill':'recon-asset-discovery','actor':'authorized-operator','objective':'Review public source observation','action_type':'public_source_lookup','candidate':'api.example.com','input_evidence_ids':[ctx['evidence_id']],'max_items':10,'notes':'acceptance'},headers=h)
             assert_ok(cr.status_code==201,cr.text); ctx['request_id']=cr.json()['request']['request_id']; ctx['contract_rev']=cr.json()['contracts']['contract_revision']
-            vr=client.post(f"/api/runs/{ctx['rid']}/contracts/requests/{ctx['request_id']}/validate",json={'expected_revision':ctx['contract_rev']},headers=h); assert_ok(vr.status_code==200,vr.text)
+            vr=ctx['client2'].post(f"/api/runs/{ctx['rid']}/contracts/requests/{ctx['request_id']}/validate",json={'expected_revision':ctx['contract_rev']},headers=h); assert_ok(vr.status_code==200,vr.text)
             claim_id=str(uuid4()); result_id=str(uuid4()); ctx['claim_id']=claim_id; ctx['result_id']=result_id
             result={'schema_version':1,'contract_type':'skill_result','result_id':result_id,'request_id':ctx['request_id'],'run_id':ctx['rid'],'skill':'recon-asset-discovery','completed_at':utc_now(),'status':'completed','summary':'found candidate','claims':[{'claim_id':claim_id,'classification':'finding_candidate','subject':'api.example.com','statement':'Exposed schema observed','confidence':'high','suggested_severity':'medium','evidence_ids':[ctx['evidence_id']]}],'discovered_candidates':[{'candidate':'api.example.com','relationship':'observed_host','source_evidence_ids':[ctx['evidence_id']]}],'recommended_actions':[],'errors':[]}
             rp=ctx['run_dir']/'contracts'/'results'/f'{result_id}.json'; rp.write_text(json.dumps(result,sort_keys=True),encoding='utf-8'); ctx['result_path']=rp; ctx['source_sha']=sha(rp)
-            ctx['contract_rev']=client.get(f"/api/runs/{ctx['rid']}/contracts").json()['contract_revision']
-            rr=client.post(f"/api/runs/{ctx['rid']}/contracts/results/{result_id}/validate",json={'expected_revision':ctx['contract_rev']},headers=h); assert_ok(rr.status_code==200,rr.text)
-            assert_ok(client.get(f"/api/runs/{ctx['rid']}/findings").json()['findings']==[],'no auto promotion')
+            ctx['contract_rev']=ctx['client2'].get(f"/api/runs/{ctx['rid']}/contracts").json()['contract_revision']
+            rr=ctx['client2'].post(f"/api/runs/{ctx['rid']}/contracts/results/{result_id}/validate",json={'expected_revision':ctx['contract_rev']},headers=h); assert_ok(rr.status_code==200,rr.text)
+            assert_ok(ctx['client2'].get(f"/api/runs/{ctx['rid']}/findings").json()['findings']==[],'no auto promotion')
             return 'request creation and result validation verified without execution'
         stage('contracts', s5)
         def s6():
-            for old,new in [('scoped','collecting'),('collecting','analyzing')]: client.post(f"/api/runs/{ctx['rid']}/state/transition",json={'expected_state':old,'new_state':new,'actor':'authorized-operator','reason':None},headers=h)
-            cand=client.get(f"/api/runs/{ctx['rid']}/findings/candidates").json(); assert_ok(cand.get('candidates'), 'candidate available: '+json.dumps(cand, sort_keys=True)[:1000])
-            fv=client.get(f"/api/runs/{ctx['rid']}/findings").json(); vc=fv['validation_context']
-            pr=client.post(f"/api/runs/{ctx['rid']}/findings",json={'expected_finding_revision':fv['finding_revision'],'expected_contract_revision':vc['contract_revision'],'expected_scope_revision':vc['scope_revision'],'expected_evidence_revision':vc['evidence_revision'],'expected_state':'analyzing','result_id':ctx['result_id'],'claim_id':ctx['claim_id'],'expected_source_sha256':ctx['source_sha'],'actor':'authorized-operator','title':'Public schema','candidate':'api.example.com','severity':'medium','confidence':'high','validation_basis':'response_evidence','validation_reason':'Human reviewed acceptance fixture','impact':'Information exposure','remediation':'Restrict schema','location':'/openapi.json','notes':'acceptance','supplementary_evidence_ids':[ctx['evidence_id']]},headers=h)
+            for old,new in [('scoped','collecting'),('collecting','analyzing')]: ctx['client2'].post(f"/api/runs/{ctx['rid']}/state/transition",json={'expected_state':old,'new_state':new,'actor':'authorized-operator','reason':None},headers=h)
+            cand=ctx['client2'].get(f"/api/runs/{ctx['rid']}/findings/candidates").json(); assert_ok(cand.get('candidates'), 'candidate available: '+json.dumps(cand, sort_keys=True)[:1000])
+            fv=ctx['client2'].get(f"/api/runs/{ctx['rid']}/findings").json(); vc=fv['validation_context']
+            pr=ctx['client2'].post(f"/api/runs/{ctx['rid']}/findings",json={'expected_finding_revision':fv['finding_revision'],'expected_contract_revision':vc['contract_revision'],'expected_scope_revision':vc['scope_revision'],'expected_evidence_revision':vc['evidence_revision'],'expected_state':'analyzing','result_id':ctx['result_id'],'claim_id':ctx['claim_id'],'expected_source_sha256':ctx['source_sha'],'actor':'authorized-operator','title':'Public schema','candidate':'api.example.com','severity':'medium','confidence':'high','validation_basis':'response_evidence','validation_reason':'Human reviewed acceptance fixture','impact':'Information exposure','remediation':'Restrict schema','location':'/openapi.json','notes':'acceptance','supplementary_evidence_ids':[ctx['evidence_id']]},headers=h)
             assert_ok(pr.status_code==201,pr.text); ctx['finding_id']=pr.json()['finding']['finding_id']
             assert_ok(pr.json()['finding']['source']['result_sha256']==ctx['source_sha'],'source hash captured')
-            assert_ok(client.get(f"/api/runs/{ctx['rid']}/findings/candidates").json()['candidates'][0].get('already_promoted') is True,'candidate promoted')
-            vf=client.post(f"/api/runs/{ctx['rid']}/findings/verify",json={'finding_id':ctx['finding_id']},headers=h).json(); assert_ok(vf['results'][0].get('overall_status', vf['results'][0].get('status'))=='verified','finding verified')
-            assert_ok(client.delete(f"/api/runs/{ctx['rid']}/findings/{ctx['finding_id']}").status_code in {404,405},'no delete')
+            assert_ok(ctx['client2'].get(f"/api/runs/{ctx['rid']}/findings/candidates").json()['candidates'][0].get('already_promoted') is True,'candidate promoted')
+            vf=ctx['client2'].post(f"/api/runs/{ctx['rid']}/findings/verify",json={'finding_id':ctx['finding_id']},headers=h).json(); assert_ok(vf['results'][0].get('overall_status', vf['results'][0].get('status'))=='verified','finding verified')
+            assert_ok(ctx['client2'].delete(f"/api/runs/{ctx['rid']}/findings/{ctx['finding_id']}").status_code in {404,405},'no delete')
             return 'human finding promotion and verification verified'
         stage('findings', s6)
         def s7():
-            cat=client.get(f"/api/runs/{ctx['rid']}/mcp").json(); tools=[t['tool_name'] for t in cat['tools']]; assert_ok(tools==['crtsh_lookup','dns_records','epss_score','hudsonrock_lookup','wayback_urls'],tools)
-            pf=client.post(f"/api/runs/{ctx['rid']}/mcp/preflight",json={'tool_name':'crtsh_lookup','arguments':{'domain':'api.example.com'}},headers=h); assert_ok(pf.status_code==200,pf.text); assert_ok(fake.http_calls==[],'preflight no provider')
+            cat=ctx['client2'].get(f"/api/runs/{ctx['rid']}/mcp").json(); tools=[t['tool_name'] for t in cat['tools']]; assert_ok(tools==['crtsh_lookup','dns_records','epss_score','hudsonrock_lookup','wayback_urls'],tools)
+            pf=ctx['client2'].post(f"/api/runs/{ctx['rid']}/mcp/preflight",json={'tool_name':'crtsh_lookup','arguments':{'domain':'api.example.com'}},headers=h); assert_ok(pf.status_code==200,pf.text); assert_ok(fake.http_calls==[],'preflight no provider')
             base={'expected_state':'analyzing','expected_scope_revision':ctx['scope_rev'],'expected_approval_revision':ctx['approval_rev'],'actor':'authorized-operator','purpose':'acceptance','confirmed':True}
-            inv=client.post(f"/api/runs/{ctx['rid']}/mcp/invoke",json={**base,'tool_name':'crtsh_lookup','arguments':{'domain':'api.example.com'}},headers=h); assert_ok(inv.status_code==200,inv.text); assert_ok(len(fake.http_calls)==1 and inv.json()['invocation']['transient'],'transient one call')
-            out=client.post(f"/api/runs/{ctx['rid']}/mcp/invoke",json={**base,'tool_name':'crtsh_lookup','arguments':{'domain':'evil.test'}},headers=h); assert_ok(out.status_code==409 and len(fake.http_calls)==1,'out-of-scope blocked')
-            dns=client.post(f"/api/runs/{ctx['rid']}/mcp/invoke",json={**base,'tool_name':'dns_records','arguments':{'domain':'api.example.com'}},headers=h); assert_ok(dns.status_code==200,dns.text); assert_ok(len(fake.dns_calls)==1,'dns called once')
-            rv=client.post(f"/api/runs/{ctx['rid']}/approvals/{ctx['approval_id']}/revoke",json={'expected_revision':ctx['approval_rev'],'actor':'authorized-operator','reason':'done'},headers=h); assert_ok(rv.status_code==200,rv.text); ctx['approval_rev']=rv.json()['approvals']['approval_revision']
-            dns2=client.post(f"/api/runs/{ctx['rid']}/mcp/invoke",json={**base,'expected_approval_revision':ctx['approval_rev'],'tool_name':'dns_records','arguments':{'domain':'api.example.com'}},headers=h); assert_ok(dns2.status_code==409 and len(fake.dns_calls)==1,'dns blocked after revoke')
+            inv=ctx['client2'].post(f"/api/runs/{ctx['rid']}/mcp/invoke",json={**base,'tool_name':'crtsh_lookup','arguments':{'domain':'api.example.com'}},headers=h); assert_ok(inv.status_code==200,inv.text); assert_ok(len(fake.http_calls)==1 and inv.json()['invocation']['transient'],'transient one call')
+            out=ctx['client2'].post(f"/api/runs/{ctx['rid']}/mcp/invoke",json={**base,'tool_name':'crtsh_lookup','arguments':{'domain':'evil.test'}},headers=h); assert_ok(out.status_code==409 and len(fake.http_calls)==1,'out-of-scope blocked')
+            dns=ctx['client2'].post(f"/api/runs/{ctx['rid']}/mcp/invoke",json={**base,'tool_name':'dns_records','arguments':{'domain':'api.example.com'}},headers=h); assert_ok(dns.status_code==200,dns.text); assert_ok(len(fake.dns_calls)==1,'dns called once')
+            rv=ctx['client2'].post(f"/api/runs/{ctx['rid']}/approvals/{ctx['approval_id']}/revoke",json={'expected_revision':ctx['approval_rev'],'actor':'authorized-operator','reason':'done'},headers=h); assert_ok(rv.status_code==200,rv.text); ctx['approval_rev']=rv.json()['approvals']['approval_revision']
+            dns2=ctx['client2'].post(f"/api/runs/{ctx['rid']}/mcp/invoke",json={**base,'expected_approval_revision':ctx['approval_rev'],'tool_name':'dns_records','arguments':{'domain':'api.example.com'}},headers=h); assert_ok(dns2.status_code==409 and len(fake.dns_calls)==1,'dns blocked after revoke')
             return 'fixed MCP catalog, preflight, transient invocation, and DNS approval enforcement verified'
         stage('MCP enrichment', s7)
         def s8():
-            html=client.get('/').text; css=client.get('/static/app.css').text; js=client.get('/static/app.js').text; alltxt=html+css+js
+            html=ctx['client2'].get('/').text; css=ctx['client2'].get('/static/app.css').text; js=ctx['client2'].get('/static/app.js').text; alltxt=html+css+js
             for term in ['Overview','Scope','State','Evidence','Approvals','Contracts','Findings','Integrity','MCP']:
                 assert_ok(term in alltxt, f'tab/control {term}')
             for bad in ['<script>', 'http://', 'https://', 'innerHTML', 'eval(', 'localStorage', 'sessionStorage', CONTROL_VALUE, 'Run recon', 'Upload result']:
@@ -156,7 +171,7 @@ def run_acceptance() -> dict:
         stage('static UI and security boundaries', s8)
         def s9():
             before=files(ctx['run_dir'])
-            readonly=[lambda: client.post(f"/api/runs/{ctx['rid']}/mcp/preflight",json={'tool_name':'crtsh_lookup','arguments':{'domain':'api.example.com'}},headers=h), lambda: client.post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'target_enumeration','candidate':'api.example.com'},headers=h), lambda: client.post(f"/api/runs/{ctx['rid']}/evidence/verify",json={'evidence_id':ctx['evidence_id']},headers=h), lambda: client.post(f"/api/runs/{ctx['rid']}/contracts/results/{ctx['result_id']}/validate",json={'expected_revision':ctx['contract_rev']},headers=h), lambda: client.post(f"/api/runs/{ctx['rid']}/findings/verify",json={'finding_id':ctx['finding_id']},headers=h)]
+            readonly=[lambda: ctx['client2'].post(f"/api/runs/{ctx['rid']}/mcp/preflight",json={'tool_name':'crtsh_lookup','arguments':{'domain':'api.example.com'}},headers=h), lambda: ctx['client2'].post(f"/api/runs/{ctx['rid']}/action/check",json={'action_type':'target_enumeration','candidate':'api.example.com'},headers=h), lambda: ctx['client2'].post(f"/api/runs/{ctx['rid']}/evidence/verify",json={'evidence_id':ctx['evidence_id']},headers=h), lambda: ctx['client2'].post(f"/api/runs/{ctx['rid']}/contracts/results/{ctx['result_id']}/validate",json={'expected_revision':ctx['contract_rev']},headers=h), lambda: ctx['client2'].post(f"/api/runs/{ctx['rid']}/findings/verify",json={'finding_id':ctx['finding_id']},headers=h)]
             for fn in readonly: fn()
             after=files(ctx['run_dir']); assert_ok(before==after,'read-only operations preserved files')
             assert_ok(not list(ctx['run_dir'].rglob('*.tmp')),'no tmp files')

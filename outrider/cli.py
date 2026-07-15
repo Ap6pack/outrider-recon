@@ -2,6 +2,10 @@ from __future__ import annotations
 
 import argparse
 import json
+import socket
+import threading
+import time
+import webbrowser
 from importlib.metadata import PackageNotFoundError, version
 from pathlib import Path
 
@@ -79,39 +83,85 @@ def _validate_web_args(args: argparse.Namespace) -> Path:
         raise ValueError("RUNS_ROOT must be a directory")
     return root
 
-def web_serve(args: argparse.Namespace) -> int:
+def _safe_default_runs_root(path: str | Path) -> Path:
+    root = Path(path)
+    if root.is_symlink():
+        raise ValueError("runs root must not be a symlink")
+    if root.exists() and not root.is_dir():
+        raise ValueError("runs root must be a directory")
+    if not root.exists():
+        root.mkdir(parents=True, exist_ok=False)
+    return root
+
+def _browser_url(host: str, port: int) -> str:
+    return f"http://{host}:{port}" if host != "::1" else f"http://[::1]:{port}"
+
+def _wait_for_loopback(host: str, port: int, timeout: float = 10.0) -> bool:
+    deadline = time.monotonic() + timeout
+    connect_host = "::1" if host == "::1" else host
+    while time.monotonic() < deadline:
+        try:
+            with socket.create_connection((connect_host, port), timeout=0.25):
+                return True
+        except OSError:
+            time.sleep(0.1)
+    return False
+
+def _open_browser_when_ready(host: str, port: int, opener=webbrowser.open, printer=print) -> threading.Thread:
+    url = _browser_url(host, port)
+    def worker() -> None:
+        if not _wait_for_loopback(host, port):
+            printer(f"Open your browser to {url}")
+            return
+        try:
+            if not opener(url):
+                printer(f"Open your browser to {url}")
+        except Exception:
+            printer(f"Open your browser to {url}")
+    thread = threading.Thread(target=worker, name="outrider-browser-open", daemon=True)
+    thread.start()
+    return thread
+
+def launch_local_portal(args: argparse.Namespace, *, create_default_root: bool = False, browser_opener=webbrowser.open) -> int:
     try:
-        root = _validate_web_args(args)
+        if args.host not in LOOPBACK_WEB_HOSTS:
+            raise ValueError("web host must be one of 127.0.0.1, localhost, or ::1")
+        root = _safe_default_runs_root(args.runs_root) if create_default_root else _validate_web_args(args)
         try:
             import uvicorn
             from outrider.web_app import create_app
         except ImportError:
-            print('ERROR: web dependencies are not installed. Install them with: python -m pip install -e ".[web]"')
+            print('The Outrider web portal is not installed.')
+            print('Run:')
+            print('python -m pip install -e ".[web]"')
             return 2
         if getattr(args, "enable_mcp_enrichment", False):
             try:
                 import httpx  # noqa: F401
             except ImportError:
-                print('ERROR: enrichment dependencies are not installed. Install them with: python -m pip install -e ".[web,enrichment]"')
+                print('Discovery enrichment dependencies are not installed.')
+                print('Run:')
+                print('python -m pip install -e ".[web,enrichment]"')
                 return 2
         app = create_app(root, mcp_enrichment_enabled=getattr(args, "enable_mcp_enrichment", False))
-        url = f"http://{args.host}:{args.port}" if args.host != "::1" else f"http://[::1]:{args.port}"
-        print(f"Outrider local control plane: {url}")
-        print("Runs root accepted.")
-        print("Interface mode: local review with controlled workflow-state transitions.")
-        print("Authentication: none provided.")
-        print("Mutation protection: process-local control token and same-origin checks.")
-        print("Network scope: restricted to the local machine (loopback only).")
-        if getattr(args, "enable_mcp_enrichment", False):
-            print("MCP enrichment: explicitly enabled.")
-            print("Five fixed policy-gated enrichment tools are available.")
-            print("The interface remains unauthenticated and loopback-only.")
-            print("Every invocation reloads current run policy before network activity.")
-            print("Results are transient and are not automatically persisted or registered as evidence.")
+        url = _browser_url(args.host, args.port)
+        print("Outrider is running locally:")
+        print(url)
+        print()
+        if getattr(args, "no_browser", False):
+            print("Browser opening disabled. Open the local URL above.")
         else:
-            print("MCP enrichment: disabled.")
-            print("No outbound HTTP or DNS activity is available from the browser.")
-        print("Other control actions remain CLI-only.")
+            print("Opening your browser…")
+            _open_browser_when_ready(args.host, args.port, opener=browser_opener)
+        print("Press Ctrl+C to stop Outrider.")
+        print()
+        print("Authentication: none")
+        print("Network access: loopback only")
+        if getattr(args, "enable_mcp_enrichment", False):
+            print("Discovery enrichment: explicitly enabled")
+            print("Results remain transient unless the operator explicitly saves them later.")
+        else:
+            print("Discovery enrichment: disabled")
         uvicorn.run(app, host=args.host, port=args.port)
         return 0
     except ValueError as exc:
@@ -120,6 +170,9 @@ def web_serve(args: argparse.Namespace) -> int:
     except RuntimeError as exc:
         print(f"ERROR: {exc}")
         return 2
+
+def web_serve(args: argparse.Namespace) -> int:
+    return launch_local_portal(args, create_default_root=False)
 
 
 
@@ -708,7 +761,12 @@ def build_parser() -> argparse.ArgumentParser:
         description="Outrider Recon CLI harness for run-folder creation and evidence-backed handoff.",
     )
     parser.add_argument("--version", action="version", version=f"outrider-recon {package_version()}")
-    subcommands = parser.add_subparsers(dest="command", required=True)
+    parser.add_argument("--runs-root", default="./runs", help="Runs root for the default local web portal. Defaults to ./runs.")
+    parser.add_argument("--host", default="127.0.0.1", choices=sorted(LOOPBACK_WEB_HOSTS), help="Loopback host for the default local web portal.")
+    parser.add_argument("--port", type=_valid_web_port, default=8765, help="Loopback port for the default local web portal.")
+    parser.add_argument("--no-browser", action="store_true", help="Start the local portal without opening a browser.")
+    parser.add_argument("--enable-mcp-enrichment", action="store_true", help="Explicitly enable fixed policy-gated discovery enrichment in the browser.")
+    subcommands = parser.add_subparsers(dest="command", required=False)
 
     init_parser = subcommands.add_parser(
         "init", help="Create a new Outrider run folder."
@@ -908,6 +966,7 @@ def build_parser() -> argparse.ArgumentParser:
     web_serve_parser.add_argument("--host", default="127.0.0.1", choices=sorted(LOOPBACK_WEB_HOSTS))
     web_serve_parser.add_argument("--port", type=_valid_web_port, default=8765)
     web_serve_parser.add_argument("--enable-mcp-enrichment", action="store_true", help="Explicitly enable five fixed policy-gated MCP enrichment tools in the loopback web UI.")
+    web_serve_parser.add_argument("--no-browser", action="store_true", help=argparse.SUPPRESS)
     web_serve_parser.set_defaults(func=web_serve)
 
     contract_parser = subcommands.add_parser("contract", help="Create and validate skill interchange contracts.")
@@ -942,9 +1001,11 @@ def build_parser() -> argparse.ArgumentParser:
     return parser
 
 
-def main() -> int:
+def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(argv)
+    if not hasattr(args, "func"):
+        return launch_local_portal(args, create_default_root=True)
     return args.func(args)
 
 

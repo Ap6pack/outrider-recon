@@ -39,3 +39,25 @@ class RunSetupTests(unittest.TestCase):
 
 if __name__ == '__main__':
     unittest.main()
+
+class WebEngagementMetadataTests(unittest.TestCase):
+    def test_platform_and_traffic_header_are_stored_and_survive_scope_replace(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            run_dir = create_web_run_atomic(root, WebRunRequest('example.com','op','auth',['example.com'],[], 'HackerOne', {'name':'X-Bug-Bounty','value':'H1-op'}))
+            text = (run_dir / 'scope.yaml').read_text(encoding='utf-8')
+            self.assertIn('engagement_platform: HackerOne', text)
+            self.assertIn('X-Bug-Bounty', text)
+            from outrider.scope import replace_scope_rules_atomic, scope_revision
+            replace_scope_rules_atomic(run_dir, scope_revision(run_dir), 'op', 'update', ['example.com','*.example.com'], [], 'example.com')
+            text = (run_dir / 'scope.yaml').read_text(encoding='utf-8')
+            self.assertIn('engagement_platform: HackerOne', text)
+            self.assertIn('X-Bug-Bounty', text)
+
+    def test_sensitive_and_partial_traffic_headers_are_rejected(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            with self.assertRaises(RunSetupError):
+                create_web_run_atomic(root, WebRunRequest('example.com','op','auth',['example.com'],[], 'HackerOne', {'name':'Authorization','value':'secret'}))
+            with self.assertRaises(RunSetupError):
+                create_web_run_atomic(root, WebRunRequest('other.com','op','auth',['other.com'],[], 'HackerOne', {'name':'X-Bug-Bounty'}))

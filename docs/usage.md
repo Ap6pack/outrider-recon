@@ -1,5 +1,7 @@
 # Usage
 
+The normal human entry point is now the browser portal launched with `outrider`. It creates `./runs` safely when needed, opens the local browser, and guides engagement creation. Existing CLI commands remain advanced usage for automation and recovery.
+
 How to actually use these skills during an engagement.
 
 ## Quick reference
