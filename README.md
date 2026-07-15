@@ -247,6 +247,8 @@ The project is built around read-only recon and safe handoff. It explicitly excl
 
 See [SECURITY.md](SECURITY.md) for the full security posture and prohibited-use boundaries.
 
+The local portal now guides new engagements through scope review, explicit scope confirmation, Begin Discovery, and server-derived next-action cards. It still does not provide task-oriented discovery execution, automatic evidence capture, or Claude execution in the browser.
+
 ---
 
 ## About

@@ -78,3 +78,5 @@ The browser may inventory `finding_candidate` metadata, explicitly promote a rev
 ## Web MCP enrichment boundary
 
 Browser MCP enrichment is disabled by default and must be explicitly enabled on a loopback-only web server. It exposes only five fixed Outrider tools, rechecks current state, scope, and approvals immediately before transport, and returns transient bounded output. It is not authentication, not remote hosting, not arbitrary MCP, not evidence capture, and not proof of authorization, vulnerability, exploitation, or client acceptance.
+
+Guided workflow actions are local, token-guarded state transitions with stale guide-revision checks. They add no authentication, remote access, automatic discovery, evidence capture, skill execution, finding promotion, or reporting.

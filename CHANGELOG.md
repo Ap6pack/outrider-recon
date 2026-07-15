@@ -9,6 +9,16 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- Added deterministic guided engagement progress and server-derived next actions.
+- Added explicit beginner scope confirmation and guarded forward workflow actions.
+
+### Fixed
+
+- Restored the functional Advanced Workspace controls alongside web-first onboarding.
+- Removed hard-coded next actions, corrected terminal phase labels, removed hidden static test markers, and corrected malformed architecture wording.
+
 ---
 
 ## [Python 0.3.0] -- 2026-07-14
@@ -315,7 +325,7 @@ Major rewrite for external red-team posture. Both skills tagged `version: 2.0`.
 
 This project is a fork of [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT).
 
-## Unreleased
+## Historical Unreleased Notes
 
 ### Added
 

@@ -96,6 +96,8 @@ jobs:
               assert health.status_code == 200
               assert health.json()["capabilities"]["approval_mutation"] is True
               assert health.json()["capabilities"]["action_check"] is True
+              assert health.json()["capabilities"]["guided_workflow"] is True
+              assert health.json()["capabilities"]["automatic_discovery"] is False
 
               created = client.post("/api/runs", json={
                   "target": "example.com",
@@ -156,6 +158,7 @@ jobs:
               assert client.get("/").status_code == 200
               assert client.get("/static/app.css").status_code == 200
               assert client.get("/static/app.js").status_code == 200
+              assert client.get(f"/api/runs/{run_id}/guide").status_code == 200
           PY
 
       - name: Clean enrichment install smoke

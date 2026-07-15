@@ -182,6 +182,14 @@ class Audit:
         forbidden = ['localStorage','sessionStorage','document.cookie','innerHTML','eval(']
         hits=[x for x in forbidden if x in app_js]
         self.ok('browser storage and dynamic HTML exclusion','no browser storage, innerHTML, or eval in app.js') if not hits else self.fail('browser storage and dynamic HTML exclusion', ', '.join(hits))
+        index = (ROOT/'outrider/web_static/index.html').read_text(encoding='utf-8')
+        self.ok('no hidden static marker block','hidden aggregate keyword fixture absent') if 'evidence-registration-form evidence-verification-controls' not in index and '<div hidden>' not in index else self.fail('no hidden static marker block','hidden aggregate keyword fixture present')
+        app = (ROOT/'outrider/web_app.py').read_text(encoding='utf-8')
+        self.ok('guided workflow capability','guided workflow enabled') if '"guided_workflow": True' in app and '"automatic_discovery": False' in app else self.fail('guided workflow capability','capability flags incorrect')
+        self.ok('guide routes','guide endpoints exist') if '/guide' in app and '/guide/actions/{action_id}' in app else self.fail('guide routes','missing guide endpoints')
+        static = (ROOT/'outrider/web_static/app.js').read_text(encoding='utf-8')
+        real = all(x in static for x in ['renderScopeTools','renderEvidenceRegistration','renderApprovals','renderContracts','renderFindings','renderEnrichment'])
+        self.ok('advanced workspace renderers','real advanced renderers present') if real else self.fail('advanced workspace renderers','missing advanced renderers')
         html=(self.root/'outrider/web_static/index.html').read_text(encoding='utf-8')
         if '<script src="/static/app.js" defer></script>' in html and 'http://' not in html and 'https://' not in html:
             self.ok('static asset locality','no inline script or external static asset')
@@ -329,7 +337,7 @@ class Audit:
         if 'python -m pip install -e ".[web,enrichment]"' not in web: problems.append('web enrichment extra install')
         if 'python -c "import fastapi, httpx, uvicorn"' not in web: problems.append('web dependency import check')
         if 'python -m compileall outrider tests tools' not in web: problems.append('web compile command')
-        if 'python -m unittest tests.test_web_view tests.test_web_app' not in web: problems.append('focused web tests')
+        if 'tests.test_workflow_guide' not in web or 'tests.test_web_view' not in web or 'tests.test_web_app' not in web: problems.append('focused web tests')
         if 'python -m unittest discover -s tests -p "test_*.py"' not in web: problems.append('web full discovery')
         if not re.search(r'python-version:\s*[\'\"]?3\.12[\'\"]?', release): problems.append('release-readiness Python 3.12')
         if problems: self.fail('lint workflow test structure','missing or invalid '+', '.join(problems))

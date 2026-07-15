@@ -2,8 +2,10 @@ from __future__ import annotations
 
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
+import hashlib
 import json
 import os
+import stat
 from pathlib import Path
 import tempfile
 from typing import Any
@@ -299,6 +301,26 @@ def load_state(run_dir: str | Path) -> RunStateSummary:
         raise StateValidationError("no schema-versioned state events found")
     return RunStateSummary(manifest.run_id, manifest.target, current or manifest.initial_state, count, manifest.created_at, last_at, last_actor, legacy > 0, legacy)
 
+
+
+def state_revision(run_dir: str | Path) -> str:
+    """Return a stable SHA-256 of the exact state event-log bytes."""
+    manifest = load_manifest(run_dir)
+    path = Path(run_dir) / manifest.event_log
+    try:
+        before = os.stat(path, follow_symlinks=False)
+    except FileNotFoundError as exc:
+        raise StateValidationError("event log not found") from exc
+    if stat.S_ISLNK(before.st_mode):
+        raise StateValidationError("event log must not be a symlink")
+    if not stat.S_ISREG(before.st_mode):
+        raise StateValidationError("event log must be a regular file")
+    digest = hashlib.sha256(path.read_bytes()).hexdigest()
+    after = os.stat(path, follow_symlinks=False)
+    attrs = ("st_dev", "st_ino", "st_mode", "st_size", "st_mtime_ns")
+    if tuple(getattr(before, a) for a in attrs) != tuple(getattr(after, a) for a in attrs):
+        raise StateValidationError("event log changed while hashing")
+    return digest
 
 def transition_state(run_dir: str | Path, new_state: str, actor: str, reason: str | None = None) -> RunStateSummary:
     actor = _require_nonempty(actor, "actor")

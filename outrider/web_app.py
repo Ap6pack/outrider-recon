@@ -12,6 +12,7 @@ from outrider.approval import (
     approval_revision, evaluate_action, grant_approval, list_approvals, revoke_approval,
 )
 from outrider.state import InvalidTransitionError, StateValidationError, load_manifest, load_state, transition_state
+from outrider.workflow_guide import GUIDE_ACTION_TARGETS, build_workflow_guide
 from outrider.scope import ScopeValidationError, evaluate_scope, load_scope, replace_scope_rules_atomic, scope_revision
 from outrider.run_setup import PLATFORM_OPTIONS, RunConflictError, RunSetupError, WebRunRequest, create_web_run_atomic
 from outrider.skill_contract import (REQUEST_ACTIONS, SkillContractValidationError, contract_revision, create_skill_request, find_skill_request_by_id, find_skill_result_by_id, list_known_skills, load_skill_request, load_skill_result, validate_skill_request, validate_skill_result)
@@ -22,7 +23,7 @@ TOKEN_HEADER = "X-Outrider-Control-Token"
 
 
 def _capabilities(mcp_enrichment_enabled: bool) -> dict:
-    return {"state_transition": True, "run_creation": True, "web_first_launcher": True, "engagement_onboarding": True, "engagement_creation": True, "engagement_resume": True, "guided_workflow": False, "automatic_discovery": False, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_catalog": True, "mcp_preflight": True, "mcp_invocation": mcp_enrichment_enabled, "mcp_enrichment_enabled": mcp_enrichment_enabled, "fixed_outbound_enrichment_tools": 5, "recon_execution": False}
+    return {"state_transition": True, "run_creation": True, "web_first_launcher": True, "engagement_onboarding": True, "engagement_creation": True, "engagement_resume": True, "guided_workflow": True, "next_action_engine": True, "guided_state_progression": True, "automatic_discovery": False, "guided_discovery": False, "automatic_evidence_capture": False, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_catalog": True, "mcp_preflight": True, "mcp_invocation": mcp_enrichment_enabled, "mcp_enrichment_enabled": mcp_enrichment_enabled, "fixed_outbound_enrichment_tools": 5, "recon_execution": False, "report_generation": False}
 
 def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_enrichment_enabled: bool = False, enrichment_executor=None):
     try:
@@ -90,7 +91,7 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_e
     @app.get("/api/onboarding")
     def onboarding():
         inventory = web_view.list_runs(root)
-        return json({"first_run": inventory.get("total", 0) == 0, "engagement_count": inventory.get("total", 0), "enrichment_enabled": mcp_enrichment_enabled, "platform_options": list(PLATFORM_OPTIONS), "capabilities": {"engagement_creation": True, "engagement_resume": True, "guided_workflow": False, "automatic_discovery": False}})
+        return json({"first_run": inventory.get("total", 0) == 0, "engagement_count": inventory.get("total", 0), "enrichment_enabled": mcp_enrichment_enabled, "platform_options": list(PLATFORM_OPTIONS), "capabilities": {"engagement_creation": True, "engagement_resume": True, "guided_workflow": True, "next_action_engine": True, "guided_state_progression": True, "automatic_discovery": False, "guided_discovery": False, "automatic_evidence_capture": False}})
 
 
     async def read_json_object(request: Request):
@@ -496,6 +497,57 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_e
             if lookup.status=="ambiguous": return error(409,"result ID is ambiguous")
             rep=validate_skill_result(run_dir, lookup.relative_path)
             return contract_validation_response("result", rid, rep, run_dir)
+
+
+    @app.get("/api/runs/{run_id}/guide")
+    def guide(run_id: str):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        try:
+            return json(build_workflow_guide(run_dir, enrichment_enabled=mcp_enrichment_enabled))
+        except Exception:
+            return error(500, "guide unavailable")
+
+    @app.post("/api/runs/{run_id}/guide/actions/{action_id}")
+    async def guide_action(run_id: str, action_id: str, request: Request):
+        try: UUID(run_id)
+        except ValueError: return error(422, "run_id must be a UUID")
+        if action_id not in GUIDE_ACTION_TARGETS: return error(422, "unknown guided action")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None: return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        allowed = {"expected_state", "expected_guide_revision", "actor", "reason", "confirmed"}
+        if set(body) - allowed: return error(422, "unknown field")
+        if body.get("confirmed") is not True: return error(422, "confirmation must be exactly true")
+        for field in ("expected_state", "expected_guide_revision", "actor"):
+            if not isinstance(body.get(field), str) or not body[field].strip(): return error(422, f"{field} must be a non-empty string")
+        if len(body["expected_guide_revision"]) != 64 or any(c not in "0123456789abcdef" for c in body["expected_guide_revision"]): return error(422, "expected_guide_revision must be a lowercase sha256")
+        reason = body.get("reason")
+        if reason is not None and (not isinstance(reason, str) or not reason.strip() or len(reason) > 2000): return error(422, "reason must be null or a non-empty bounded string")
+        with mutation_lock:
+            try:
+                guide_now = build_workflow_guide(run_dir, enrichment_enabled=mcp_enrichment_enabled)
+                if guide_now["current_state"] != body["expected_state"] or guide_now["guide_revision"] != body["expected_guide_revision"]:
+                    return error(409, "This engagement changed since you opened it. Reload the latest information before continuing.")
+                next_id = guide_now["next_action"]["id"]
+                allowed_now = (next_id == action_id and guide_now["next_action"].get("kind") == "transition") or (action_id == "confirm_scope" and next_id == "review_scope")
+                if not allowed_now or not guide_now["next_action"].get("available"):
+                    return error(409, "This step is no longer available. Reload the engagement to see the current recommended action.")
+                target = GUIDE_ACTION_TARGETS[action_id]
+                transition_state(run_dir, target, body["actor"].strip(), reason.strip() if isinstance(reason, str) else None)
+                updated = build_workflow_guide(run_dir, enrichment_enabled=mcp_enrichment_enabled)
+                return json({"ok": True, "state": web_view.state_view(run_dir), "guide": updated})
+            except StateValidationError as exc:
+                msg = "Scope must be valid before it can be confirmed." if action_id == "confirm_scope" else "guided action rejected"
+                return error(409, msg)
+            except InvalidTransitionError:
+                return error(409, "This step is no longer available. Reload the engagement to see the current recommended action.")
+            except Exception:
+                return error(500, "guided action failed")
 
     @app.get("/api/runs")
     def runs():

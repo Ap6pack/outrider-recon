@@ -22,10 +22,11 @@ from outrider.skill_contract import (
     validate_skill_result,
 )
 from outrider.state import ALLOWED_TRANSITIONS, REASON_REQUIRED, StateValidationError, load_manifest, load_state
+from outrider.workflow_guide import PHASE_LABELS as GUIDE_PHASE_LABELS, build_workflow_guide
 
 CONTROL_FILES = ("manifest.json", "scope.yaml", "run.jsonl", "evidence.jsonl", "approvals.jsonl", "findings.jsonl")
 
-PHASE_LABELS = {"initialized": "Setup", "scoped": "Scope confirmed", "collecting": "Discovery", "analyzing": "Analysis", "reporting": "Findings and reporting", "closed": "Closed", "aborted": "Stopped"}
+PHASE_LABELS = {state: label for state, (_id, label) in GUIDE_PHASE_LABELS.items()}
 
 def _scope_metadata(run_dir: str | Path) -> dict[str, Any]:
     try:
@@ -133,7 +134,7 @@ def list_runs(runs_root: str | Path) -> dict[str, Any]:
             continue
         seen[manifest.run_id] = child.name
         overview = run_overview(child)
-        items.append({"run_id": manifest.run_id, "target": manifest.target, "created_at": manifest.created_at, "last_activity_at": overview.get("last_transition_at") or manifest.created_at, "current_state": overview.get("current_state"), "phase_label": overview.get("phase_label"), "engagement_platform": overview.get("engagement_platform"), "next_action": "Review Scope", "evidence_count": overview["evidence_summary"]["count"], "active_approval_count": overview["approval_summary"]["active_count"], "request_count": overview["contract_summary"]["request_count"], "result_count": overview["contract_summary"]["result_count"], "finding_count": overview["finding_summary"]["count"], "health": overview["health"]["status"], "summary": overview["health"]["summary"]})
+        items.append({"run_id": manifest.run_id, "target": manifest.target, "created_at": manifest.created_at, "last_activity_at": overview.get("last_transition_at") or manifest.created_at, "current_state": overview.get("current_state"), "phase_label": overview.get("phase_label"), "engagement_platform": overview.get("engagement_platform"), "next_action": (build_workflow_guide(child, enrichment_enabled=False)["next_action"]["label"]), "next_action_id": (build_workflow_guide(child, enrichment_enabled=False)["next_action"]["id"]), "evidence_count": overview["evidence_summary"]["count"], "active_approval_count": overview["approval_summary"]["active_count"], "request_count": overview["contract_summary"]["request_count"], "result_count": overview["contract_summary"]["result_count"], "finding_count": overview["finding_summary"]["count"], "health": overview["health"]["status"], "summary": overview["health"]["summary"]})
     if dupes:
         for run_id in sorted(dupes):
             items = [i for i in items if i.get("run_id") != run_id]
@@ -344,7 +345,7 @@ def run_overview(run_dir: str | Path) -> dict[str, Any]:
     sv = state_view(run_dir); sc = scope_view(run_dir); ev = evidence_view(run_dir); av = approval_view(run_dir); cv = contract_view(run_dir); fv = finding_view(run_dir)
     all_errors = errors + [ViewError(e["section"], e["message"]) for block in (sv, sc, ev, av, cv, fv) for e in block.get("errors", [])]
     meta = _scope_metadata(run_dir)
-    return {"run_id": getattr(manifest, "run_id", None), "target": getattr(manifest, "target", None), "engagement_type": getattr(manifest, "engagement_type", None), "engagement_platform": meta.get("engagement_platform"), "traffic_header_configured": meta.get("traffic_header_configured"), "created_at": getattr(manifest, "created_at", None), "actor": getattr(manifest, "created_by", None), "current_state": sv["current_state"], "phase_label": PHASE_LABELS.get(sv["current_state"], sv["current_state"]), "next_action": "Review Scope", "last_transition_at": sv["last_transition_at"], "control_files": list(CONTROL_FILES), "scope_summary": {"valid": sc["valid"], **sc["counts"]}, "evidence_summary": {"valid": ev["valid"], "count": ev["evidence_count"]}, "approval_summary": {"valid": av["valid"], "count": av["approval_count"], "active_count": av["active_count"]}, "contract_summary": {"valid": cv["valid"], "request_count": cv["request_count"], "result_count": cv["result_count"]}, "finding_summary": {"valid": fv["valid"], "count": fv["finding_count"]}, "health": {"status": _health(all_errors), "summary": "; ".join(e.message for e in all_errors[:3]) or "healthy", "errors": [e.to_dict() for e in all_errors]}}
+    return {"run_id": getattr(manifest, "run_id", None), "target": getattr(manifest, "target", None), "engagement_type": getattr(manifest, "engagement_type", None), "engagement_platform": meta.get("engagement_platform"), "traffic_header_configured": meta.get("traffic_header_configured"), "created_at": getattr(manifest, "created_at", None), "actor": getattr(manifest, "created_by", None), "current_state": sv["current_state"], "phase_label": PHASE_LABELS.get(sv["current_state"], sv["current_state"]), "next_action": build_workflow_guide(run_dir, enrichment_enabled=False)["next_action"]["label"], "next_action_id": build_workflow_guide(run_dir, enrichment_enabled=False)["next_action"]["id"], "last_transition_at": sv["last_transition_at"], "control_files": list(CONTROL_FILES), "scope_summary": {"valid": sc["valid"], **sc["counts"]}, "evidence_summary": {"valid": ev["valid"], "count": ev["evidence_count"]}, "approval_summary": {"valid": av["valid"], "count": av["approval_count"], "active_count": av["active_count"]}, "contract_summary": {"valid": cv["valid"], "request_count": cv["request_count"], "result_count": cv["result_count"]}, "finding_summary": {"valid": fv["valid"], "count": fv["finding_count"]}, "health": {"status": _health(all_errors), "summary": "; ".join(e.message for e in all_errors[:3]) or "healthy", "errors": [e.to_dict() for e in all_errors]}}
 
 
 def view_for_run_id(runs_root: str | Path, run_id: str, view: str) -> dict[str, Any] | None:

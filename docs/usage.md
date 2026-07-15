@@ -173,3 +173,5 @@ See [`../examples/`](../examples/) for end-to-end walkthroughs:
 - `02-bug-bounty-workflow.md` — full HackerOne engagement
 - `03-identity-fabric-mapping.md` — M365 deep enum
 - `04-secret-hunting.md` — leaked-credential workflow
+
+The web portal Basic mode shows server-derived progress and one recommended next action. Advanced Workspace remains available for technical controls and uses existing guarded API routes.

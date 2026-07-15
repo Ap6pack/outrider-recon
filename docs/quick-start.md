@@ -43,3 +43,10 @@ troubleshooting, CI, and advanced workflows. The explicit web command remains:
 ```bash
 outrider web serve runs
 ```
+
+After creating an engagement in the portal:
+
+1. Review Scope.
+2. Confirm Scope and Continue.
+3. Begin Discovery.
+4. Follow the next-action card.
