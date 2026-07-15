@@ -1,5 +1,12 @@
 # Installation
 
+For first-time local use install the web extra and start the browser portal:
+
+```bash
+python -m pip install -e ".[web]"
+outrider
+```
+
 These skills are plain Markdown files. Installing them depends on which Claude surface you're using.
 
 ## One-Click Install (Recommended)

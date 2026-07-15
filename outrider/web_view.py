@@ -25,6 +25,17 @@ from outrider.state import ALLOWED_TRANSITIONS, REASON_REQUIRED, StateValidation
 
 CONTROL_FILES = ("manifest.json", "scope.yaml", "run.jsonl", "evidence.jsonl", "approvals.jsonl", "findings.jsonl")
 
+PHASE_LABELS = {"initialized": "Setup", "scoped": "Scope confirmed", "collecting": "Discovery", "analyzing": "Analysis", "reporting": "Findings and reporting", "closed": "Closed", "aborted": "Stopped"}
+
+def _scope_metadata(run_dir: str | Path) -> dict[str, Any]:
+    try:
+        doc = load_scope_document(run_dir)
+    except Exception:
+        return {"engagement_platform": None, "traffic_header_configured": False}
+    tagging = doc.get("traffic_tagging") if isinstance(doc.get("traffic_tagging"), dict) else {}
+    headers = tagging.get("headers") if isinstance(tagging.get("headers"), dict) else {}
+    return {"engagement_platform": doc.get("engagement_platform"), "traffic_header_configured": bool(headers)}
+
 @dataclass(frozen=True)
 class ViewError:
     section: str
@@ -122,7 +133,7 @@ def list_runs(runs_root: str | Path) -> dict[str, Any]:
             continue
         seen[manifest.run_id] = child.name
         overview = run_overview(child)
-        items.append({"run_id": manifest.run_id, "target": manifest.target, "created_at": manifest.created_at, "current_state": overview.get("current_state"), "evidence_count": overview["evidence_summary"]["count"], "active_approval_count": overview["approval_summary"]["active_count"], "request_count": overview["contract_summary"]["request_count"], "result_count": overview["contract_summary"]["result_count"], "finding_count": overview["finding_summary"]["count"], "health": overview["health"]["status"], "summary": overview["health"]["summary"]})
+        items.append({"run_id": manifest.run_id, "target": manifest.target, "created_at": manifest.created_at, "last_activity_at": overview.get("last_transition_at") or manifest.created_at, "current_state": overview.get("current_state"), "phase_label": overview.get("phase_label"), "engagement_platform": overview.get("engagement_platform"), "next_action": "Review Scope", "evidence_count": overview["evidence_summary"]["count"], "active_approval_count": overview["approval_summary"]["active_count"], "request_count": overview["contract_summary"]["request_count"], "result_count": overview["contract_summary"]["result_count"], "finding_count": overview["finding_summary"]["count"], "health": overview["health"]["status"], "summary": overview["health"]["summary"]})
     if dupes:
         for run_id in sorted(dupes):
             items = [i for i in items if i.get("run_id") != run_id]
@@ -332,7 +343,8 @@ def run_overview(run_dir: str | Path) -> dict[str, Any]:
     manifest, errors = _ok("manifest", lambda: load_manifest(run_dir))
     sv = state_view(run_dir); sc = scope_view(run_dir); ev = evidence_view(run_dir); av = approval_view(run_dir); cv = contract_view(run_dir); fv = finding_view(run_dir)
     all_errors = errors + [ViewError(e["section"], e["message"]) for block in (sv, sc, ev, av, cv, fv) for e in block.get("errors", [])]
-    return {"run_id": getattr(manifest, "run_id", None), "target": getattr(manifest, "target", None), "engagement_type": getattr(manifest, "engagement_type", None), "created_at": getattr(manifest, "created_at", None), "actor": getattr(manifest, "created_by", None), "current_state": sv["current_state"], "last_transition_at": sv["last_transition_at"], "control_files": list(CONTROL_FILES), "scope_summary": {"valid": sc["valid"], **sc["counts"]}, "evidence_summary": {"valid": ev["valid"], "count": ev["evidence_count"]}, "approval_summary": {"valid": av["valid"], "count": av["approval_count"], "active_count": av["active_count"]}, "contract_summary": {"valid": cv["valid"], "request_count": cv["request_count"], "result_count": cv["result_count"]}, "finding_summary": {"valid": fv["valid"], "count": fv["finding_count"]}, "health": {"status": _health(all_errors), "summary": "; ".join(e.message for e in all_errors[:3]) or "healthy", "errors": [e.to_dict() for e in all_errors]}}
+    meta = _scope_metadata(run_dir)
+    return {"run_id": getattr(manifest, "run_id", None), "target": getattr(manifest, "target", None), "engagement_type": getattr(manifest, "engagement_type", None), "engagement_platform": meta.get("engagement_platform"), "traffic_header_configured": meta.get("traffic_header_configured"), "created_at": getattr(manifest, "created_at", None), "actor": getattr(manifest, "created_by", None), "current_state": sv["current_state"], "phase_label": PHASE_LABELS.get(sv["current_state"], sv["current_state"]), "next_action": "Review Scope", "last_transition_at": sv["last_transition_at"], "control_files": list(CONTROL_FILES), "scope_summary": {"valid": sc["valid"], **sc["counts"]}, "evidence_summary": {"valid": ev["valid"], "count": ev["evidence_count"]}, "approval_summary": {"valid": av["valid"], "count": av["approval_count"], "active_count": av["active_count"]}, "contract_summary": {"valid": cv["valid"], "request_count": cv["request_count"], "result_count": cv["result_count"]}, "finding_summary": {"valid": fv["valid"], "count": fv["finding_count"]}, "health": {"status": _health(all_errors), "summary": "; ".join(e.message for e in all_errors[:3]) or "healthy", "errors": [e.to_dict() for e in all_errors]}}
 
 
 def view_for_run_id(runs_root: str | Path, run_id: str, view: str) -> dict[str, Any] | None:

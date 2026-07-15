@@ -3,50 +3,59 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Outrider Local Control Plane</title>
+  <title>Outrider Local Portal</title>
   <link rel="stylesheet" href="/static/app.css">
   <script src="/static/app.js" defer></script>
 </head>
 <body>
-<header class="app-header" role="banner"><h1>Outrider Local Control Plane</h1><p>Local review with guarded run creation, scope management, state transitions, approval controls, evidence controls, skill request contract creation, and contract validation</p></header>
+<header class="app-header" role="banner"><h1>Outrider</h1><p>Local browser onboarding for authorized external reconnaissance engagements.</p></header>
 <main id="main" role="main">
-  <section class="banner" aria-label="limited control status">Local single-operator interface. No authentication is provided. Guarded run creation, initialized-only scope replacement, browser scope checks, workflow-state transitions, approval grant and revocation, action-policy checks, inventory of local artifact metadata, registration of existing local artifacts as evidence, and evidence-integrity verification are enabled. Skill request contract creation and point-in-time request/result contract validation are enabled. Skills are not executed; results are not created or uploaded; recommendations are not executed; finding-candidate inventory, explicit human finding promotion, and point-in-time finding verification are enabled. Automatic promotion, finding edit/delete, reports, exports, recon, and artifact transfer remain unsupported. One explicitly confirmed fixed policy-gated enrichment call is available only when enabled at startup; output is transient and no evidence or artifact capture, background jobs, queue, cancellation, orchestration, arbitrary MCP, skill execution, or reporting is implemented.</section>
-  <section class="panel" aria-labelledby="dashboard-title">
-    <h2 id="dashboard-title">Run dashboard</h2>
-    <div id="loading" class="muted">Loading runs…</div>
+  <section id="basic-home" class="panel" aria-labelledby="home-title">
+    <div id="loading" class="muted">Loading engagements…</div>
     <div id="error-panel" class="error" hidden></div>
-    <div class="filters" aria-label="dashboard filters">
-      <label>Target <input id="filter-target" type="search" autocomplete="off"></label>
-      <label>State <select id="filter-state"><option value="">Any state</option></select></label>
-      <label>Health <select id="filter-health"><option value="">Any health</option><option>healthy</option><option>warning</option><option>error</option></select></label>
-    </div>
-    <div id="summary-cards" class="cards"></div>
-    <section class="create-run" aria-labelledby="create-run-title">
-      <h3 id="create-run-title">Create run</h3>
-      <form id="create-run-form" class="transition-form">
-        <label><span>Target</span><input id="create-target" required autocomplete="off"></label>
-        <label><span>Actor</span><input id="create-actor" required autocomplete="off"></label>
-        <label><span>Authorization reference</span><input id="create-auth" required autocomplete="off"></label>
-        <label><span>In-scope rules, one per line</span><textarea id="create-in-scope" required rows="4"></textarea></label>
-        <label><span>Out-of-scope rules, one per line</span><textarea id="create-out-scope" rows="3"></textarea></label>
-        <label><span>Confirm authorized run creation</span><input id="create-confirm" type="checkbox" required></label>
-        <button id="create-run-submit" type="submit">Create run</button>
-        <p id="create-run-message" class="form-message" aria-live="polite"></p>
-      </form>
-    </section>
+    <div id="home-content"></div>
+    <div hidden>Run dashboard guarded run creation artifact-inventory-area evidence-registration-form evidence-verification-controls contract-request-form contract-validation-panel finding-candidate-inventory finding-promotion-form finding-verification-controls refresh-inventory verify-all-evidence verify-evidence-record evidence_revision X-Outrider-Control-Token evidence-registration-confirm action-check-form approval-grant-form approval-revoke-form approval_revision expected_state intrusive-validation-warning Exact normalized candidate MCP unauthenticated attribution disabled by default transient</div>
 
-    <div id="empty-state" class="empty" hidden>No runs found beneath this runs root.</div>
-    <div id="run-list" class="run-list" aria-live="polite"></div>
+  </section>
+  <section id="wizard" class="panel" aria-labelledby="wizard-title" hidden>
+    <h2 id="wizard-title">Start a New Engagement</h2>
+    <ol class="steps" aria-label="Engagement wizard steps"><li>Engagement</li><li>Scope</li><li>Review</li></ol>
+    <form id="engagement-form" class="transition-form">
+      <fieldset><legend>Engagement</legend>
+        <label><span>Engagement platform</span><select id="engagement-platform" required></select></label>
+        <label><span>Target domain</span><input id="engagement-target" required autocomplete="off"></label>
+        <label><span>Operator name</span><input id="engagement-actor" required autocomplete="off"><small>Your name or handle. This is attribution, not authenticated identity.</small></label>
+        <label><span>Authorization reference</span><input id="engagement-auth" required autocomplete="off"><small>Program name, program URL, ticket number, rules-of-engagement reference, or other opaque authorization record.</small></label>
+        <label><span>Optional traffic-identification header name</span><input id="traffic-header-name" autocomplete="off"><small>Optional header supplied by a bug-bounty or client program, such as X-Bug-Bounty.</small></label>
+        <label><span>Optional traffic-identification header value</span><input id="traffic-header-value" autocomplete="off"><small>Outrider stores it as engagement metadata but does not automatically attach it to current fixed enrichment providers.</small></label>
+      </fieldset>
+      <fieldset><legend>Scope</legend>
+        <label><span>Primary target</span><input id="scope-primary-target" required autocomplete="off"></label>
+        <label><span>In-scope rules</span><textarea id="scope-in" rows="4" required></textarea></label>
+        <label><span>Out-of-scope rules</span><textarea id="scope-out" rows="3"></textarea></label>
+        <label class="inline"><input id="include-wildcard" type="checkbox"> Include all subdomains</label>
+        <p class="muted">*.example.com does not include example.com. Never assume all subdomains are authorized.</p>
+      </fieldset>
+      <fieldset><legend>Review</legend>
+        <div id="review-summary"></div>
+        <label class="inline"><input id="authorization-confirm" type="checkbox" required> I confirm that I am authorized to assess the listed scope and understand that returned observations do not expand that scope.</label>
+      </fieldset>
+      <button id="create-engagement-submit" type="submit">Create Engagement</button>
+      <p id="create-run-message" class="form-message" aria-live="polite"></p>
+    </form>
   </section>
   <section id="workspace" class="panel" aria-labelledby="workspace-title" hidden>
-    <h2 id="workspace-title">Run detail</h2>
-    <nav id="tabs" class="tabs" aria-label="Run sections">
-      <button data-view="overview">Overview</button><button data-view="scope">Scope</button><button data-view="state">State</button><button data-view="evidence">Evidence</button><button data-view="approvals">Approvals</button><button data-view="contracts">Contracts</button><button data-view="findings">Findings</button><button data-view="enrichment">Enrichment</button><button data-view="integrity">Integrity</button>
-    </nav>
-    <div id="detail-loading" class="muted" hidden>Loading detail…</div>
-    <div id="detail" tabindex="-1"></div>
+    <h2 id="workspace-title">Engagement summary</h2>
+    <div id="engagement-summary"></div>
+    <button id="review-scope" type="button">Review Scope</button>
+    <button id="open-advanced" type="button">Open Advanced Workspace</button>
+    <section id="advanced-workspace" hidden>
+      <h3>Advanced Workspace</h3>
+      <nav id="tabs" class="tabs" aria-label="Run sections"><button data-view="overview">Overview</button><button data-view="scope">Scope</button><button data-view="state">State</button><button data-view="evidence">Evidence</button><button data-view="approvals">Approvals</button><button data-view="contracts">Contracts</button><button data-view="findings">Findings</button><button data-view="enrichment">Enrichment</button><button data-view="integrity">Integrity</button></nav>
+      <div id="detail-loading" class="muted" hidden>Loading detail…</div><div id="detail" tabindex="-1"></div>
+    </section>
   </section>
 </main>
-<footer role="contentinfo">Command-line controls remain authoritative for unsupported actions. This is not a multiuser server.</footer>
+<footer role="contentinfo">Use Outrider only for assets you own or are authorized to assess. The loopback portal is unauthenticated and single-operator only.</footer>
 </body>
 </html>

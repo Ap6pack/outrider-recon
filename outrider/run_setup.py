@@ -7,6 +7,7 @@ import json, os, shutil, tempfile
 from pathlib import Path
 from typing import Any, Iterable
 from urllib.parse import urlsplit
+import re
 
 import yaml
 
@@ -31,12 +32,14 @@ class WebRunRequest:
     authorization_reference: str
     in_scope: list[str]
     out_of_scope: list[str]
+    engagement_platform: str | None = None
+    traffic_header: dict[str, str] | None = None
 
 
 def utc_now() -> str:
     return datetime.now(timezone.utc).replace(microsecond=0).isoformat()
 
-def render_scope_yaml(target: str, scopes: Iterable[str], exclusions: Iterable[str], *, scope_control: dict[str, Any] | None = None) -> str:
+def render_scope_yaml(target: str, scopes: Iterable[str], exclusions: Iterable[str], *, scope_control: dict[str, Any] | None = None, engagement_platform: str | None = None, traffic_header: dict[str, str] | None = None) -> str:
     if scope_control is None:
         scope_lines = "\n".join(f"  - {json.dumps(item)}" for item in scopes) or "  - TODO"
         exclusion_items = list(exclusions)
@@ -44,10 +47,14 @@ def render_scope_yaml(target: str, scopes: Iterable[str], exclusions: Iterable[s
             exclusion_block = "out_of_scope:\n" + "\n".join(f"  - {json.dumps(item)}" for item in exclusion_items)
         else:
             exclusion_block = "out_of_scope: []"
+        platform_line = f"engagement_platform: {json.dumps(engagement_platform)}\n" if engagement_platform else ""
+        headers = ""
+        if traffic_header:
+            headers = "  headers:\n" + "\n".join(f"    {json.dumps(k)}: {json.dumps(v)}" for k, v in traffic_header.items()) + "\n"
         return f"""target: {target}
 created_at: {utc_now()}
 engagement_type: authorized_external_recon
-boundary:
+{platform_line}boundary:
   - read_only_recon_by_default
   - explicit_rules_of_engagement_required_for_post_discovery
   - no_destructive_validation_without_written_authorization
@@ -57,7 +64,7 @@ in_scope:
 traffic_tagging:
   user_agent: TODO
   source_ip: TODO
-notes:
+{headers}notes:
   - Replace TODO values before using this run folder for real work.
 """
     data: dict[str, Any] = {
@@ -71,6 +78,10 @@ notes:
         "notes": ["Replace TODO values before using this run folder for real work."],
         "scope_control": scope_control,
     }
+    if engagement_platform:
+        data["engagement_platform"] = engagement_platform
+    if traffic_header:
+        data["traffic_tagging"]["headers"] = traffic_header
     return yaml.safe_dump(data, sort_keys=False, allow_unicode=True)
 
 def render_findings_md(target: str) -> str: return f"# Finding Cards — {target}\n\nThis file is the operator-facing finding card output for the run.\n"
@@ -111,12 +122,12 @@ def _ensure_root(root: Path) -> Path:
 def _write_text(path: Path, text: str): path.write_text(text, encoding='utf-8')
 def _write_json(path: Path, payload: Any): path.write_text(json.dumps(payload, indent=2, sort_keys=True)+"\n", encoding='utf-8')
 
-def create_standard_run_structure(run_dir: Path, target: str, actor: str, auth_ref: str, in_scope: list[str], out_scope: list[str], *, web_scope_control: bool=False) -> None:
+def create_standard_run_structure(run_dir: Path, target: str, actor: str, auth_ref: str, in_scope: list[str], out_scope: list[str], *, web_scope_control: bool=False, engagement_platform: str | None = None, traffic_header: dict[str, str] | None = None) -> None:
     run_dir.mkdir(parents=True, exist_ok=False)
     control = None
     if web_scope_control:
         now = utc_now(); control={"schema_version":1,"revision_number":1,"last_updated_at":now,"last_updated_by":actor,"last_change_reason":"Initial web run creation","history":[{"revision_number":1,"occurred_at":now,"actor":actor,"reason":"Initial web run creation","previous_revision":None}]}
-    _write_text(run_dir/'scope.yaml', render_scope_yaml(target, in_scope, out_scope, scope_control=control))
+    _write_text(run_dir/'scope.yaml', render_scope_yaml(target, in_scope, out_scope, scope_control=control, engagement_platform=engagement_platform, traffic_header=traffic_header))
     (run_dir/'run.jsonl').touch(); initialize_state(run_dir, target, actor, auth_ref)
     for fn,p in DEFAULT_FILES.items(): _write_json(run_dir/fn,p)
     for fn in ['evidence.jsonl','approvals.jsonl','findings.jsonl']: (run_dir/fn).touch()
@@ -130,8 +141,36 @@ def validate_completed_run(run_dir: Path, target: str) -> None:
     for rel in EXPECTED_ENTRIES:
         if not (run_dir/rel).exists(): raise RunSetupError('created run structure is incomplete')
 
+PLATFORM_OPTIONS = ("HackerOne", "Bugcrowd", "Internal assessment", "Client engagement", "Other")
+SENSITIVE_TRAFFIC_HEADERS = {"authorization", "proxy-authorization", "cookie", "set-cookie", "x-api-key"}
+_HEADER_RE = re.compile(r"^[!#$%&'*+.^_`|~0-9A-Za-z-]+$")
+
+def _single_line(value: str, field: str, limit: int) -> str:
+    if not isinstance(value, str) or not value.strip():
+        raise RunSetupError(f"{field} must be a non-empty string")
+    if len(value) > limit or any(ch in value for ch in "\0\r\n"):
+        raise RunSetupError(f"{field} is invalid")
+    return value.strip()
+
+def validate_engagement_metadata(platform: Any = None, traffic_header: Any = None) -> tuple[str | None, dict[str, str] | None]:
+    clean_platform = None
+    if platform is not None:
+        clean_platform = _single_line(platform, "engagement_platform", 100)
+        if clean_platform not in PLATFORM_OPTIONS:
+            raise RunSetupError("engagement_platform is not supported")
+    if traffic_header in (None, {}):
+        return clean_platform, None
+    if not isinstance(traffic_header, dict) or set(traffic_header) != {"name", "value"}:
+        raise RunSetupError("traffic_header requires name and value")
+    name = _single_line(traffic_header.get("name"), "traffic_header.name", 100)
+    value = _single_line(traffic_header.get("value"), "traffic_header.value", 500)
+    if not _HEADER_RE.match(name) or name.lower() in SENSITIVE_TRAFFIC_HEADERS:
+        raise RunSetupError("Store only program traffic-identification metadata here, not credentials, cookies, API keys, or authorization tokens.")
+    return clean_platform, {name: value}
+
 def create_web_run_atomic(root: str|Path, req: WebRunRequest) -> Path:
     target=normalize_target_host(req.target); in_s,out_s=validate_scope_lists(req.in_scope, req.out_of_scope)
+    platform, traffic_header = validate_engagement_metadata(req.engagement_platform, req.traffic_header)
     tmp_parent=_ensure_root(Path(root)); final=(tmp_parent/safe_run_dir_name(target))
     if final.exists() or final.is_symlink(): raise RunConflictError('run destination already exists')
     # validate target under temp scope
@@ -139,7 +178,7 @@ def create_web_run_atomic(root: str|Path, req: WebRunRequest) -> Path:
     shutil.rmtree(probe)
     tmp=Path(tempfile.mkdtemp(prefix='.outrider-create-', dir=tmp_parent))
     try:
-        shutil.rmtree(tmp); create_standard_run_structure(tmp, target, req.actor.strip(), req.authorization_reference.strip(), in_s, out_s, web_scope_control=True)
+        shutil.rmtree(tmp); create_standard_run_structure(tmp, target, req.actor.strip(), req.authorization_reference.strip(), in_s, out_s, web_scope_control=True, engagement_platform=platform, traffic_header=traffic_header)
         validate_completed_run(tmp,target)
         os.replace(tmp, final)
         return final

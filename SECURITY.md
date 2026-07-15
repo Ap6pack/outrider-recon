@@ -1,4 +1,6 @@
-# Security Policy
+# Security
+
+The default `outrider` launcher binds only to loopback, opens a local browser, and provides no authentication. Do not expose the portal through a reverse proxy, shared host, or remote interface. Onboarding metadata such as platform, authorization reference, operator, and traffic-identification headers is not authentication or authorization proof.
 
 ## Scope of these skills
 

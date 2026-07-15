@@ -5,7 +5,8 @@ import unittest
 from contextlib import redirect_stdout
 from io import StringIO
 from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import mock_open, patch
+from unittest import mock
 
 from outrider import cli
 
@@ -240,3 +241,44 @@ class ContractCliTests(unittest.TestCase):
             status, out = self.run_cli("contract", "request", "validate", run, str(bad))
             self.assertEqual(status, 2)
             self.assertNotIn("Traceback", out)
+
+class WebFirstLauncherTests(unittest.TestCase):
+    def test_no_argument_main_launches_portal_and_creates_default_runs_root(self):
+        with tempfile.TemporaryDirectory() as td:
+            cwd = Path.cwd()
+            calls = []
+            try:
+                import os
+                os.chdir(td)
+                with mock.patch.dict(sys.modules, {'uvicorn': mock.Mock(run=lambda app, host, port: calls.append((host, port))), 'outrider.web_app': mock.Mock(create_app=lambda *a, **k: object())}), mock.patch('outrider.cli._open_browser_when_ready') as open_browser:
+                    self.assertEqual(cli.main([]), 0)
+                self.assertTrue((Path(td) / 'runs').is_dir())
+                self.assertEqual(calls, [('127.0.0.1', 8765)])
+                open_browser.assert_called_once()
+            finally:
+                os.chdir(cwd)
+
+    def test_no_browser_avoids_browser_open(self):
+        fake_uvicorn = mock.Mock()
+        with tempfile.TemporaryDirectory() as td, mock.patch.dict(sys.modules, {'uvicorn': fake_uvicorn, 'outrider.web_app': mock.Mock(create_app=lambda *a, **k: object())}), mock.patch('outrider.cli._open_browser_when_ready') as open_browser:
+            self.assertEqual(cli.main(['--runs-root', td, '--no-browser']), 0)
+            fake_uvicorn.run.assert_called_once()
+            open_browser.assert_not_called()
+
+    def test_symlink_and_file_roots_are_rejected_for_implicit_launcher(self):
+        fake_uvicorn = mock.Mock()
+        with tempfile.TemporaryDirectory() as td, mock.patch.dict(sys.modules, {'uvicorn': fake_uvicorn, 'outrider.web_app': mock.Mock(create_app=lambda *a, **k: object())}):
+            file_root = Path(td) / 'file'
+            file_root.write_text('x')
+            self.assertEqual(cli.main(['--runs-root', str(file_root), '--no-browser']), 2)
+            if hasattr(Path, 'symlink_to'):
+                target = Path(td) / 'target'; target.mkdir()
+                link = Path(td) / 'link'; link.symlink_to(target, target_is_directory=True)
+                self.assertEqual(cli.main(['--runs-root', str(link), '--no-browser']), 2)
+            fake_uvicorn.run.assert_not_called()
+
+    def test_subcommand_does_not_trigger_implicit_launch(self):
+        with mock.patch('outrider.cli.launch_local_portal') as launch:
+            with self.assertRaises(SystemExit):
+                cli.main(['init'])
+            launch.assert_not_called()

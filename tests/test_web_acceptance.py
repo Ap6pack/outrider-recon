@@ -11,5 +11,5 @@ class WebAcceptanceTests(unittest.TestCase):
     def test_complete_web_control_plane_acceptance(self):
         result = run_acceptance()
         self.assertEqual(result['status'], 'passed')
-        self.assertEqual(result['stage_count'], 9)
+        self.assertEqual(result['stage_count'], 10)
         self.assertTrue(all(stage['status'] == 'PASS' for stage in result['stages']))

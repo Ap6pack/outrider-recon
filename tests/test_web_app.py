@@ -45,7 +45,7 @@ class WebAppTests(unittest.TestCase):
             runs_root = Path(td) / 'runs'; runs_root.mkdir()
             c = self.client(runs_root, token='fixture')
             h = {'X-Outrider-Control-Token': 'fixture'}
-            create = c.post('/api/runs', json={'target':'https://example.com/path','actor':'authorized-operator','authorization_reference':'EXAMPLE-ROE-001','in_scope':['example.com','*.example.com'],'out_of_scope':[]}, headers=h)
+            create = c.post('/api/runs', json={'target':'https://example.com/path','actor':'authorized-operator','authorization_reference':'EXAMPLE-ROE-001','in_scope':['example.com','*.example.com'],'out_of_scope':[], 'confirmed': True}, headers=h)
             self.assertEqual(create.status_code, 201, create.text)
             rid = create.json()['run']['run_id']
             self.assertEqual(c.get('/api/runs').json()['total'], 1)
@@ -247,7 +247,7 @@ class WebAppTests(unittest.TestCase):
     def test_evidence_artifact_registration_and_verification_api(self):
         with tempfile.TemporaryDirectory() as td:
             runs_root=Path(td)/'runs'; runs_root.mkdir(); c=self.client(runs_root, token='fixture'); h={'X-Outrider-Control-Token':'fixture'}
-            create=c.post('/api/runs', json={'target':'example.com','actor':'authorized-operator','authorization_reference':'EXAMPLE-ROE-001','in_scope':['example.com'],'out_of_scope':[]}, headers=h)
+            create=c.post('/api/runs', json={'target':'example.com','actor':'authorized-operator','authorization_reference':'EXAMPLE-ROE-001','in_scope':['example.com'],'out_of_scope':[], 'confirmed': True}, headers=h)
             rid=create.json()['run']['run_id']
             c.post(f'/api/runs/{rid}/state/transition', json={'expected_state':'initialized','new_state':'scoped','actor':'authorized-operator','reason':None}, headers=h)
             c.post(f'/api/runs/{rid}/state/transition', json={'expected_state':'scoped','new_state':'collecting','actor':'authorized-operator','reason':None}, headers=h)
@@ -305,3 +305,35 @@ class ContractEndpointTests(unittest.TestCase):
             val=c.post(f'/api/runs/{rid}/contracts/requests/{req["request_id"]}/validate', json={'expected_revision':ok.json()['contracts']['contract_revision']}, headers=h)
             self.assertEqual(val.status_code,200,val.text); self.assertEqual(val.json()['validation_report']['overall_status'],'valid')
             self.assertIn(c.post(f'/api/runs/{rid}/contracts/results', json={}, headers=h).status_code, (404,405))
+
+@unittest.skipIf(TestClient is None, "web extra not installed")
+class OnboardingApiTests(unittest.TestCase):
+    def test_onboarding_empty_and_existing_run_projection(self):
+        with tempfile.TemporaryDirectory() as td:
+            client = TestClient(create_app(td, control_token='tok'))
+            r = client.get('/api/onboarding')
+            self.assertEqual(r.status_code, 200)
+            self.assertEqual(r.headers.get('cache-control'), 'no-store')
+            body = r.json()
+            self.assertTrue(body['first_run'])
+            self.assertFalse(body['enrichment_enabled'])
+            self.assertIn('HackerOne', body['platform_options'])
+            self.assertNotIn('tok', json.dumps(body))
+            create = client.post('/api/runs', headers={'X-Outrider-Control-Token':'tok'}, json={'target':'example.com','actor':'operator','authorization_reference':'secret auth','engagement_platform':'HackerOne','traffic_header':{'name':'X-Bug-Bounty','value':'secret traffic'},'in_scope':['example.com'],'out_of_scope':[],'confirmed':True})
+            self.assertEqual(create.status_code, 201, create.text)
+            body = client.get('/api/onboarding').json()
+            self.assertFalse(body['first_run'])
+            inv = client.get('/api/runs').json()
+            self.assertNotIn('secret auth', json.dumps(inv))
+            self.assertNotIn('secret traffic', json.dumps(inv))
+            self.assertEqual(inv['runs'][0]['next_action'], 'Review Scope')
+
+    def test_creation_requires_exact_confirmation_and_rejects_unknowns(self):
+        with tempfile.TemporaryDirectory() as td:
+            client = TestClient(create_app(td, control_token='tok'))
+            payload={'target':'example.com','actor':'operator','authorization_reference':'auth','engagement_platform':'HackerOne','in_scope':['example.com'],'out_of_scope':[],'confirmed':'true'}
+            self.assertEqual(client.post('/api/runs', headers={'X-Outrider-Control-Token':'tok'}, json=payload).status_code, 422)
+            payload['confirmed']=True; payload['run_id']='caller'
+            self.assertEqual(client.post('/api/runs', headers={'X-Outrider-Control-Token':'tok'}, json=payload).status_code, 422)
+            payload.pop('run_id'); payload['engagement_platform']='Unsupported'
+            self.assertEqual(client.post('/api/runs', headers={'X-Outrider-Control-Token':'tok'}, json=payload).status_code, 422)
