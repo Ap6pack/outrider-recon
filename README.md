@@ -186,7 +186,7 @@ Outrider uses independent version domains:
 
 - Python package: `0.3.0`
 - Claude plugin/content bundle: `3.1.0`
-- individual skill frontmatter versions: independent
+- individual skills: versioned as part of the plugin/content bundle (no separate per-skill version)
 - JSON contract schema version: `1`
 
 Do not assume the Python package version and Claude plugin/content version move together. Future GitHub release artifacts are checksum-verifiable, but this repository does not claim cryptographic signing or PyPI / Claude Marketplace publication in this PR.

@@ -96,7 +96,7 @@
 
 ```text
 Run date: ____________
-Skill versions: osint-methodology v____ + offensive-osint v____ + all sub-skills
+Plugin/content version: ____ (see `.claude-plugin/plugin.json`)
 Tester: ____________
 
 | # | Prompt | PASS / PARTIAL / FAIL | Notes |
@@ -151,7 +151,7 @@ Grade: ___
 
 ## Failure modes to watch for
 
-- **Skill doesn't trigger** on an obvious prompt — check `triggers:` in YAML frontmatter; expand if needed.
+- **Skill doesn't trigger** on an obvious prompt — check the `description` / `when_to_use` in YAML frontmatter; expand `when_to_use` if needed, or load the skill on demand with `/<skill-name>`.
 - **Wrong section pulled** — usually means similar headings across the two skills; tighten section names if necessary.
 - **Hallucinated endpoint / regex / wordlist** — Claude invented something. Flag the prompt; tighten the section it should have pulled from with explicit "do not invent" language.
 - **No scope check** on an unverified third-party target — soft scope check in `osint-methodology` §1 isn't being respected. Re-read YAML description and §1.
@@ -162,4 +162,4 @@ Grade: ___
 
 Re-run this suite after every skill edit. Add new prompts when you discover new behavior gaps. Open issues for failures.
 
-Last updated: 2026-05-29. Skill versions: see YAML frontmatter in each skill.
+Last updated: 2026-07-27. Skill content ships with the plugin/content release; see `.claude-plugin/plugin.json`.

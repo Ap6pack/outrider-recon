@@ -77,11 +77,7 @@ class Audit:
     def versions(self):
         py=load_pyproject(self.root/'pyproject.toml')
         plugin=json.loads((self.root/'.claude-plugin/plugin.json').read_text())
-        skills={}
-        for p in sorted((self.root/'skills').glob('*/SKILL.md')):
-            if p.parent.name=='_shared': continue
-            fm=parse_frontmatter(p.read_text())[0]
-            skills[p.parent.name]=str(fm.get('version'))
+        skills=sorted(p.parent.name for p in (self.root/'skills').glob('*/SKILL.md') if p.parent.name!='_shared')
         schemas={p.name: json.loads(p.read_text()).get('properties',{}).get('schema_version',{}).get('const') for p in (self.root/'contracts').glob('*.schema.json')}
         return {'python_package':py['project']['version'],'claude_plugin':plugin['version'],'skills':skills,'schemas':schemas,'manifest_schema':1,'state_event_schema':1,'evidence_schema':1,'approval_schema':1,'finding_schema':schemas.get('finding-v1.schema.json')}
     def run(self):
@@ -89,19 +85,14 @@ class Audit:
 
     def check_versions(self):
         versions = self.versions()
-        expected_skills = {
-            'analysis-and-reporting': '1.0.0', 'cloud-and-infra': '1.1.0', 'identity-fabric': '1.0.0',
-            'offensive-osint': '2.1.1', 'osint-methodology': '2.2', 'people-breach-intel': '1.0.0',
-            'post-discovery': '1.0.0', 'recon-asset-discovery': '1.0.0', 'report-template': '1.0.0',
-            'secrets-and-dorks': '1.0.0', 'web-surface': '1.0.0'}
         if versions['python_package'] == '0.3.0' and versions['claude_plugin'] == '3.1.0' and versions['python_package'] != versions['claude_plugin']:
             self.ok('independent release versions','Python 0.3.0 and plugin/content 3.1.0 are distinct')
         else:
             self.fail('independent release versions',f"unexpected versions: {versions['python_package']} / {versions['claude_plugin']}")
-        if versions['skills'] == expected_skills:
-            self.ok('skill version preservation','all 11 skill frontmatter versions match the release-readiness baseline')
+        if len(versions['skills']) == 11:
+            self.ok('shipped skill count','all 11 skills present; content is versioned by the plugin/content release, not per-skill frontmatter')
         else:
-            self.fail('skill version preservation','skill versions changed')
+            self.fail('shipped skill count',f"expected 11 skills, found {len(versions['skills'])}")
         if set(versions['schemas'].values()) == {1} and all(versions[k] == 1 for k in ['manifest_schema','state_event_schema','evidence_schema','approval_schema','finding_schema']):
             self.ok('schema version preservation','all runtime schemas remain version 1')
         else:
@@ -128,10 +119,10 @@ class Audit:
         for p in sorted((self.root/'skills').glob('*/SKILL.md')):
             if p.parent.name=='_shared': continue
             fm,body=parse_frontmatter(p.read_text())
-            for key in ['name','description','version','triggers']:
+            for key in ['name','description','when_to_use']:
                 if key not in fm: bad.append(f'{p}: missing {key}')
             if fm.get('name') != p.parent.name: bad.append(f'{p}: name mismatch')
-            if not isinstance(fm.get('triggers'), list): bad.append(f'{p}: triggers must be array')
+            if len(str(fm.get('description','')))+len(str(fm.get('when_to_use','')))>1536: bad.append(f'{p}: description+when_to_use exceeds 1536 chars')
             if '../_shared/run-contract.md' not in body: bad.append(f'{p}: missing shared contract reference')
             lower=body.lower()
             if 'validated_finding' in body and not any(phrase in lower for phrase in ['do not emit','must not emit','must not finalize','must not create','must not claim']): bad.append(f'{p}: may claim validated_finding output')

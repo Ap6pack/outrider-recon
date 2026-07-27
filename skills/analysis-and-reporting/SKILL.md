@@ -1,28 +1,7 @@
 ---
 name: analysis-and-reporting
 description: "Endpoint interest scoring (0–100), mobile app ownership confidence, attack-path hint patterns (35 templates), severity decision matrix (92 examples), sector severity overrides, and sidecar coordination."
-version: 1.0.0
-triggers:
-  - endpoint interest score
-  - finding severity
-  - severity decision matrix
-  - attack path hint
-  - mobile app ownership
-  - mobile recon
-  - AI-assisted OSINT
-  - evidence preservation
-  - archiving
-  - automation workflow
-  - cross module sidecar
-  - tooling install
-  - sector specific recon
-  - healthcare DICOM
-  - finance SWIFT
-  - ICS SCADA
-  - CVE prioritization
-  - EPSS scoring
-  - vulnerability prioritization
-  - reporting
+when_to_use: "Use when scoring endpoint interest (0–100), deciding finding severity or applying the severity decision matrix, generating attack-path hints, assessing mobile-app ownership, prioritizing vulnerabilities (CVE/EPSS scoring), applying sector-specific overrides (healthcare DICOM, finance SWIFT, ICS/SCADA), preserving evidence, or coordinating sidecar output across modules for reporting."
 ---
 
 # Analysis & Reporting

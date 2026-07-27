@@ -205,10 +205,11 @@ Most AI IDEs allow custom system-prompt injection. Use the API method above as a
 
 ### "The skill loads but doesn't trigger on my prompt"
 
-The skill's `triggers:` list controls auto-activation. If your prompt's wording isn't in the list, Claude may not pull the skill.
+Claude decides when to auto-load a skill from its `description` and `when_to_use` frontmatter. If your prompt's wording is far from that text, Claude may not pull the skill.
 
-- Try rephrasing with a phrase from the SKILL.md `triggers:` list.
-- If your phrasing is a common practitioner term, [open an issue](https://github.com/Ap6pack/outrider-recon/issues) to add it.
+- Rephrase using terms from the SKILL.md `description` / `when_to_use` — name the technique or target explicitly.
+- Or load a skill on demand by typing its command, e.g. `/web-surface`.
+- If your phrasing is a common practitioner term, [open an issue](https://github.com/Ap6pack/outrider-recon/issues) to add it to `when_to_use`.
 
 ### "Skill is too large for my model's context"
 
@@ -236,14 +237,9 @@ Version numbers are tracked by domain rather than forced to match:
 
 - Plugin/content release: see `CHANGELOG.md` and `.claude-plugin/plugin.json`.
 - Python CLI package: see `pyproject.toml` and `outrider/__init__.py`.
-- Individual skills: see each SKILL.md YAML frontmatter.
 - MCP implementation: see `mcp-server/` source and dependencies.
 
-Check individual skill versions with:
-
-```bash
-grep "^version:" skills/*/SKILL.md
-```
+Individual skills are versioned as part of the plugin/content release; they no longer carry a per-file `version:` field.
 
 ## Uninstalling
 

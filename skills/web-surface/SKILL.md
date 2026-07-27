@@ -1,33 +1,7 @@
 ---
 name: web-surface
 description: "Probe paths, endpoint scoring, email security analysis, vendor fingerprints, documentation leak hunting, and API endpoint references for authorized web-surface enumeration."
-version: 1.0.0
-triggers:
-  - swagger discovery
-  - openapi discovery
-  - graphql introspection
-  - endpoint enumeration
-  - email security analysis
-  - SPF DMARC DKIM
-  - BIMI
-  - MTA-STS
-  - TLS-RPT
-  - DNSSEC
-  - MX inference
-  - DMARC vendor
-  - vendor product fingerprints
-  - Citrix Netscaler
-  - F5 BIG-IP
-  - Pulse Secure
-  - FortiGate
-  - PaloAlto GlobalProtect
-  - Cisco AnyConnect
-  - VMware vCenter
-  - Wayback CDX
-  - postman workspace
-  - stack exchange OSINT
-  - subdomain takeover
-  - documentation leak
+when_to_use: "Use for Swagger/OpenAPI/GraphQL discovery, endpoint enumeration, email-security analysis (SPF/DMARC/DKIM/BIMI/MTA-STS/TLS-RPT/DNSSEC, MX inference, DMARC vendor), vendor/product fingerprinting (Citrix NetScaler, F5 BIG-IP, Pulse Secure, FortiGate, PaloAlto GlobalProtect, Cisco AnyConnect, VMware vCenter), Wayback CDX mining, Postman workspace hunting, subdomain-takeover checks, or documentation-leak hunting."
 ---
 
 # Web Surface Enumeration

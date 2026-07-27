@@ -1,23 +1,7 @@
 ---
 name: offensive-osint
 description: "Router for the Offensive OSINT arsenal. Dispatches to focused sub-skills by task type. Covers the full external red-team surface: asset discovery, web enumeration, identity/SSO, secrets/dorks, post-credential workflows, cloud/infra, people/breach intel, and analysis/reporting. Companion to osint-methodology. Use for any authorized external recon, bug bounty, or ASM engagement."
-version: 2.1.1
-triggers:
-  - external recon
-  - external red team
-  - red team external
-  - attack surface management
-  - ASM
-  - bug bounty recon
-  - bug bounty
-  - reconnaissance
-  - footprinting
-  - asset discovery
-  - start recon
-  - new target
-  - pick up recon
-  - continue recon
-  - assess target
+when_to_use: "Use to start, continue, or pick up any authorized external recon, red-team, attack-surface-management (ASM), or bug-bounty engagement — footprinting, asset discovery, or assessing a new target — then dispatch to the focused sub-skill for the task."
 ---
 
 # Offensive OSINT — Arsenal Router
