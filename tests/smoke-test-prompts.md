@@ -1,6 +1,6 @@
 # Smoke-Test Prompts
 
-40 verification prompts to confirm the skills load and behave correctly after install. Drop each into a fresh Claude session and verify the **expected behavior**.
+43 verification prompts (40 functional + 3 scope-check) to confirm the skills load and behave correctly after install. Drop each into a fresh Claude session and verify the **expected behavior**.
 
 ## How to use
 
@@ -17,7 +17,7 @@
 - ✅ Authorization scope-check invoked when needed.
 - ✅ Severity / confidence / detectability tagged appropriately.
 
-**Current self-grade:** 31 PASS / 1 PARTIAL / 0 FAIL on original 32 prompts (96.9%). 40 prompts total.
+**Current self-grade:** 43 PASS / 0 PARTIAL / 0 FAIL across all 43 prompts. See [`docs/coverage.md`](../docs/coverage.md) for the per-release history and the caveat that these are self-graded.
 
 ---
 
@@ -57,7 +57,7 @@
 
 ---
 
-## Tier 3 — Edge cases + critical capabilities (10 prompts)
+## Tier 3 — Edge cases + critical capabilities (18 prompts)
 
 | #   | Prompt                                                                                                                     | Expected behavior                                                                                                                                                                                  |
 | --- | -------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |

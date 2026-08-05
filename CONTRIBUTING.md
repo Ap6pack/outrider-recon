@@ -41,7 +41,7 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
 5. **Commit with a clear message:**
    - Format: `<type>(<scope>): <subject>`
    - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-   - Examples: `feat(web-surface): add Zscaler vendor fingerprint to §10`, `fix(people-breach-intel): correct EPSS threshold tier in §4`, `docs(readme): update capability index for v2.3`
+   - Examples: `feat(web-surface): add Zscaler vendor fingerprint to §10`, `fix(people-breach-intel): correct EPSS threshold tier in §4`, `docs(readme): refresh capability index`
 6. **Push and open a PR** to `Ap6pack/outrider-recon` with:
    - Clear description of what changed and why.
    - Reference any related issues.

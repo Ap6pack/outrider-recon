@@ -134,6 +134,14 @@ For every artifact: **URL + UTC timestamp + SHA-256 + tool version + run_id**.
 - Do NOT use a credential validator for anything except read-only verification.
 - Do NOT mirror-image the threat actor. Separate capability from intent and sponsorship.
 - Do NOT escalate when you hit active defenses — back off and document (§6.4).
+- Do NOT promote a snippet-only dork hit to CONFIRMED. It stays TENTATIVE until visited (§2).
+- Do NOT read absence from CT logs as proof of absence — lag runs minutes to hours.
+- Do NOT cite a Wayback capture as "the site at time T". Captures are best-effort and often partial.
+- Do NOT let untyped strings into the asset graph. Every discovery is a typed asset (§8.1).
+- Do NOT skip the scope check when in doubt — ask once (§1).
+- Do NOT record local time. UTC only, or cross-source correlation breaks.
+- Do NOT leave a TENTATIVE finding without a documented upgrade path (§2.1).
+- Do NOT treat the exec summary as an afterthought. Plan deliverables at engagement start (§14).
 
 ---
 

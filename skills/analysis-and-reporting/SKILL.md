@@ -309,6 +309,7 @@ Every artifact collected during an engagement must be preserved with integrity m
 - **archive.org:** `curl -s -d "url=<https://target.com/page"> <https://web.archive.org/save`> — returns archived URL.
 - **archive.today:** Submit via their form endpoint as a backup when archive.org is slow or blocked.
 - **Local mirror:** `wget --mirror --convert-links --adjust-extension --page-requisites --no-parent -P ./evidence/ <https://target.com/path`> for a full offline copy.
+- **Other archivers:** [URLScan.io](https://urlscan.io/) (scan + resource map), [ArchiveBox](https://archivebox.io/) (self-hosted HTML/PDF/screenshots), [SingleFileZ](https://github.com/gildas-lormeau/SingleFileZ) (offline single-file HTML), Wayback SavePageNow API v3 (on-demand, returns job IDs), [Hunchly](https://www.hunch.ly/) (investigator capture, paid), [Kasm Workspaces](https://kasmweb.com/) (containerized browser isolation).
 
 **Screenshot evidence.** Capture visual state of findings:
 

@@ -73,16 +73,17 @@ This is the minimum successful path. For complete setup options, see [Installati
 ### 1. Install the Claude skills
 
 ```bash
-git clone https://github.com/Ap6pack/outrider-recon.git
-mkdir -p ~/.claude/skills
-cp -r outrider-recon/skills/* ~/.claude/skills/
+curl -fsSL https://raw.githubusercontent.com/Ap6pack/outrider-recon/main/install.sh | bash
 ```
+
+This clones to `~/.local/share/outrider-recon` and symlinks all 11 skills into `~/.claude/skills/`, so re-running it updates in place. For manual copies, Claude Desktop/API setups, and uninstall steps, see [Installation](docs/installation.md).
 
 ### 2. Install or download the Python CLI
 
 From a source checkout:
 
 ```bash
+git clone https://github.com/Ap6pack/outrider-recon.git
 cd outrider-recon
 python -m pip install -e .
 ```
