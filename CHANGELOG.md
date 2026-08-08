@@ -13,11 +13,27 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Added deterministic guided engagement progress and server-derived next actions.
 - Added explicit beginner scope confirmation and guarded forward workflow actions.
+- Added `tests/test_secret_scan.py`, pinning the secret-pattern catalog's exact-length contract in both directions.
+
+### Changed
+
+- Replaced each skill's non-functional `triggers:` list with the supported `when_to_use` frontmatter field and dropped the ignored per-skill `version:`. Neither old field exists in the Agent Skills specification, so the authored trigger vocabulary never reached skill dispatch. Lint, release audit, and contributor docs now enforce the real contract.
+- Merged the archiver pointers from the former evidence-preservation method file into `analysis-and-reporting` §8, and eight failure modes not already covered into `osint-methodology` §5.
+- Pointed the README quick start at the one-click installer instead of `cp -r skills/*`, which contradicted the installation guide and produced installs that never received updates.
 
 ### Fixed
 
 - Restored the functional Advanced Workspace controls alongside web-first onboarding.
 - Removed hard-coded next actions, corrected terminal phase labels, removed hidden static test markers, and corrected malformed architecture wording.
+- Fixed an unhandled `re.error` crash in `h1_reference.py` when `--query` or `--cwe` received an invalid regular expression.
+- Fixed the `secret_scan.py` CI smoke test, whose GitHub PAT fixture carried 37 characters instead of 36 and was never asserted on, so `GH_PAT_CLASSIC` silently never matched.
+- Fixed `install.sh` copying helper scripts onto themselves through a symlink while silencing the resulting error, and counting unrelated skills already present in `~/.claude/skills`.
+- Fixed `uninstall.sh` removing skills by hardcoded name, which could delete a user's own skill sharing a generic name; it now removes only symlinks resolving into the install directory.
+- Corrected stale documentation counts and roadmap state: the Tier 3 smoke-test heading, the prompt totals, and the released-versus-upcoming status of v3.1.
+
+### Removed
+
+- Removed `docs/methods/anti-patterns.md` and `docs/methods/evidence-preservation.md`. Both were unreferenced and largely duplicated skill content; their unique material was merged into the skills above.
 
 ---
 
