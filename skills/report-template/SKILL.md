@@ -1,16 +1,7 @@
 ---
 name: report-template
 description: "Autonomous report generation from collected findings. Produces bug bounty submissions, client deliverables, and vulnerability reports using the standard finding schema."
-version: 1.0.0
-triggers:
-  - generate report
-  - write report
-  - write findings
-  - bug bounty submission
-  - create deliverable
-  - vulnerability report
-  - submit finding
-  - report template
+when_to_use: "Use when asked to generate, write, or submit a report — bug-bounty submissions, client deliverables, or vulnerability reports — from collected findings using the standard finding schema."
 ---
 
 # Report Template

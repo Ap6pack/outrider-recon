@@ -33,7 +33,7 @@ The "how to think" reference for external red-team OSINT and bug-bounty reconnai
 
 ## When this skill triggers
 
-Auto-triggers on prompts containing any of ~55 trigger phrases. Common ones:
+Auto-loads on recon/red-team/ASM prompts. Its `when_to_use` frontmatter covers cases like:
 
 - `external recon`, `external red team`, `bug bounty recon`, `attack surface management`, `ASM`, `perimeter recon`
 - `OSINT methodology`, `recon methodology`, `target reconnaissance`, `asset discovery`, `attack path`
@@ -46,7 +46,7 @@ Auto-triggers on prompts containing any of ~55 trigger phrases. Common ones:
 - `vulnerability prioritization`, `CVE prioritization`, `EPSS`, `CISA KEV`
 - `threat actor investigation`, `attribution`
 
-Full trigger list in the SKILL.md frontmatter.
+See the SKILL.md `when_to_use` frontmatter for the full coverage.
 
 ## Loading
 

@@ -33,7 +33,7 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
    - To add a new capability area: create a new peer directory `skills/<new-skill-name>/SKILL.md`. Each sub-skill should be under 500 lines and self-contained. Register it in the router (`skills/offensive-osint/SKILL.md`).
    - Update `CHANGELOG.md` under an `[Unreleased]` heading at the top.
    - If you're adding a new sub-skill, update the README's Capability Index and Structure block.
-   - If you're adding a new triggerable concept, add a trigger phrase to the YAML frontmatter.
+   - If you're adding a new triggerable concept, extend the skill's `when_to_use` frontmatter so Claude loads it for that phrasing.
 4. **Run the smoke tests** locally:
    - Install the pipeline in Claude Code (`cp -r skills/* ~/.claude/skills/`).
    - Run any relevant prompt from `tests/smoke-test-prompts.md` and verify behavior.
@@ -41,7 +41,7 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
 5. **Commit with a clear message:**
    - Format: `<type>(<scope>): <subject>`
    - Types: `feat`, `fix`, `docs`, `style`, `refactor`, `test`, `chore`
-   - Examples: `feat(web-surface): add Zscaler vendor fingerprint to §10`, `fix(people-breach-intel): correct EPSS threshold tier in §4`, `docs(readme): update capability index for v2.3`
+   - Examples: `feat(web-surface): add Zscaler vendor fingerprint to §10`, `fix(people-breach-intel): correct EPSS threshold tier in §4`, `docs(readme): refresh capability index`
 6. **Push and open a PR** to `Ap6pack/outrider-recon` with:
    - Clear description of what changed and why.
    - Reference any related issues.
@@ -66,9 +66,9 @@ Thanks for considering a contribution. This pipeline is battle-tested but always
 - **Confidence-aware.** When introducing a finding pattern, tag its confidence level (TENTATIVE/FIRM/CONFIRMED).
 - **Severity-anchored.** New finding categories should map to `osint-methodology` §9 / `analysis-and-reporting` §4 severity rubric.
 
-### Trigger discipline
+### Discovery discipline
 
-When you add a new capability, add at least one trigger phrase to the YAML frontmatter `triggers:` list. Trigger phrases should be the exact wording a user would type, not the formal name. E.g., `kubelet exposed` is a better trigger than `Kubernetes Kubelet API exposure on port 10250`.
+When you add a new capability, extend the skill's `when_to_use` frontmatter so Claude loads it for the wording a user would actually type — the exact phrase, not the formal name. E.g., `kubelet exposed` is better than `Kubernetes Kubelet API exposure on port 10250`. Claude Code matches prompts against `description` + `when_to_use` (combined cap 1,536 characters), so keep additions tight and high-signal. Do **not** reintroduce a `triggers:` or `version:` field — neither is part of the [Agent Skills frontmatter spec](https://code.claude.com/docs/en/skills), and both are ignored at runtime.
 
 ## Reviewing other PRs
 

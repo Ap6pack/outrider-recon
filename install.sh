@@ -10,10 +10,19 @@ SKILLS_DIR="$HOME/.claude/skills"
 
 echo "Installing outrider-recon..."
 
+if ! command -v git >/dev/null 2>&1; then
+  echo "Error: git is required but was not found on PATH." >&2
+  exit 1
+fi
+
 # Clone or update
-if [ -d "$INSTALL_DIR" ]; then
+if [ -d "$INSTALL_DIR/.git" ]; then
   echo "Updating existing installation..."
   git -C "$INSTALL_DIR" pull --quiet
+elif [ -e "$INSTALL_DIR" ]; then
+  echo "Error: $INSTALL_DIR already exists but is not a git checkout." >&2
+  echo "Move or remove it, then re-run this installer." >&2
+  exit 1
 else
   echo "Cloning repository..."
   git clone --quiet "$REPO" "$INSTALL_DIR"
@@ -22,33 +31,26 @@ fi
 # Create skills directory if needed
 mkdir -p "$SKILLS_DIR"
 
-# Symlink each skill
+# Symlink each skill. The symlink exposes the entire skill directory, including
+# offensive-osint/scripts/, so helper scripts need no separate copy step.
+skill_count=0
 for skill_dir in "$INSTALL_DIR"/skills/*/; do
-  skill_name=$(basename "$skill_dir")
+  [ -f "$skill_dir/SKILL.md" ] || continue
+  skill_dir="${skill_dir%/}"
+  skill_name="$(basename "$skill_dir")"
   target="$SKILLS_DIR/$skill_name"
-  if [ -L "$target" ] || [ -d "$target" ]; then
+  if [ -L "$target" ] || [ -e "$target" ]; then
     rm -rf "$target"
   fi
-  ln -sf "$skill_dir" "$target"
+  ln -sfn "$skill_dir" "$target"
+  skill_count=$((skill_count + 1))
   echo "  Linked: $skill_name"
 done
 
-# Copy helper scripts
-if [ -d "$INSTALL_DIR/skills/offensive-osint/scripts" ]; then
-  mkdir -p "$SKILLS_DIR/offensive-osint/scripts"
-  cp "$INSTALL_DIR/skills/offensive-osint/scripts/"*.py "$SKILLS_DIR/offensive-osint/scripts/" 2>/dev/null || true
-fi
-
-SKILL_COUNT=0
-for skill_file in "$SKILLS_DIR"/*/SKILL.md; do
-  if [ -f "$skill_file" ]; then
-    SKILL_COUNT=$((SKILL_COUNT + 1))
-  fi
-done
 echo ""
-echo "Done! $SKILL_COUNT skills installed."
+echo "Done! $skill_count skills installed."
 echo "Start a new Claude Code session and try:"
 echo "  'Plan a 4-hour external recon on acme.com (in-scope bug bounty)'"
 echo ""
 echo "To update later: git -C $INSTALL_DIR pull"
-echo "To uninstall:    rm -rf $INSTALL_DIR && rm -rf $SKILLS_DIR/{osint-methodology,offensive-osint,recon-asset-discovery,web-surface,identity-fabric,secrets-and-dorks,post-discovery,cloud-and-infra,people-breach-intel,analysis-and-reporting,report-template}"
+echo "To uninstall:    $INSTALL_DIR/uninstall.sh"

@@ -8,7 +8,7 @@ This document describes both implemented behavior and architectural design inten
 
 - **Claude plugin/content release**: Implemented as the skill bundle, plugin manifest, docs, examples, install scripts, and optional MCP companion listed in the changelog. Version source: `CHANGELOG.md` and `.claude-plugin/plugin.json`. This release domain tracks the packaged Claude-facing content.
 - **Python CLI package**: Implemented as run-folder scaffolding, deterministic scope validation, stable run manifests, append-only workflow-state events, validated state transitions, append-only evidence registration, SHA-256 artifact integrity verification, append-only approval records, and bounded offline action-policy decisions. Version source: `pyproject.toml` and `outrider/__init__.py`. The CLI validates local scope, workflow state, approvals, evidence integrity, skill request/result contracts, and human-reviewed finding promotion; the optional MCP server enforces tool-boundary policy for the existing five enrichment tools. It does not implement autonomous recon orchestration, authenticated approvers, automatic evidence capture from every skill, unrestricted skill execution, or concurrent-writer protection.
-- **Individual skill frontmatter**: Implemented per `skills/*/SKILL.md`. Version source: each skill's YAML `version:` field. Skill versions may differ from the plugin/content release and from the Python package version.
+- **Individual skills**: Implemented per `skills/*/SKILL.md`. Skill content ships and is versioned as part of the plugin/content release (`.claude-plugin/plugin.json`); skills do not carry a separate per-file `version:`.
 - **MCP server**: Implemented as optional live enrichment. Version source: MCP server files and dependency metadata. The MCP server provides five live enrichment tools and enforces explicit run context, fixed action mappings, scope, workflow-state, and approval decisions before HTTP or DNS activity.
 
 These version domains do not have to use the same number. A plugin/content release can advance independently from the Python CLI package, individual skill frontmatter, or MCP implementation.
@@ -22,7 +22,7 @@ The skills are split into **methodology** ("how to think"), a **router** ("which
 - **Methodology mode** — "I have a target. How do I approach this?" → strategic + procedural.
 - **Arsenal mode** — "I need a Swagger probe path / secret regex / curl one-liner." → tactical + reference.
 
-A single mega-skill of ~4,200 lines would have noisier triggering and worse retrieval. The split lets each skill have a tight, distinct trigger vocabulary and a behavioral contract that drives autonomous execution.
+A single mega-skill of ~4,200 lines would have noisier triggering and worse retrieval. The split lets each skill have a tight, distinct `when_to_use` vocabulary and a behavioral contract that drives autonomous execution.
 
 ```mermaid
 flowchart TD
@@ -196,14 +196,15 @@ flowchart LR
 
 9 providers covered (Postman, AWS, GitHub, Slack, Anthropic, OpenAI, npm, Atlassian, DataDog). Hard rule: never create / delete / send. Tag every validation with detectability + `checked_at`. These validator rules are currently expressed in skills and operator procedures; deterministic enforcement is planned for future Python/MCP integration.
 
-## Trigger frontmatter discipline
+## Discovery frontmatter discipline
 
-Each skill declares ~50–110 trigger phrases in YAML frontmatter. Triggers are:
+Claude Code decides when to load a skill from its `description` plus the optional `when_to_use` field (combined text capped at 1,536 characters, per the [Agent Skills spec](https://code.claude.com/docs/en/skills)). Each skill's `when_to_use` names the tasks and phrasing that should pull it:
 
 - The exact wording a user would type (`kubelet exposed`, not `Kubernetes Kubelet API exposure on port 10250`).
-- Inclusive of common synonyms (`SSO discovery`, `IdP fingerprinting`, `tenant fingerprinting` all map to identity-fabric work).
+- Common synonyms (`SSO discovery`, `IdP fingerprinting`, `tenant fingerprinting` all map to identity-fabric work).
 - Domain-specific jargon (`JARM`, `mmh3`, `BGP`, `KEV`).
-- Operator slang (`grease the rails`, `pop the recon`).
+
+Earlier releases carried a non-standard `triggers:` list in frontmatter; Claude Code never read it, so that discovery intent now lives in `when_to_use`.
 
 ## Versioning
 
@@ -213,16 +214,15 @@ Semantic versioning applies within each release domain rather than requiring all
 | ------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------- |
 | Plugin/content release    | `CHANGELOG.md` and `.claude-plugin/plugin.json` | The Claude-facing content bundle, documentation, examples, install scripts, and optional companion components. |
 | Python CLI package        | `pyproject.toml` and `outrider/__init__.py`     | The installable Python package and `outrider` console script.                                                  |
-| Individual skill versions | YAML frontmatter in each `skills/*/SKILL.md`    | Skill-specific trigger/content changes.                                                                        |
 | MCP server implementation | `mcp-server/` source and dependency files       | Optional live enrichment server behavior and dependencies.                                                     |
 
-For individual skills:
+Skill content is versioned as part of the plugin/content release — individual `SKILL.md` files no longer carry their own `version:` field. Bump the plugin/content version for content changes:
 
-- **MAJOR** — section renumbering, breaking trigger changes, schema changes to Finding output.
-- **MINOR** — new sections, new techniques, expanded catalogs.
+- **MAJOR** — section renumbering, breaking `when_to_use`/routing changes, schema changes to Finding output.
+- **MINOR** — new skills, new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-The published plugin/content GitHub release is v3.1.0. The Python CLI package and individual skill versions are separate domains and may use different numbers.
+The published plugin/content GitHub release is v3.1.0. The Python CLI package is a separate version domain and may use a different number.
 
 ## Renumbering policy
 

@@ -1,17 +1,7 @@
 ---
 name: recon-asset-discovery
 description: "Subdomain enumeration, CT logs, DNS record catalog, WHOIS/RDAP, and passive reconnaissance for authorized external recon."
-version: 1.0.0
-triggers:
-  - subdomain enumeration
-  - asset discovery
-  - certificate transparency
-  - crt.sh
-  - WHOIS lookup
-  - RDAP
-  - DNS record catalog
-  - passive recon
-  - footprinting
+when_to_use: "Use for passive external asset discovery: subdomain enumeration, certificate-transparency (crt.sh) lookups, DNS record cataloging, and WHOIS/RDAP queries during footprinting."
 ---
 
 # Recon — Asset Discovery

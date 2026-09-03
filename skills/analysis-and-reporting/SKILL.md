@@ -1,28 +1,7 @@
 ---
 name: analysis-and-reporting
 description: "Endpoint interest scoring (0–100), mobile app ownership confidence, attack-path hint patterns (35 templates), severity decision matrix (92 examples), sector severity overrides, and sidecar coordination."
-version: 1.0.0
-triggers:
-  - endpoint interest score
-  - finding severity
-  - severity decision matrix
-  - attack path hint
-  - mobile app ownership
-  - mobile recon
-  - AI-assisted OSINT
-  - evidence preservation
-  - archiving
-  - automation workflow
-  - cross module sidecar
-  - tooling install
-  - sector specific recon
-  - healthcare DICOM
-  - finance SWIFT
-  - ICS SCADA
-  - CVE prioritization
-  - EPSS scoring
-  - vulnerability prioritization
-  - reporting
+when_to_use: "Use when scoring endpoint interest (0–100), deciding finding severity or applying the severity decision matrix, generating attack-path hints, assessing mobile-app ownership, prioritizing vulnerabilities (CVE/EPSS scoring), applying sector-specific overrides (healthcare DICOM, finance SWIFT, ICS/SCADA), preserving evidence, or coordinating sidecar output across modules for reporting."
 ---
 
 # Analysis & Reporting
@@ -330,6 +309,7 @@ Every artifact collected during an engagement must be preserved with integrity m
 - **archive.org:** `curl -s -d "url=<https://target.com/page"> <https://web.archive.org/save`> — returns archived URL.
 - **archive.today:** Submit via their form endpoint as a backup when archive.org is slow or blocked.
 - **Local mirror:** `wget --mirror --convert-links --adjust-extension --page-requisites --no-parent -P ./evidence/ <https://target.com/path`> for a full offline copy.
+- **Other archivers:** [URLScan.io](https://urlscan.io/) (scan + resource map), [ArchiveBox](https://archivebox.io/) (self-hosted HTML/PDF/screenshots), [SingleFileZ](https://github.com/gildas-lormeau/SingleFileZ) (offline single-file HTML), Wayback SavePageNow API v3 (on-demand, returns job IDs), [Hunchly](https://www.hunch.ly/) (investigator capture, paid), [Kasm Workspaces](https://kasmweb.com/) (containerized browser isolation).
 
 **Screenshot evidence.** Capture visual state of findings:
 

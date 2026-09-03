@@ -1,20 +1,7 @@
 ---
 name: people-breach-intel
 description: "Breach data lookup, HudsonRock infostealer intel, email-pattern inference, email harvest, Slack/Discord discovery, package registry leaks, and vulnerability prioritization endpoints."
-version: 1.0.0
-triggers:
-  - breach lookup
-  - have I been pwned
-  - HudsonRock cavalier
-  - infostealer
-  - dehashed
-  - intelx
-  - email pattern inference
-  - email harvest
-  - Slack workspace discovery
-  - Discord server discovery
-  - npm token leak
-  - package registry leaks
+when_to_use: "Use for breach-data lookups (HaveIBeenPwned, DeHashed, IntelX), HudsonRock/infostealer (Cavalier) intel, email-pattern inference and harvesting, Slack/Discord discovery, or package-registry (npm) token leaks."
 ---
 
 # People, Breach & Intelligence

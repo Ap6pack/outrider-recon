@@ -1,21 +1,7 @@
 ---
 name: post-discovery
 description: "Post-credential enumeration workflows for validated live keys — AWS IAM enum, GitHub PAT scope/repo enum, Slack workspace enum, JWT triage, Postman PMAK workspace enum, Anthropic/OpenAI usage enum. Requires validator confirmation first."
-version: 1.0.0
-triggers:
-  - post discovery workflow
-  - JWT triage
-  - AWS key triage
-  - AWS IAM enum
-  - GitHub PAT scope
-  - Slack workspace enum
-  - Postman PMAK workspace enum
-  - Anthropic API key
-  - OpenAI API key
-  - post-credential workflow
-  - validated credential
-  - algorithm confusion
-  - JWT none bypass
+when_to_use: "Use only after a validator confirms a live credential, to enumerate what it can reach: AWS key/IAM triage, GitHub PAT scope/repo enum, Slack workspace enum, JWT triage (algorithm confusion, none bypass), Postman PMAK workspace enum, or Anthropic/OpenAI usage enum."
 ---
 
 # Post-Discovery Enumeration Workflows
