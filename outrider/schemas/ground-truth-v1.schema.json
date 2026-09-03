@@ -1,0 +1,83 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://outrider.local/contracts/ground-truth-v1.schema.json",
+  "title": "Outrider benchmark ground_truth v1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema_version", "contract_type", "case_id", "target", "in_scope", "evidence", "seeds", "scripts", "expected"],
+  "properties": {
+    "schema_version": {"const": 1},
+    "contract_type": {"const": "ground_truth"},
+    "case_id": {"type": "string", "minLength": 1},
+    "description": {"type": "string"},
+    "target": {"type": "string", "minLength": 1},
+    "in_scope": {"type": "array", "items": {"type": "string", "minLength": 1}, "minItems": 1},
+    "out_of_scope": {"type": "array", "items": {"type": "string", "minLength": 1}},
+    "evidence": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["ref", "path", "content", "artifact_type"],
+        "properties": {
+          "ref": {"type": "string", "minLength": 1},
+          "path": {"type": "string", "minLength": 1},
+          "content": {"type": "string"},
+          "artifact_type": {"type": "string", "minLength": 1}
+        }
+      }
+    },
+    "seeds": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["skill", "action_type", "objective"],
+        "properties": {
+          "skill": {"type": "string", "minLength": 1},
+          "action_type": {"type": "string", "minLength": 1},
+          "objective": {"type": "string", "minLength": 1},
+          "candidate": {"type": ["string", "null"]}
+        }
+      }
+    },
+    "grants": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["action_type", "candidate"],
+        "properties": {
+          "action_type": {"type": "string"},
+          "candidate": {"type": "string"}
+        }
+      }
+    },
+    "scripts": {
+      "type": "object",
+      "additionalProperties": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["status", "summary"],
+        "properties": {
+          "status": {"enum": ["completed", "partial", "blocked", "failed"]},
+          "summary": {"type": "string", "minLength": 1},
+          "claims": {"type": "array"},
+          "discovered_candidates": {"type": "array"},
+          "recommended_actions": {"type": "array"},
+          "errors": {"type": "array"}
+        }
+      }
+    },
+    "expected": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["discovered_candidates", "finding_candidate_subjects"],
+      "properties": {
+        "discovered_candidates": {"type": "array", "items": {"type": "string"}},
+        "finding_candidate_subjects": {"type": "array", "items": {"type": "string"}}
+      }
+    }
+  }
+}

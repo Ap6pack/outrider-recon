@@ -136,7 +136,8 @@ Capability areas include:
 - identity fabric, SSO, SaaS, cloud, CI/CD, and package-registry signals;
 - secrets, public-code, dorking, breach, and people intelligence;
 - public disclosure research and bug-bounty technique references;
-- evidence-backed analysis, scoring, finding cards, handoff notes, and reports.
+- evidence-backed analysis, scoring, finding cards, handoff notes, and reports;
+- a governed agent-to-agent loop with an independent advisory verifier and a deterministic benchmark harness, all inside the scope/approval/evidence controls.
 
 See [Capabilities](docs/capabilities.md) for the complete inventory and [Coverage](docs/coverage.md) for practitioner coverage by engagement phase.
 

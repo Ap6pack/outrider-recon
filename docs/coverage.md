@@ -72,6 +72,8 @@ Prompts #33–40 added in v2.3 cover crt.sh fallback chain, bulk ASN lookup, pre
 
 Smoke-test scores are **Claude grading itself on tests Claude designed**. Useful for tracking gaps but not an objective measure of real-world coverage. A real practitioner would find more gaps. Treat it as "the skills now answer the obvious questions"; non-obvious questions may need a follow-on iteration.
 
+The deterministic benchmark harness (`outrider benchmark run`) complements these self-graded prompts with *reproducible* metrics — schema-conformance rate, discovered-candidate precision/recall, and finding-candidate coverage — measured by driving the governed loop over a synthetic ground-truth corpus with no model and no network. It measures conformance and coverage against fixtures, not live-model recon quality, so it is a regression signal rather than an accuracy claim; the corpus starts minimal and is expected to grow.
+
 ## Practitioner-review gaps (all addressed)
 
 A senior offensive consultant reviewed v2.3 and, staying within OSINT scope, flagged ten gaps. All ten have since been closed — kept here as a record of what was added and where it landed:

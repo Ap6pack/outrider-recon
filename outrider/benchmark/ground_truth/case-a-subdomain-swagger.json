@@ -1,0 +1,46 @@
+{
+  "schema_version": 1,
+  "contract_type": "ground_truth",
+  "case_id": "case-a-subdomain-swagger",
+  "description": "Passive subdomain discovery surfaces an exposed API schema as a finding candidate. Intrusive follow-up is handoff-only and must not be dispatched.",
+  "target": "example.com",
+  "in_scope": ["example.com", "*.example.com"],
+  "out_of_scope": [],
+  "evidence": [
+    {"ref": "e1", "path": "artifacts/ct.txt", "content": "crt.sh rows: api.example.com admin.example.com", "artifact_type": "text"}
+  ],
+  "seeds": [
+    {"skill": "offensive-osint", "action_type": "local_analysis", "objective": "seed recon from certificate transparency"}
+  ],
+  "scripts": {
+    "*": {
+      "status": "completed",
+      "summary": "root analysis over certificate transparency observations",
+      "claims": [
+        {"classification": "observation", "subject": "example.com", "statement": "root domain observed in CT logs", "confidence": "high", "suggested_severity": null, "evidence": ["e1"]}
+      ],
+      "discovered_candidates": [
+        {"candidate": "api.example.com", "relationship": "subdomain", "source_evidence": ["e1"]},
+        {"candidate": "admin.example.com", "relationship": "subdomain", "source_evidence": ["e1"]}
+      ],
+      "recommended_actions": [
+        {"action_type": "public_source_lookup", "candidate": "api.example.com", "priority": "medium", "reason": "enumerate the API host from public sources"}
+      ]
+    },
+    "api.example.com": {
+      "status": "completed",
+      "summary": "public-source enumeration of the API host",
+      "claims": [
+        {"classification": "finding_candidate", "subject": "api.example.com", "statement": "unauthenticated OpenAPI schema exposed at /openapi.json", "confidence": "high", "suggested_severity": "high", "evidence": ["e1"]}
+      ],
+      "discovered_candidates": [],
+      "recommended_actions": [
+        {"action_type": "intrusive_validation", "candidate": "api.example.com", "priority": "high", "reason": "confirm exploitability of the exposed schema"}
+      ]
+    }
+  },
+  "expected": {
+    "discovered_candidates": ["api.example.com", "admin.example.com"],
+    "finding_candidate_subjects": ["api.example.com"]
+  }
+}

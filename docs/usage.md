@@ -109,6 +109,33 @@ Claude: [pulls osint-methodology §14 exec summary template + §14 risk translat
          statements per finding]
 ```
 
+## Governed loop, verification, and benchmark
+
+These deterministic CLI verbs operate over an existing run folder and its
+request/result contracts. None of them promote findings; promotion stays the
+human `outrider finding promote` workflow.
+
+```bash
+# Inspect the contract inventory the loop works over.
+outrider orchestrate status runs/example.com --json
+
+# Run the governed loop. It advances the run by creating each hop through the
+# existing contract, auto-dispatching only local/passive actions, requiring a
+# standing approval for active enumeration, and treating intrusive actions as
+# handoff-only. Live execution is off by default and requires --live plus
+# provider safeguard enrollment.
+outrider orchestrate run runs/example.com --actor authorized-operator --live
+
+# Produce advisory verdicts (supported / refuted / insufficient_evidence) for
+# the run's finding candidates. Verdicts never promote and never gate promotion.
+outrider verify candidates runs/example.com --json
+
+# Score the governed loop against the packaged synthetic ground-truth corpus.
+# Fully deterministic: no model, no network.
+outrider benchmark run --tally-only
+outrider benchmark analyze-misses --json
+```
+
 ## Tips
 
 ### Ask for skill references in the response
