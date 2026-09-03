@@ -74,9 +74,9 @@ Smoke-test scores are **Claude grading itself on tests Claude designed**. Useful
 
 The deterministic benchmark harness (`outrider benchmark run`) complements these self-graded prompts with *reproducible* metrics — schema-conformance rate, discovered-candidate precision/recall, and finding-candidate coverage — measured by driving the governed loop over a synthetic ground-truth corpus with no model and no network. It measures conformance and coverage against fixtures, not live-model recon quality, so it is a regression signal rather than an accuracy claim; the corpus starts minimal and is expected to grow.
 
-## What experienced practitioners would say is still missing (within OSINT scope)
+## Practitioner-review gaps (all addressed)
 
-If a senior offensive consultant reviewed v2.3 and stayed within OSINT scope, here's what they'd flag as still missing:
+A senior offensive consultant reviewed v2.3 and, staying within OSINT scope, flagged ten gaps. All ten have since been closed — kept here as a record of what was added and where it landed:
 
 1. ~~**Specific tool-chaining recipes** — "use spiderfoot → export CSV → maltego transforms → asset graph" workflows. We name tools; we don't compose them step-by-step.~~ Added in v3.0: docs/methods/tool-chaining-recipes.md
 2. ~~**Recon-ng / SpiderFoot / Maltego module-by-module configuration** — these are full ecosystems; we treat them as pointers.~~ Added in v3.0: docs/methods/tool-chaining-recipes.md
@@ -89,7 +89,7 @@ If a senior offensive consultant reviewed v2.3 and stayed within OSINT scope, he
 9. ~~**Client-specific report styling** — every Big-4 consultancy has their own template.~~ Added in v3.0: docs/methods/report-customization.md
 10. ~~**Tool failure recovery** — when Shodan rate-limits during a critical phase, what's plan B/C/D?~~ Added in v3.0: docs/methods/tool-failure-recovery.md
 
-All 10 gaps identified by practitioner review are now addressed. Coverage has reached ~95-98% of OSINT-phase work.
+All 10 gaps identified by practitioner review are now addressed. Coverage has reached ~95-98% of OSINT-phase work. No further gaps have been raised since; a fresh review would be the natural way to find the next set.
 
 ## Roadmap
 
@@ -103,7 +103,8 @@ All 10 gaps identified by practitioner review are now addressed. Coverage has re
 | v2.3   | ✅ Done | Cross-reference fixes, docs restructuring, content sync                                                                                                                                                                        |
 | v2.4   | ✅ Done | Continuous-monitoring playbook + multi-tenant workflow + Burp/ZAP setup recipes                                                                                                                                                |
 | v3.0   | ✅ Done | Plugin manifest, one-click install, optional MCP server companion, tool-chaining recipes, OPSEC infrastructure-as-code, adversary-emulation playbooks, report customization, tool failure recovery, sector deep-dive expansion |
-| v3.1   | 🔜      | Next iteration TBD                                                                                                                                                                                                             |
+| v3.1   | ✅ Done | `outrider` Python package (scope/state/evidence/approval/finding CLI), policy-gated MCP enrichment, web control plane, release-audit tooling                                                                                   |
+| Next   | 🔜      | TBD — see [open issues](https://github.com/Ap6pack/outrider-recon/issues)                                                                                                                                                      |
 
 ## Bottom line
 

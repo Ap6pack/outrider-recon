@@ -9,14 +9,9 @@
 
 > **Warning:** Never paste PII, sensitive IOCs, or unique pivots into cloud LLMs.
 
-| Tool                                         | Strength                                                     |
-| -------------------------------------------- | ------------------------------------------------------------ |
-| [ChatGPT](https://chat.openai.com/) (paid)   | Log parsing, dataset analysis, Code Interpreter for CSV/JSON |
-| [Claude](https://claude.ai/) (paid)          | 200K-token context for large doc dumps + report synthesis    |
-| [Gemini](https://gemini.google.com/)         | Long-context; Deep Research mode with citations              |
-| [Perplexity Pro](https://www.perplexity.ai/) | Real-time web search + reasoning                             |
+General-purpose assistants are useful for log parsing, large-dump synthesis, and report drafting; pick whichever you already have. What matters for OSINT is the handling rule above, not the vendor.
 
-**Local / privacy-preserving:** [Ollama](https://ollama.com/), [LM Studio](https://lmstudio.ai/).
+**Local / privacy-preserving** — use these for anything sensitive: [Ollama](https://ollama.com/), [LM Studio](https://lmstudio.ai/).
 
 ---
 

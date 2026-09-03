@@ -1,24 +1,7 @@
 ---
 name: cloud-and-infra
 description: "Cloud-native service fingerprints, Kubernetes/container exposure, CI/CD platform exposure, TLS deep audit, and favicon hash pivot for authorized infrastructure recon."
-version: 1.1.0
-triggers:
-  - cloud native fingerprint
-  - Lambda function URL
-  - Cloud Run
-  - kubernetes exposure
-  - kubelet
-  - etcd
-  - CI CD exposure
-  - Jenkins recon
-  - GitLab self-hosted
-  - GitHub Actions secrets
-  - TLS deep audit
-  - JA3 JA4
-  - container registry
-  - Docker API
-  - Argo CD
-  - favicon hash
+when_to_use: "Use for cloud-native service fingerprinting (Lambda function URLs, Cloud Run), Kubernetes/container exposure (kubelet, etcd, Docker API, container registries), CI/CD platform exposure (Jenkins, self-hosted GitLab, GitHub Actions secrets, Argo CD), TLS deep audits (JA3/JA4), or favicon-hash pivoting."
 ---
 
 # Cloud & Infrastructure OSINT

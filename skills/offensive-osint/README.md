@@ -31,9 +31,9 @@ The "what to reach for" operational arsenal for external red-team OSINT and bug-
 
 ## When this skill triggers
 
-Auto-triggers on prompts containing phrases like `external recon`, `bug bounty`, `attack surface management`, `reconnaissance`, `asset discovery`, `start recon`, `new target`, and others listed in the SKILL.md frontmatter.
+Auto-loads on prompts about `external recon`, `bug bounty`, `attack surface management`, `reconnaissance`, `asset discovery`, `start recon`, `new target`, and similar — the full set is declared in the SKILL.md `when_to_use` frontmatter.
 
-The companion `osint-methodology` skill shares several triggers and is co-loaded at session start.
+The companion `osint-methodology` skill has overlapping `when_to_use` coverage and is loaded alongside this router for recon work.
 
 ## Loading
 

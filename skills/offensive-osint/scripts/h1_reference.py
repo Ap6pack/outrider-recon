@@ -211,10 +211,19 @@ def fetch_all_pages(args) -> list[dict]:
     return all_nodes
 
 
+def _compile_regex(pattern: str, label: str) -> "re.Pattern":
+    """Compile a user-supplied regex, exiting cleanly on a bad pattern."""
+    try:
+        return re.compile(pattern, re.IGNORECASE)
+    except re.error as e:
+        print(f"[!] Invalid {label} regex {pattern!r}: {e}", file=sys.stderr)
+        sys.exit(2)
+
+
 def apply_client_filters(nodes: list[dict], args) -> list[dict]:
-    keyword_pattern = re.compile(args.query, re.IGNORECASE) if args.query else None
+    keyword_pattern = _compile_regex(args.query, "--query") if args.query else None
     severity_set = set(s.lower() for s in args.severity) if args.severity else None
-    cwe_patterns = [re.compile(c, re.IGNORECASE) for c in args.cwe] if args.cwe else []
+    cwe_patterns = [_compile_regex(c, "--cwe") for c in args.cwe] if args.cwe else []
 
     results = []
     for node in nodes:

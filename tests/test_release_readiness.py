@@ -263,14 +263,17 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn("grep 'outrider-recon-bundle-3.1.0.zip' SHA256SUMS | sha256sum -c -", combined)
         self.assertIn("grep -E 'outrider_recon-0.3.0-py3-none-any.whl|outrider_recon-0.3.0.tar.gz' SHA256SUMS | sha256sum -c -", combined)
 
-    def test_skill_and_schema_version_preservation(self):
-        expected={
-            'analysis-and-reporting': '1.0.0', 'cloud-and-infra': '1.1.0', 'identity-fabric': '1.0.0',
-            'offensive-osint': '2.1.1', 'osint-methodology': '2.2', 'people-breach-intel': '1.0.0',
-            'post-discovery': '1.0.0', 'recon-asset-discovery': '1.0.0', 'report-template': '1.0.0',
-            'secrets-and-dorks': '1.0.0', 'web-surface': '1.0.0'}
-        self.assertEqual(release_audit.Audit(ROOT).versions()['skills'], expected)
-        self.assertNotIn('_shared', expected)
+    def test_skill_inventory_and_schema_version_preservation(self):
+        # Skills are versioned as part of the plugin/content release, not per-file
+        # frontmatter, so the audit tracks the shipped skill inventory (names/count).
+        expected=[
+            'analysis-and-reporting', 'cloud-and-infra', 'identity-fabric', 'offensive-osint',
+            'osint-methodology', 'people-breach-intel', 'post-discovery', 'recon-asset-discovery',
+            'report-template', 'secrets-and-dorks', 'web-surface']
+        skills=release_audit.Audit(ROOT).versions()['skills']
+        self.assertEqual(skills, expected)
+        self.assertEqual(len(skills), 11)
+        self.assertNotIn('_shared', skills)
         self.assertEqual(set(release_audit.Audit(ROOT).versions()['schemas'].values()), {1})
 
     def test_audit_is_read_only_and_no_network(self):

@@ -1,60 +1,7 @@
 ---
 name: osint-methodology
 description: "Comprehensive OSINT methodology for external red-team operations and authorized attack-surface assessments. Covers the 5-stage recon pipeline, asset-graph discipline, severity rubric, confidence upgrade workflows, time budgeting, identity-fabric mapping, breach×identity correlation, detectability tagging, detection-aware probing, WAF/CDN bypass, vulnerability prioritization, phishing infrastructure planning, bug bounty submission, and client deliverable templates. Use when planning or executing reconnaissance against authorized targets, mapping an organization's external attack surface, investigating a person/entity, or producing client deliverables."
-version: 2.2
-triggers:
-  - external recon
-  - external red team
-  - red team external
-  - attack surface management
-  - attack surface mapping
-  - ASM
-  - perimeter recon
-  - target reconnaissance
-  - bug bounty recon
-  - asset discovery
-  - footprint
-  - attack path
-  - identity fabric
-  - SSO discovery
-  - IdP fingerprinting
-  - tenant fingerprinting
-  - M365 enumeration
-  - Microsoft 365 recon
-  - API discovery
-  - GraphQL introspection
-  - mobile recon
-  - APK analysis
-  - cloud bucket enumeration
-  - breach correlation
-  - secret leak hunt
-  - origin discovery
-  - CDN bypass
-  - WAF bypass
-  - vulnerability prioritization
-  - CVE prioritization
-  - EPSS
-  - CISA KEV
-  - phishing infrastructure
-  - pretext development
-  - bug bounty submission
-  - responsible disclosure
-  - client report
-  - exec summary
-  - risk translation
-  - confidence upgrade
-  - time budget
-  - engagement profile
-  - asset triage
-  - detection-aware probing
-  - back-off strategy
-  - OSINT methodology
-  - open source intelligence
-  - target profiling
-  - OSINT workflow
-  - recon methodology
-  - threat actor investigation
-  - attribution
+when_to_use: "Use when planning or executing reconnaissance against authorized targets, mapping an org's external attack surface (perimeter recon, footprinting, asset triage), investigating a person/entity or threat actor (attribution, target profiling), correlating breach×identity data, doing detection-aware probing or WAF/CDN/origin-discovery bypass, prioritizing vulnerabilities (EPSS, CISA KEV), planning phishing infrastructure, or producing bug-bounty submissions and client deliverables."
 ---
 
 # OSINT Methodology — External Red-Team Edition
@@ -187,6 +134,14 @@ For every artifact: **URL + UTC timestamp + SHA-256 + tool version + run_id**.
 - Do NOT use a credential validator for anything except read-only verification.
 - Do NOT mirror-image the threat actor. Separate capability from intent and sponsorship.
 - Do NOT escalate when you hit active defenses — back off and document (§6.4).
+- Do NOT promote a snippet-only dork hit to CONFIRMED. It stays TENTATIVE until visited (§2).
+- Do NOT read absence from CT logs as proof of absence — lag runs minutes to hours.
+- Do NOT cite a Wayback capture as "the site at time T". Captures are best-effort and often partial.
+- Do NOT let untyped strings into the asset graph. Every discovery is a typed asset (§8.1).
+- Do NOT skip the scope check when in doubt — ask once (§1).
+- Do NOT record local time. UTC only, or cross-source correlation breaks.
+- Do NOT leave a TENTATIVE finding without a documented upgrade path (§2.1).
+- Do NOT treat the exec summary as an afterthought. Plan deliverables at engagement start (§14).
 
 ---
 

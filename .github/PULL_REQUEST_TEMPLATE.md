@@ -38,7 +38,7 @@ Brief summary of what this PR changes.
 - [ ] My change is OSINT-only (no active exploitation, post-exploit, malware tradecraft).
 - [ ] I updated `CHANGELOG.md` under `[Unreleased]`.
 - [ ] I updated `docs/capabilities.md` (if I added a capability).
-- [ ] I added trigger phrases to the YAML frontmatter (if I added a new triggerable concept).
+- [ ] I extended the skill's `when_to_use` frontmatter (if I added a new triggerable concept).
 - [ ] I added a self-test prompt to `tests/smoke-test-prompts.md` (if I added a new capability).
 - [ ] Severity / detectability / confidence tags are consistent with existing rubrics.
 - [ ] I tested locally (installed the modified skill in Claude Code and verified the relevant prompts).

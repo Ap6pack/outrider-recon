@@ -44,15 +44,16 @@ jobs:
           except yaml.YAMLError as e:
               print(f"  FAIL: $skill has invalid YAML frontmatter: {e}")
               sys.exit(1)
-          required = ["name", "description", "version", "triggers"]
+          required = ["name", "description", "when_to_use"]
           for r in required:
               if r not in data:
                   print(f"  FAIL: $skill missing required field: {r}")
                   sys.exit(1)
-          if not isinstance(data["triggers"], list) or len(data["triggers"]) < 5:
-              print(f"  FAIL: $skill needs at least 5 trigger phrases")
+          combined = len(str(data["description"])) + len(str(data["when_to_use"]))
+          if combined > 1536:
+              print(f"  FAIL: $skill description + when_to_use is {combined} chars (Claude Code truncates the skill listing at 1536)")
               sys.exit(1)
-          print(f"  OK: name={data['name']} version={data['version']} triggers={len(data['triggers'])}")
+          print(f"  OK: name={data['name']} description+when_to_use={combined} chars")
           EOF
           done
 
@@ -68,16 +69,23 @@ jobs:
         run: python3 -m py_compile skills/offensive-osint/scripts/secret_scan.py
       - name: Smoke test
         run: |
-          # Should detect AKIA + ghp + JWT
-          echo 'AKIAIOSFODNN7EXAMPLE
-          ghp_abc1234567890123456789012345678901234
-          eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c' | \
+          # A GitHub classic PAT is ghp_ followed by exactly 36 characters.
+          # Build the fixture at runtime so no PAT-shaped literal is committed.
+          # The previous inline fixture had 37 characters, so GH_PAT_CLASSIC
+          # never matched and nothing asserted on it.
+          gh_fixture="ghp_$(printf 'a%.0s' {1..36})"
+
+          printf '%s\n' \
+            'AKIAIOSFODNN7EXAMPLE' \
+            "$gh_fixture" \
+            'eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIxIn0.SflKxwRJSMeKKF2QT4fwpMeJf36POk6yJV_adQssw5c' | \
             python3 skills/offensive-osint/scripts/secret_scan.py | \
             tee /tmp/output.jsonl
 
           # Verify expected hits
-          grep -q '"AWS_ACCESS_KEY"' /tmp/output.jsonl || (echo "FAIL: AWS key not detected"; exit 1)
-          grep -q '"JWT"' /tmp/output.jsonl || (echo "FAIL: JWT not detected"; exit 1)
+          for pattern in AWS_ACCESS_KEY GH_PAT_CLASSIC JWT; do
+            grep -q "\"$pattern\"" /tmp/output.jsonl || { echo "FAIL: $pattern not detected"; exit 1; }
+          done
           echo "OK: secret_scan.py smoke test passed"
 
   shellcheck:

@@ -1,34 +1,7 @@
 ---
 name: identity-fabric
 description: "Concrete endpoints, probes, and enumeration techniques for identity provider fingerprinting and auth surface mapping. Covers Microsoft Entra (Azure AD), Okta, ADFS, Google Workspace, generic OIDC (Keycloak/Auth0/Ping/OneLogin/Duo), SAML metadata, AWS account-ID extraction, Microsoft 365 deep enumeration (Teams/SharePoint/OneDrive/OAuth/Power Platform), GraphQL field-suggestion enumeration when introspection is disabled, and LinkedIn employee enumeration with role prioritization. Use when mapping an org's auth architecture, enumerating SSO/IdP surfaces, or building a target employee list."
-version: 1.0.0
-triggers:
-  - identity fabric
-  - SSO discovery
-  - IdP fingerprinting
-  - tenant fingerprinting
-  - okta enum
-  - entra enum
-  - azure AD enum
-  - ADFS enum
-  - SAML metadata
-  - Microsoft 365 deep
-  - Teams federation
-  - SharePoint enum
-  - OneDrive enum
-  - GraphQL field suggestion
-  - LinkedIn enumeration
-  - employee enumeration
-  - auth architecture
-  - OIDC discovery
-  - Keycloak enum
-  - Auth0 enum
-  - user enumeration
-  - getuserrealm
-  - GetCredentialType
-  - device code phishing
-  - Power Platform
-  - M365 OAuth
+when_to_use: "Use when fingerprinting SSO/IdP or tenants, enumerating Okta/Entra/Azure AD/ADFS users (getuserrealm, GetCredentialType), inspecting SAML metadata, running Microsoft 365 deep enumeration (Teams federation, SharePoint, OneDrive, OAuth, Power Platform), GraphQL field-suggestion enumeration, LinkedIn/employee enumeration, or planning device-code phishing."
 ---
 
 # Identity Fabric — Concrete Endpoints
