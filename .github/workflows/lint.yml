@@ -113,6 +113,8 @@ jobs:
         run: python -m compileall outrider tests mcp-server tools
       - name: Run complete unit test suite
         run: python -m unittest discover -s tests -p "test_*.py"
+      - name: Benchmark harness smoke (deterministic, no network)
+        run: python -m outrider benchmark run --tally-only
 
   web-control-tests:
     name: Web control-plane tests (3.12)
@@ -186,9 +188,11 @@ jobs:
               venv.EnvBuilder(with_pip=True).create(env)
               py = env / 'bin' / 'python'
               subprocess.check_call([py, '-m', 'pip', 'install', str(wheel)])
-              for args in [['outrider','--version'], ['outrider','--help'], ['outrider','init','--help'], ['outrider','show','--help'], ['outrider','scope-check','--help'], ['outrider','state','--help'], ['outrider','evidence','--help'], ['outrider','approval','--help'], ['outrider','action-check','--help'], ['outrider','contract','--help'], ['outrider','finding','--help'], ['outrider','web','--help']]:
+              for args in [['outrider','--version'], ['outrider','--help'], ['outrider','init','--help'], ['outrider','show','--help'], ['outrider','scope-check','--help'], ['outrider','state','--help'], ['outrider','evidence','--help'], ['outrider','approval','--help'], ['outrider','action-check','--help'], ['outrider','contract','--help'], ['outrider','finding','--help'], ['outrider','web','--help'], ['outrider','orchestrate','--help'], ['outrider','verify','--help'], ['outrider','benchmark','--help']]:
                   subprocess.check_call([env / 'bin' / args[0], *args[1:]])
-              subprocess.check_call([py, '-c', 'import outrider, outrider.cli; from outrider.skill_contract import list_known_skills; from outrider.package_resources import schema_json; assert len(list_known_skills()) == 11; assert schema_json("skill-request-v1.schema.json")["properties"]["schema_version"]["const"] == 1; import importlib.util; assert importlib.util.find_spec("fastapi") is None'])
+              # Proves the ground-truth corpus is packaged in the wheel and the loop runs offline.
+              subprocess.check_call([env / 'bin' / 'outrider', 'benchmark', 'run', '--tally-only'])
+              subprocess.check_call([py, '-c', 'import outrider, outrider.cli, outrider.orchestrator, outrider.verifier, outrider.benchmark; from outrider.skill_contract import list_known_skills; from outrider.package_resources import schema_json; assert len(list_known_skills()) == 11; assert schema_json("skill-request-v1.schema.json")["properties"]["schema_version"]["const"] == 1; import importlib.util; assert importlib.util.find_spec("fastapi") is None'])
           PY
       - name: Clean web wheel installation smoke test
         run: |

@@ -282,3 +282,57 @@ class WebFirstLauncherTests(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 cli.main(['init'])
             launch.assert_not_called()
+
+
+class LoopCliTests(unittest.TestCase):
+    CASE = Path(__file__).resolve().parents[1] / "outrider" / "benchmark" / "ground_truth" / "case-a-subdomain-swagger.json"
+
+    def run_cli(self, *argv):
+        stdout = StringIO()
+        with patch.object(sys, "argv", ["outrider", *argv]), redirect_stdout(stdout):
+            status = cli.main()
+        return status, stdout.getvalue()
+
+    def _build_run(self, td):
+        from outrider.benchmark.corpus import load_case
+        from outrider.benchmark.run import run_case
+        run_dir, _ = run_case(load_case(self.CASE), td)
+        return str(run_dir)
+
+    def test_orchestrate_run_requires_live(self):
+        with tempfile.TemporaryDirectory() as td:
+            run = self._build_run(td)
+            status, out = self.run_cli("orchestrate", "run", run, "--actor", "op")
+            self.assertEqual(status, 2)
+            self.assertIn("requires --live", out)
+
+    def test_orchestrate_status_json(self):
+        with tempfile.TemporaryDirectory() as td:
+            run = self._build_run(td)
+            status, out = self.run_cli("orchestrate", "status", run, "--json")
+            self.assertEqual(status, 0)
+            payload = json.loads(out)
+            self.assertGreaterEqual(payload["request_count"], 1)
+            self.assertEqual(payload["invalid_result_count"], 0)
+
+    def test_verify_candidates_json(self):
+        with tempfile.TemporaryDirectory() as td:
+            run = self._build_run(td)
+            status, out = self.run_cli("verify", "candidates", run, "--json")
+            self.assertEqual(status, 0)
+            payload = json.loads(out)
+            self.assertGreaterEqual(payload["summary"]["verdict_count"], 1)
+            self.assertTrue(any(v["subject"] == "api.example.com" for v in payload["verdicts"]))
+
+    def test_benchmark_run_tally_only_json(self):
+        status, out = self.run_cli("benchmark", "run", "--tally-only", "--json")
+        self.assertEqual(status, 0)
+        totals = json.loads(out)["totals"]
+        self.assertEqual(totals["promoted_findings_total"], 0)
+        self.assertEqual(totals["schema_validity_rate"], 1.0)
+
+    def test_benchmark_analyze_misses_json(self):
+        status, out = self.run_cli("benchmark", "analyze-misses", "--json")
+        self.assertEqual(status, 0)
+        misses = json.loads(out)
+        self.assertTrue(all(m["missing_discovered"] == [] for m in misses))

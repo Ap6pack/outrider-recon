@@ -13,6 +13,13 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 - Added deterministic guided engagement progress and server-derived next actions.
 - Added explicit beginner scope confirmation and guarded forward workflow actions.
+- Added a governed agent-to-agent orchestrator loop (`outrider orchestrate run|status`) that advances a run by creating each hop through the existing request/result contract, re-evaluating scope, approval, and workflow state on every hop. It auto-dispatches only local and passive actions, requires a standing approval for active enumeration, treats intrusive and prohibited actions as handoff-only, is bounded and resumable, and never promotes findings. Skill execution is delegated to an injected executor; live execution is off by default. (ADR 0017)
+- Added an independent advisory verifier (`outrider verify candidates`) that attempts to falsify each finding candidate against its cited evidence and current scope, recording `supported`, `refuted`, or `insufficient_evidence` verdicts under `contracts/verification/`. Verdicts never promote, never delete, and never gate promotion eligibility. (ADR 0018)
+- Added a deterministic benchmark harness (`outrider benchmark run|analyze-misses`) that drives the loop over a synthetic ground-truth corpus with a stub executor and scores schema conformance, discovered-candidate precision/recall, and finding-candidate coverage. Metrics are reproducible with no model or network; a shipped corpus and the `ground-truth-v1` and `verification-v1` contracts back it. (ADR 0019)
+
+### Changed
+
+- Packaged the benchmark ground-truth corpus and the new contract schemas so the loop and harness work from an installed wheel; the release-readiness smoke now exercises the new subcommands and runs the corpus offline.
 
 ### Fixed
 

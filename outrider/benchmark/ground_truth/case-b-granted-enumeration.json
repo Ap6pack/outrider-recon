@@ -1,0 +1,47 @@
+{
+  "schema_version": 1,
+  "contract_type": "ground_truth",
+  "case_id": "case-b-granted-enumeration",
+  "description": "A standing approval lets the loop dispatch an ACTIVE enumeration hop, which yields a finding candidate. An out-of-scope discovery is surfaced as an observation but never pursued.",
+  "target": "acme.test",
+  "in_scope": ["acme.test", "*.acme.test"],
+  "out_of_scope": [],
+  "grants": [
+    {"action_type": "target_enumeration", "candidate": "portal.acme.test"}
+  ],
+  "evidence": [
+    {"ref": "e1", "path": "artifacts/scan.txt", "content": "surface rows: portal.acme.test and an unrelated evil.example reference", "artifact_type": "text"}
+  ],
+  "seeds": [
+    {"skill": "offensive-osint", "action_type": "local_analysis", "objective": "seed recon from surface scan"}
+  ],
+  "scripts": {
+    "*": {
+      "status": "completed",
+      "summary": "root analysis over surface scan",
+      "claims": [
+        {"classification": "observation", "subject": "acme.test", "statement": "portal host observed", "confidence": "high", "suggested_severity": null, "evidence": ["e1"]}
+      ],
+      "discovered_candidates": [
+        {"candidate": "portal.acme.test", "relationship": "subdomain", "source_evidence": ["e1"]},
+        {"candidate": "evil.example", "relationship": "reference", "source_evidence": ["e1"]}
+      ],
+      "recommended_actions": [
+        {"action_type": "target_enumeration", "candidate": "portal.acme.test", "priority": "high", "reason": "enumerate the approved portal host"}
+      ]
+    },
+    "portal.acme.test": {
+      "status": "completed",
+      "summary": "authorized enumeration of the portal host",
+      "claims": [
+        {"classification": "finding_candidate", "subject": "portal.acme.test", "statement": "directory listing enabled on /backups", "confidence": "high", "suggested_severity": "medium", "evidence": ["e1"]}
+      ],
+      "discovered_candidates": [],
+      "recommended_actions": []
+    }
+  },
+  "expected": {
+    "discovered_candidates": ["portal.acme.test", "evil.example"],
+    "finding_candidate_subjects": ["portal.acme.test"]
+  }
+}

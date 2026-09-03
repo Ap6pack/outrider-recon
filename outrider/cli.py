@@ -49,6 +49,14 @@ from outrider.state import (
     load_state,
     transition_state,
 )
+from outrider.orchestrator import (
+    OrchestrationBounds,
+    SeedRequest,
+    orchestration_status,
+    run_orchestration,
+)
+from outrider.executors import ClaudeSubprocessExecutor, ExecutorError
+from outrider.verifier import VerifierError, verification_summary, verify_candidates
 
 
 LOOPBACK_WEB_HOSTS = {"127.0.0.1", "localhost", "::1"}
@@ -755,6 +763,128 @@ def finding_verify(args: argparse.Namespace) -> int:
         print(f"ERROR: {exc}")
         return 2
 
+def _default_corpus_dir() -> str:
+    import outrider.benchmark as benchmark_pkg
+    return str(Path(benchmark_pkg.__file__).resolve().parent / "ground_truth")
+
+
+def orchestrate_run(args: argparse.Namespace) -> int:
+    if not args.live:
+        print("ERROR: live orchestration requires --live and provider safeguard enrollment.")
+        print("The governed loop dispatches skills through an external agent runtime;")
+        print("re-run with --live once Anthropic Cyber Verification enrollment is in place.")
+        return 2
+    executor = ClaudeSubprocessExecutor(enabled=True, skills_dir=args.skills_dir, model=args.model)
+    seeds = [SeedRequest(
+        skill=args.seed_skill, action_type=args.seed_action,
+        objective=args.seed_objective, candidate=args.seed_candidate,
+    )]
+    bounds = OrchestrationBounds(
+        max_hops=args.max_hops, max_requests=args.max_requests,
+        max_wall_clock_seconds=args.max_seconds,
+    )
+    try:
+        report = run_orchestration(
+            args.run_dir, executor=executor, actor=args.actor, seeds=seeds,
+            route_skill=args.route_skill, bounds=bounds,
+        )
+    except (StateValidationError, SkillContractValidationError, ExecutorError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    if args.json:
+        print(json.dumps(report.to_dict(), sort_keys=True))
+    else:
+        print(f"Stop reason: {report.stop_reason}")
+        print(f"Hops: {report.hops}")
+        print(f"Requests created: {report.requests_created}")
+        print(f"Valid results: {report.results_valid}")
+        print(f"Invalid results: {report.results_invalid}")
+        print(f"Candidates discovered: {report.candidates_discovered}")
+        print(f"Deferred (handoff/blocked): {len(report.deferred)}")
+    return 0
+
+
+def orchestrate_status(args: argparse.Namespace) -> int:
+    try:
+        status = orchestration_status(args.run_dir)
+    except StateValidationError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    if args.json:
+        print(json.dumps(status, sort_keys=True))
+    else:
+        for key, value in status.items():
+            print(f"{key}: {value}")
+    return 0
+
+
+def verify_candidates_cmd(args: argparse.Namespace) -> int:
+    try:
+        verdicts = verify_candidates(args.run_dir, actor=args.actor)
+    except (StateValidationError, VerifierError) as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    summary = verification_summary(args.run_dir)
+    if args.json:
+        print(json.dumps({"summary": summary, "verdicts": [v.to_dict() for v in verdicts]}, sort_keys=True))
+    else:
+        print(f"Verdicts: {summary['verdict_count']}")
+        for label, count in summary["counts"].items():
+            print(f"  {label}: {count}")
+        for verdict in verdicts:
+            print(f"  - {verdict.subject} [{verdict.verdict}] {verdict.rationale}")
+    return 0
+
+
+def benchmark_run(args: argparse.Namespace) -> int:
+    from outrider.benchmark.run import run_benchmark
+    from outrider.benchmark.corpus import CorpusError
+    import tempfile
+    corpus = args.corpus or _default_corpus_dir()
+    try:
+        if args.work_dir:
+            result = run_benchmark(corpus, args.work_dir)
+        else:
+            with tempfile.TemporaryDirectory() as td:
+                result = run_benchmark(corpus, td)
+    except CorpusError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    payload = {"totals": result["totals"]} if args.tally_only else result
+    if args.json:
+        print(json.dumps(payload, sort_keys=True))
+    else:
+        totals = result["totals"]
+        for key, value in totals.items():
+            print(f"{key}: {value}")
+        if not args.tally_only:
+            for case in result["cases"]:
+                print(f"  - {case['case_id']}: recall={case['discovered_recall']} coverage={case['finding_candidate_coverage']} promoted={case['promoted_findings']}")
+    return 0
+
+
+def benchmark_analyze(args: argparse.Namespace) -> int:
+    from outrider.benchmark.run import analyze_misses
+    from outrider.benchmark.corpus import CorpusError
+    import tempfile
+    corpus = args.corpus or _default_corpus_dir()
+    try:
+        with tempfile.TemporaryDirectory() as td:
+            misses = analyze_misses(corpus, td)
+    except CorpusError as exc:
+        print(f"ERROR: {exc}")
+        return 2
+    if args.json:
+        print(json.dumps(misses, sort_keys=True))
+    else:
+        for entry in misses:
+            print(f"{entry['case_id']}:")
+            print(f"  missing discovered: {entry['missing_discovered'] or 'none'}")
+            print(f"  missing finding subjects: {entry['missing_finding_subjects'] or 'none'}")
+            print(f"  unexpected discovered: {entry['unexpected_discovered'] or 'none'}")
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="outrider",
@@ -997,6 +1127,50 @@ def build_parser() -> argparse.ArgumentParser:
     contract_res_validate.add_argument("result_file")
     contract_res_validate.add_argument("--json", action="store_true")
     contract_res_validate.set_defaults(func=contract_result_validate)
+
+    orchestrate_parser = subcommands.add_parser("orchestrate", help="Drive the governed agent-to-agent loop over a run.")
+    orchestrate_sub = orchestrate_parser.add_subparsers(dest="orchestrate_command", required=True)
+    orchestrate_run_parser = orchestrate_sub.add_parser("run", help="Run the governed loop (requires --live and provider safeguard enrollment).")
+    orchestrate_run_parser.add_argument("run_dir")
+    orchestrate_run_parser.add_argument("--actor", required=True)
+    orchestrate_run_parser.add_argument("--seed-skill", default="offensive-osint")
+    orchestrate_run_parser.add_argument("--seed-action", default="local_analysis")
+    orchestrate_run_parser.add_argument("--seed-objective", default="seed governed recon")
+    orchestrate_run_parser.add_argument("--seed-candidate", default=None)
+    orchestrate_run_parser.add_argument("--route-skill", default="offensive-osint")
+    orchestrate_run_parser.add_argument("--max-hops", type=int, default=25)
+    orchestrate_run_parser.add_argument("--max-requests", type=int, default=50)
+    orchestrate_run_parser.add_argument("--max-seconds", type=float, default=300.0)
+    orchestrate_run_parser.add_argument("--live", action="store_true", help="Enable the live agent executor. Off by default.")
+    orchestrate_run_parser.add_argument("--model", default="opus")
+    orchestrate_run_parser.add_argument("--skills-dir", default=str(Path.home() / ".claude" / "skills"))
+    orchestrate_run_parser.add_argument("--json", action="store_true")
+    orchestrate_run_parser.set_defaults(func=orchestrate_run)
+    orchestrate_status_parser = orchestrate_sub.add_parser("status", help="Show orchestration contract inventory for a run.")
+    orchestrate_status_parser.add_argument("run_dir")
+    orchestrate_status_parser.add_argument("--json", action="store_true")
+    orchestrate_status_parser.set_defaults(func=orchestrate_status)
+
+    verify_parser = subcommands.add_parser("verify", help="Independent advisory verification of finding candidates.")
+    verify_sub = verify_parser.add_subparsers(dest="verify_command", required=True)
+    verify_candidates_parser = verify_sub.add_parser("candidates", help="Produce advisory verdicts for finding candidates.")
+    verify_candidates_parser.add_argument("run_dir")
+    verify_candidates_parser.add_argument("--actor", default="verifier")
+    verify_candidates_parser.add_argument("--json", action="store_true")
+    verify_candidates_parser.set_defaults(func=verify_candidates_cmd)
+
+    benchmark_parser = subcommands.add_parser("benchmark", help="Run the deterministic benchmark harness over the ground-truth corpus.")
+    benchmark_sub = benchmark_parser.add_subparsers(dest="benchmark_command", required=True)
+    benchmark_run_parser = benchmark_sub.add_parser("run", help="Build, run, judge and tally the corpus with the stub executor.")
+    benchmark_run_parser.add_argument("--corpus", default=None, help="Corpus directory. Defaults to the packaged ground_truth corpus.")
+    benchmark_run_parser.add_argument("--work-dir", default=None, help="Where to build run folders. Defaults to a temporary directory.")
+    benchmark_run_parser.add_argument("--tally-only", action="store_true", help="Print only aggregate totals.")
+    benchmark_run_parser.add_argument("--json", action="store_true")
+    benchmark_run_parser.set_defaults(func=benchmark_run)
+    benchmark_analyze_parser = benchmark_sub.add_parser("analyze-misses", help="Report expected-but-missing candidates per case.")
+    benchmark_analyze_parser.add_argument("--corpus", default=None)
+    benchmark_analyze_parser.add_argument("--json", action="store_true")
+    benchmark_analyze_parser.set_defaults(func=benchmark_analyze)
 
     return parser
 
