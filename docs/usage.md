@@ -136,6 +136,39 @@ outrider benchmark run --tally-only
 outrider benchmark analyze-misses --json
 ```
 
+## Bridging legacy targets and governed runs
+
+The governed control-plane lives under `runs/` (manifest, scope, append-only
+state, evidence ledger, contracts, findings) and is what the web portal lists.
+Freeform working folders under `targets/` — the older skill-driven workspace —
+are not governed runs. Two verbs bridge the two, and both operate only on the
+gitignored `runs/` and `targets/` trees.
+
+```bash
+# Import a legacy target workspace into a governed run. The old files are copied
+# into the run's artifacts/imported/ and registered as evidence (hash + size).
+# No notes are parsed and no findings are fabricated; you supply the governed
+# metadata and promote findings by hand. Re-running is idempotent.
+outrider import-target targets/example.com \
+  --target example.com --actor authorized-operator \
+  --authorization-reference PROGRAM-ROE-001 \
+  --scope example.com --scope '*.example.com'
+# Preview without writing anything:
+outrider import-target targets/example.com --target example.com \
+  --actor op --authorization-reference ROE --dry-run
+
+# Materialize a read-only working view of a governed run back into
+# targets/<name>/OUTRIDER-RUN.md (scope, progress, registered evidence, promoted
+# findings). It never overwrites your own files — only the generated file, and
+# only when it carries the generated banner (use --force to override).
+outrider materialize runs/example.com
+outrider materialize <run_id> --runs-root runs --targets-root targets
+```
+
+Recommended flow: `import-target` your legacy engagements once so they appear in
+the dashboard as governed runs, then treat `runs/` as the source of truth and
+`materialize` the `targets/` view as needed.
+
 ## Tips
 
 ### Ask for skill references in the response

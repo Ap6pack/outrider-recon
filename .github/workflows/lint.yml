@@ -198,7 +198,7 @@ jobs:
               venv.EnvBuilder(with_pip=True).create(env)
               py = env / 'bin' / 'python'
               subprocess.check_call([py, '-m', 'pip', 'install', str(wheel)])
-              for args in [['outrider','--version'], ['outrider','--help'], ['outrider','init','--help'], ['outrider','show','--help'], ['outrider','scope-check','--help'], ['outrider','state','--help'], ['outrider','evidence','--help'], ['outrider','approval','--help'], ['outrider','action-check','--help'], ['outrider','contract','--help'], ['outrider','finding','--help'], ['outrider','web','--help'], ['outrider','orchestrate','--help'], ['outrider','verify','--help'], ['outrider','benchmark','--help']]:
+              for args in [['outrider','--version'], ['outrider','--help'], ['outrider','init','--help'], ['outrider','show','--help'], ['outrider','scope-check','--help'], ['outrider','state','--help'], ['outrider','evidence','--help'], ['outrider','approval','--help'], ['outrider','action-check','--help'], ['outrider','contract','--help'], ['outrider','finding','--help'], ['outrider','web','--help'], ['outrider','orchestrate','--help'], ['outrider','verify','--help'], ['outrider','benchmark','--help'], ['outrider','import-target','--help'], ['outrider','materialize','--help']]:
                   subprocess.check_call([env / 'bin' / args[0], *args[1:]])
               # Proves the ground-truth corpus is packaged in the wheel and the loop runs offline.
               subprocess.check_call([env / 'bin' / 'outrider', 'benchmark', 'run', '--tally-only'])

@@ -1172,7 +1172,75 @@ def build_parser() -> argparse.ArgumentParser:
     benchmark_analyze_parser.add_argument("--json", action="store_true")
     benchmark_analyze_parser.set_defaults(func=benchmark_analyze)
 
+    import_target_parser = subcommands.add_parser("import-target", help="Import a legacy targets/<name> workspace into a governed run, registering its files as evidence.")
+    import_target_parser.add_argument("source_dir", help="Path to the legacy target workspace directory to import.")
+    import_target_parser.add_argument("--target", required=True, help="Engagement target domain for the governed run.")
+    import_target_parser.add_argument("--actor", required=True, help="Operator attribution (unauthenticated).")
+    import_target_parser.add_argument("--authorization-reference", dest="authorization_reference", required=True, help="Opaque authorization record (program URL, ticket, ROE reference).")
+    import_target_parser.add_argument("--scope", action="append", help="In-scope rule (repeatable). Defaults to the target.")
+    import_target_parser.add_argument("--exclude", action="append", help="Out-of-scope rule (repeatable).")
+    import_target_parser.add_argument("--output-dir", dest="output_dir", default="./runs", help="Runs root for the created run. Defaults to ./runs.")
+    import_target_parser.add_argument("--artifact-type", dest="artifact_type", default="legacy-import", help="Evidence artifact_type for imported files.")
+    import_target_parser.add_argument("--max-bytes", dest="max_bytes", type=int, default=100 * 1024 * 1024, help="Skip files larger than this many bytes. Default 100MB.")
+    import_target_parser.add_argument("--dry-run", dest="dry_run", action="store_true", help="List what would be imported without writing anything.")
+    import_target_parser.set_defaults(func=import_target)
+
+    materialize_parser = subcommands.add_parser("materialize", help="Render a targets/<name>/OUTRIDER-RUN.md working view from a governed run.")
+    materialize_parser.add_argument("run", help="Run directory path or run_id.")
+    materialize_parser.add_argument("--runs-root", dest="runs_root", default="./runs", help="Runs root used to resolve a run_id. Defaults to ./runs.")
+    materialize_parser.add_argument("--targets-root", dest="targets_root", default="./targets", help="Targets root to write into. Defaults to ./targets.")
+    materialize_parser.add_argument("--name", help="Target folder name. Defaults to the run's normalized target.")
+    materialize_parser.add_argument("--force", action="store_true", help="Overwrite an existing non-generated file of the same name.")
+    materialize_parser.set_defaults(func=materialize)
+
     return parser
+
+
+def import_target(args: argparse.Namespace) -> int:
+    from . import bridge
+    source = Path(args.source_dir)
+    if source.is_symlink() or not source.is_dir():
+        print(f"source dir not found or not a directory: {source}")
+        return 1
+    if not args.dry_run:
+        init_run(argparse.Namespace(
+            target=args.target, output_dir=args.output_dir,
+            scope=args.scope, exclude=args.exclude,
+            actor=args.actor, authorization_reference=args.authorization_reference,
+        ))
+    run_dir = Path(args.output_dir) / normalize_run_name(args.target)
+    summary = bridge.import_files_as_evidence(
+        run_dir, source, actor=args.actor,
+        artifact_type=args.artifact_type, max_bytes=args.max_bytes, dry_run=args.dry_run,
+    )
+    if args.dry_run:
+        print(f"[dry-run] {len(summary['planned'])} file(s) would be imported into {run_dir}/artifacts/{bridge.IMPORT_SUBDIR}:")
+        for rel in summary["planned"][:100]:
+            print(f"  {rel}")
+        if summary["skipped_large"]:
+            print(f"  ({summary['skipped_large']} file(s) skipped: over --max-bytes)")
+        return 0
+    print(f"Imported legacy target into governed run: {run_dir}")
+    print(f"  files copied: {summary['copied']}  evidence registered: {summary['registered']}  "
+          f"already registered: {summary['skipped_existing']}  skipped (too large): {summary['skipped_large']}")
+    print("Next: review scope and confirm authorization in the portal before proceeding.")
+    return 0
+
+
+def materialize(args: argparse.Namespace) -> int:
+    from . import bridge
+    run_dir = bridge.resolve_run_dir(args.run, args.runs_root)
+    if run_dir is None:
+        print(f"run not found (not a run directory, and no run_id match under {args.runs_root}): {args.run}")
+        return 1
+    name = args.name or bridge.default_run_name(run_dir)
+    try:
+        out = bridge.materialize_run(run_dir, args.targets_root, name=name, force=args.force)
+    except FileExistsError as exc:
+        print(str(exc))
+        return 1
+    print(f"Materialized {run_dir} -> {out}")
+    return 0
 
 
 def main(argv: list[str] | None = None) -> int:
