@@ -42,6 +42,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Restored the page's `<h1>` (visually hidden via `.sr-only`) that the new banner header had replaced with an image, fixing the document-outline and screen-reader regression.
 - Raised the contrast of form field-hint text (`label small`) so it meets WCAG AA on the dark theme.
 - Cleaned up the SVG brand banner: stripped an embedded ~7 KB C2PA provenance manifest (halving the file) and replaced fabricated security telemetry — invented finding counts, a "LIVE" indicator, and live agent-status dots — with a static capability list, so the masthead no longer displays fabricated findings in a tool whose findings are human-promoted.
+- Restored five web portal helper functions (`labelInput`, `badge`, `records`, `card`, `postTransition`) that were dropped from `app.js` during the web-first rewrite. They were called 77 times but defined nowhere, so every engagement view threw `ReferenceError: labelInput is not defined` the moment it built a form — the "Review Scope" / "Continue" actions and every advanced-workspace panel were unusable. `node --check` only validates syntax, so the runtime break shipped unnoticed.
+- Added a dependency-free Node runtime regression check (`tools/web_js_runtime_check.js`, run in CI and via `tests/test_web_js_runtime.py`) that loads `app.js` under a DOM stub and exercises the form render paths, so a called-but-undefined helper now fails CI instead of only breaking in the browser.
+- Hardened `web_view.list_runs` so a single run whose overview or workflow-guide computation raises degrades to an error card instead of aborting the whole listing (which returned an empty dashboard for every engagement). The workflow guide is now built once per run rather than twice.
 
 ### Removed
 

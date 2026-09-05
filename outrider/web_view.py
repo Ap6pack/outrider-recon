@@ -133,8 +133,15 @@ def list_runs(runs_root: str | Path) -> dict[str, Any]:
             dupes.add(manifest.run_id)
             continue
         seen[manifest.run_id] = child.name
-        overview = run_overview(child)
-        items.append({"run_id": manifest.run_id, "target": manifest.target, "created_at": manifest.created_at, "last_activity_at": overview.get("last_transition_at") or manifest.created_at, "current_state": overview.get("current_state"), "phase_label": overview.get("phase_label"), "engagement_platform": overview.get("engagement_platform"), "next_action": (build_workflow_guide(child, enrichment_enabled=False)["next_action"]["label"]), "next_action_id": (build_workflow_guide(child, enrichment_enabled=False)["next_action"]["id"]), "evidence_count": overview["evidence_summary"]["count"], "active_approval_count": overview["approval_summary"]["active_count"], "request_count": overview["contract_summary"]["request_count"], "result_count": overview["contract_summary"]["result_count"], "finding_count": overview["finding_summary"]["count"], "health": overview["health"]["status"], "summary": overview["health"]["summary"]})
+        # Compute the per-run overview/guide defensively: one run whose overview
+        # or guide raises must degrade to an error card, never abort the whole
+        # listing (which would blank the dashboard for every engagement).
+        try:
+            overview = run_overview(child)
+            guide = build_workflow_guide(child, enrichment_enabled=False)
+            items.append({"run_id": manifest.run_id, "target": manifest.target, "created_at": manifest.created_at, "last_activity_at": overview.get("last_transition_at") or manifest.created_at, "current_state": overview.get("current_state"), "phase_label": overview.get("phase_label"), "engagement_platform": overview.get("engagement_platform"), "next_action": guide["next_action"]["label"], "next_action_id": guide["next_action"]["id"], "evidence_count": overview["evidence_summary"]["count"], "active_approval_count": overview["approval_summary"]["active_count"], "request_count": overview["contract_summary"]["request_count"], "result_count": overview["contract_summary"]["result_count"], "finding_count": overview["finding_summary"]["count"], "health": overview["health"]["status"], "summary": overview["health"]["summary"]})
+        except Exception as exc:  # noqa: BLE001 - degrade one run, keep the rest listable
+            items.append({"run_id": manifest.run_id, "directory_name": child.name, "target": manifest.target, "created_at": manifest.created_at, "current_state": None, "evidence_count": 0, "active_approval_count": 0, "request_count": 0, "result_count": 0, "finding_count": 0, "health": "error", "summary": _clean(exc)})
     if dupes:
         for run_id in sorted(dupes):
             items = [i for i in items if i.get("run_id") != run_id]

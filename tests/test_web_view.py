@@ -66,6 +66,25 @@ class WebViewTests(unittest.TestCase):
             transition_state(run,'scoped','authorized-operator')
             sv=web_view.view_for_run_id(root,rid,'state'); self.assertEqual(sv['current_state'],'scoped'); self.assertEqual([t['new_state'] for t in sv['allowed_transitions']], ['cancelled','collecting'])
 
+    def test_one_run_overview_failure_degrades_that_run_only(self):
+        # A single run whose overview computation raises must not blank the whole
+        # dashboard: it degrades to an error card while the others still list.
+        with tempfile.TemporaryDirectory() as td:
+            good=make_run(td); populate(good)
+            make_run(td,'example.com-two')
+            real=web_view.run_overview
+            def flaky(child,*a,**k):
+                if Path(child).name=='example.com-two': raise RuntimeError('overview boom')
+                return real(child,*a,**k)
+            with patch.object(web_view,'run_overview',side_effect=flaky):
+                data=web_view.list_runs(td)
+            self.assertEqual(data['total'],2)
+            errs=[i for i in data['runs'] if i['health']=='error']
+            oks=[i for i in data['runs'] if i['health']!='error']
+            self.assertEqual([i['directory_name'] for i in errs],['example.com-two'])
+            self.assertEqual([i['target'] for i in oks],['example.com'])
+            self.assertNotIn(td, serial(data))
+
     def test_all_views_no_absolute_paths_and_integrity_mismatch(self):
         with tempfile.TemporaryDirectory() as td:
             run=make_run(td); ev,_=populate(run); rid=load_manifest(run).run_id
