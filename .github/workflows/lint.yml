@@ -96,7 +96,7 @@ jobs:
       - uses: ludeeus/action-shellcheck@master
         with:
           scandir: .
-          additional_files: install.sh uninstall.sh
+          additional_files: install.sh uninstall.sh bootstrap.sh
 
   python-core-tests:
     name: Python core tests (${{ matrix.python-version }})
@@ -236,3 +236,23 @@ jobs:
               ''')
               subprocess.check_call([py, '-c', smoke])
           PY
+
+  docker-portal:
+    name: Docker web portal build + smoke
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t outrider-recon .
+      - name: Smoke test the loopback portal
+        run: |
+          docker run -d --name outrider --network host outrider-recon
+          ok=0
+          for _ in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8765/api/health >/dev/null 2>&1; then ok=1; break; fi
+            sleep 1
+          done
+          docker logs outrider || true
+          docker rm -f outrider >/dev/null 2>&1 || true
+          if [ "$ok" != "1" ]; then echo "portal did not become healthy"; exit 1; fi
+          echo "OK: portal served /api/health over loopback"

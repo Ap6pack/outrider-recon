@@ -59,7 +59,32 @@ Outrider Recon → ranked leads / technique cards → proxy-assisted testing, ma
 
 ## Quick start
 
-Install the web extra and run `outrider` to start the local browser portal:
+**Fastest path — one command.** From a checkout, `bootstrap.sh` creates an
+isolated virtualenv, installs the package, links the Claude skills, and runs a
+deterministic self-check so you know it works before touching a target:
+
+```bash
+git clone https://github.com/Ap6pack/outrider-recon.git
+cd outrider-recon
+./bootstrap.sh            # add --no-web for a base install, --no-skills to skip skill linking
+source .venv/bin/activate
+outrider                 # start the local browser portal
+```
+
+A healthy self-check ends with `promoted_findings_total: 0` and
+`schema_validity_rate: 1.0`. That is the friction-free way to confirm the
+install; no API keys, targets, or network needed.
+
+**Just want to see it in a browser (Docker, Linux).** Outrider binds loopback
+only by design, so share the host loopback with `--network host`:
+
+```bash
+docker build -t outrider-recon .
+docker run --rm --network host outrider-recon
+# then open http://127.0.0.1:8765
+```
+
+**Manual path.** Install the web extra and run `outrider`:
 
 ```bash
 python -m pip install -e ".[web]"
