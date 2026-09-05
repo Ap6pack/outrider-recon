@@ -29,6 +29,10 @@ breach-data/
 stealer-logs/
 */OWASP_
 
+# Python virtual environments (repo-local venvs from `pip install -e .`)
+.venv/
+venv/
+
 # API keys / config that shouldn't ship
 .env
 .env.local

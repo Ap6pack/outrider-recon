@@ -1,6 +1,38 @@
 # Outrider quick start
 
-Outrider is now web-first for human use. Install the web extra, start the local
+## One command (recommended)
+
+From a checkout, `bootstrap.sh` sets everything up and self-checks it:
+
+```bash
+git clone https://github.com/Ap6pack/outrider-recon.git
+cd outrider-recon
+./bootstrap.sh
+source .venv/bin/activate
+outrider
+```
+
+It creates an isolated `./.venv`, installs the package (web extra by default),
+links the Claude skills from this checkout into `~/.claude/skills`, and runs the
+deterministic benchmark self-check (no model, no network). A healthy run ends
+with `promoted_findings_total: 0` and `schema_validity_rate: 1.0`. Flags:
+`--no-web` (base install), `--no-skills` (skip skill linking), `--help`.
+
+## Docker (Linux, browser only)
+
+Outrider binds loopback only, so share the host loopback with `--network host`:
+
+```bash
+docker build -t outrider-recon .
+docker run --rm --network host outrider-recon   # open http://127.0.0.1:8765
+```
+
+We deliberately do not bind `0.0.0.0`. On macOS/Windows Docker Desktop
+`--network host` is limited; prefer `./bootstrap.sh` there.
+
+## Manual
+
+Outrider is web-first for human use. Install the web extra, start the local
 portal, and complete the browser wizard before reviewing scope.
 
 ```bash

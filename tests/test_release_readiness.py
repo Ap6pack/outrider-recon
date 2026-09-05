@@ -20,7 +20,12 @@ import release_audit
 
 def copy_repo_fixture(root: Path) -> None:
     subprocess.check_call(['cp','-a',str(ROOT)+'/.',str(root)])
-    for pattern in ['__pycache__', '.pytest_cache', 'build', 'dist', '*.egg-info']:
+    # Strip local, git-ignored working-directory artifacts so the fixture reflects
+    # a clean checkout. Without .git the audit rglob-scans everything, so a `runs/`
+    # folder (created the moment someone runs `outrider init` or the web portal) or
+    # a repo-local virtualenv would otherwise trip check_artifacts and mask the
+    # WARN-vs-FAIL behavior this test asserts.
+    for pattern in ['__pycache__', '.pytest_cache', 'build', 'dist', '*.egg-info', 'runs', '.venv', 'venv']:
         for path in root.rglob(pattern):
             if path.exists():
                 if path.is_dir():

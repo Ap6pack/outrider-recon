@@ -17,6 +17,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added an independent advisory verifier (`outrider verify candidates`) that attempts to falsify each finding candidate against its cited evidence and current scope, recording `supported`, `refuted`, or `insufficient_evidence` verdicts under `contracts/verification/`. Verdicts never promote, never delete, and never gate promotion eligibility. (ADR 0018)
 - Added a deterministic benchmark harness (`outrider benchmark run|analyze-misses`) that drives the loop over a synthetic ground-truth corpus with a stub executor and scores schema conformance, discovered-candidate precision/recall, and finding-candidate coverage. Metrics are reproducible with no model or network; a shipped corpus and the `ground-truth-v1` and `verification-v1` contracts back it. (ADR 0019)
 - Added `tests/test_secret_scan.py`, pinning the secret-pattern catalog's exact-length contract in both directions.
+- Added `bootstrap.sh`: one command that creates an isolated virtualenv, installs the package (web extra by default), links the Claude skills from the checkout, and runs the deterministic self-check. Flags: `--no-web`, `--no-skills`, `--help`.
+- Added a `Dockerfile` (+ `.dockerignore`) that serves the loopback-only web portal; reachable on Linux with `docker run --network host`. It deliberately does not bind `0.0.0.0`. CI now builds the image and smoke-tests `/api/health`.
 
 ### Changed
 
@@ -30,6 +32,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Restored the functional Advanced Workspace controls alongside web-first onboarding.
 - Removed hard-coded next actions, corrected terminal phase labels, removed hidden static test markers, and corrected malformed architecture wording.
 - Fixed an unhandled `re.error` crash in `h1_reference.py` when `--query` or `--cwe` received an invalid regular expression.
+- Hardened `copy_repo_fixture` in the release-readiness tests to strip `runs/`, `.venv/`, and `venv/` (and added `.venv/`/`venv/` to `.gitignore`). Previously, running `outrider init` or the web portal created a local `runs/` folder that the fixture copied into a `.git`-less audit, tripping `check_artifacts` and failing `test_warning_and_failure_exit_codes` for anyone who had actually used the tool.
 - Fixed the `secret_scan.py` CI smoke test, whose GitHub PAT fixture carried 37 characters instead of 36 and was never asserted on, so `GH_PAT_CLASSIC` silently never matched.
 - Fixed `install.sh` copying helper scripts onto themselves through a symlink while silencing the resulting error, and counting unrelated skills already present in `~/.claude/skills`.
 - Fixed `uninstall.sh` removing skills by hardcoded name, which could delete a user's own skill sharing a generic name; it now removes only symlinks resolving into the install directory.
