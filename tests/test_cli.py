@@ -336,3 +336,94 @@ class LoopCliTests(unittest.TestCase):
         self.assertEqual(status, 0)
         misses = json.loads(out)
         self.assertTrue(all(m["missing_discovered"] == [] for m in misses))
+
+
+class BridgeCliTests(unittest.TestCase):
+    def run_cli(self, *argv):
+        stdout = StringIO()
+        with patch.object(sys, "argv", ["outrider", *argv]), redirect_stdout(stdout):
+            status = cli.main()
+        return status, stdout.getvalue()
+
+    def _legacy_source(self, root):
+        src = Path(root) / "legacy" / "example-target"
+        (src / "sub").mkdir(parents=True)
+        (src / "memory.md").write_text("# notes\napi.example.com\n", encoding="utf-8")
+        (src / "sub" / "recon.txt").write_text("recon data", encoding="utf-8")
+        return src
+
+    def test_import_target_registers_files_as_evidence_and_is_idempotent(self):
+        from outrider import web_view
+        with tempfile.TemporaryDirectory() as td:
+            src = self._legacy_source(td)
+            runs = Path(td) / "runs"
+            status, out = self.run_cli(
+                "import-target", str(src), "--target", "example.com", "--actor", "op",
+                "--authorization-reference", "ROE-1", "--output-dir", str(runs),
+            )
+            self.assertEqual(status, 0)
+            run_dir = runs / "example.com"
+            self.assertTrue((run_dir / "manifest.json").is_file())
+            ev = web_view.evidence_view(run_dir)
+            paths = {r["relative_artifact_path"] for r in ev["records"]}
+            self.assertEqual(ev["evidence_count"], 2)
+            self.assertIn("artifacts/imported/memory.md", paths)
+            self.assertIn("artifacts/imported/sub/recon.txt", paths)
+            self.assertTrue(all(r["artifact_type"] == "legacy-import" for r in ev["records"]))
+            # re-run: idempotent, nothing newly registered
+            status2, _ = self.run_cli(
+                "import-target", str(src), "--target", "example.com", "--actor", "op",
+                "--authorization-reference", "ROE-1", "--output-dir", str(runs),
+            )
+            self.assertEqual(status2, 0)
+            self.assertEqual(web_view.evidence_view(run_dir)["evidence_count"], 2)
+
+    def test_import_target_dry_run_writes_nothing(self):
+        with tempfile.TemporaryDirectory() as td:
+            src = self._legacy_source(td)
+            runs = Path(td) / "runs"
+            status, out = self.run_cli(
+                "import-target", str(src), "--target", "example.com", "--actor", "op",
+                "--authorization-reference", "ROE-1", "--output-dir", str(runs), "--dry-run",
+            )
+            self.assertEqual(status, 0)
+            self.assertIn("[dry-run]", out)
+            self.assertFalse((runs / "example.com").exists())
+
+    def test_materialize_renders_view_and_never_clobbers_operator_files(self):
+        from outrider import web_view
+        from outrider.state import load_manifest
+        with tempfile.TemporaryDirectory() as td:
+            src = self._legacy_source(td)
+            runs = Path(td) / "runs"
+            targets = Path(td) / "targets"
+            self.run_cli(
+                "import-target", str(src), "--target", "example.com", "--actor", "op",
+                "--authorization-reference", "ROE-1", "--output-dir", str(runs),
+            )
+            run_dir = runs / "example.com"
+            status, _ = self.run_cli("materialize", str(run_dir), "--targets-root", str(targets))
+            self.assertEqual(status, 0)
+            out_file = targets / "example.com" / "OUTRIDER-RUN.md"
+            body = out_file.read_text(encoding="utf-8")
+            self.assertIn("Outrider engagement: example.com", body)
+            self.assertIn("Registered evidence", body)
+            self.assertIn("artifacts/imported/memory.md", body)
+            # refuse to overwrite a non-generated file, allow with --force
+            out_file.write_text("hand-written notes, no banner", encoding="utf-8")
+            refuse, _ = self.run_cli("materialize", str(run_dir), "--targets-root", str(targets))
+            self.assertEqual(refuse, 1)
+            self.assertEqual(out_file.read_text(encoding="utf-8"), "hand-written notes, no banner")
+            forced, _ = self.run_cli("materialize", str(run_dir), "--targets-root", str(targets), "--force")
+            self.assertEqual(forced, 0)
+            self.assertIn("Outrider engagement", out_file.read_text(encoding="utf-8"))
+            # resolve by run_id too
+            rid = load_manifest(run_dir).run_id
+            by_id, _ = self.run_cli("materialize", rid, "--runs-root", str(runs), "--targets-root", str(targets))
+            self.assertEqual(by_id, 0)
+
+    def test_materialize_unknown_run_returns_error(self):
+        with tempfile.TemporaryDirectory() as td:
+            status, out = self.run_cli("materialize", "not-a-real-run", "--runs-root", str(td), "--targets-root", str(td))
+            self.assertEqual(status, 1)
+            self.assertIn("run not found", out)
