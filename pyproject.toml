@@ -38,5 +38,5 @@ where = ["."]
 include = ["outrider*"]
 
 [tool.setuptools.package-data]
-outrider = ["web_static/*", "skill_catalog.json", "schemas/*.json"]
+outrider = ["web_static/*", "web_static/fonts/*", "skill_catalog.json", "schemas/*.json"]
 "outrider.benchmark" = ["ground_truth/*.json"]

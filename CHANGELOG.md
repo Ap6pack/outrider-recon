@@ -26,6 +26,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Replaced each skill's non-functional `triggers:` list with the supported `when_to_use` frontmatter field and dropped the ignored per-skill `version:`. Neither old field exists in the Agent Skills specification, so the authored trigger vocabulary never reached skill dispatch. Lint, release audit, and contributor docs now enforce the real contract.
 - Merged the archiver pointers from the former evidence-preservation method file into `analysis-and-reporting` §8, and eight failure modes not already covered into `osint-methodology` §5.
 - Pointed the README quick start at the one-click installer instead of `cp -r skills/*`, which contradicted the installation guide and produced installs that never received updates.
+- Vendored the portal's Space Grotesk and IBM Plex Mono fonts locally under `/static/fonts` (weights 400 and 600, the only ones used) and removed the remote Google Fonts `@import`. The portal's strict CSP (`style-src 'self'`) had blocked the remote stylesheet, so the console theme's type never actually loaded and every page load logged a CSP violation; the fonts now load offline with no third-party request. Also removed dead header CSS left behind by the banner change.
+- Extended the release audit with a `stylesheet asset locality` check that fails when `app.css` references a remote URL, and the clean web-wheel smoke now proves the vendored fonts ship and no remote font import remains — closing the gap that let the remote import pass CI.
 
 ### Fixed
 
@@ -37,6 +39,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Fixed `install.sh` copying helper scripts onto themselves through a symlink while silencing the resulting error, and counting unrelated skills already present in `~/.claude/skills`.
 - Fixed `uninstall.sh` removing skills by hardcoded name, which could delete a user's own skill sharing a generic name; it now removes only symlinks resolving into the install directory.
 - Corrected stale documentation counts and roadmap state: the Tier 3 smoke-test heading, the prompt totals, and the released-versus-upcoming status of v3.1.
+- Restored the page's `<h1>` (visually hidden via `.sr-only`) that the new banner header had replaced with an image, fixing the document-outline and screen-reader regression.
+- Raised the contrast of form field-hint text (`label small`) so it meets WCAG AA on the dark theme.
+- Cleaned up the SVG brand banner: stripped an embedded ~7 KB C2PA provenance manifest (halving the file) and replaced fabricated security telemetry — invented finding counts, a "LIVE" indicator, and live agent-status dots — with a static capability list, so the masthead no longer displays fabricated findings in a tool whose findings are human-promoted.
 
 ### Removed
 

@@ -231,6 +231,10 @@ jobs:
                       assert client.get("/").status_code == 200
                       assert client.get("/static/app.css").status_code == 200
                       assert client.get("/static/app.js").status_code == 200
+                      # Fonts are vendored locally: prove they ship in the wheel and app.css pulls no remote font.
+                      assert client.get("/static/fonts/space-grotesk-latin-400-normal.woff2").status_code == 200
+                      assert client.get("/static/fonts/ibm-plex-mono-latin-400-normal.woff2").status_code == 200
+                      assert "googleapis" not in client.get("/static/app.css").text
                       assert web_static_path("index.html").exists()
                       assert health.json()["capabilities"]["guided_workflow"] is True
               ''')
