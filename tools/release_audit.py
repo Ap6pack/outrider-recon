@@ -138,7 +138,7 @@ class Audit:
     def check_package_data(self):
         py=load_pyproject(self.root/'pyproject.toml')
         data=py.get('tool',{}).get('setuptools',{}).get('package-data',{}).get('outrider',[])
-        needed=['web_static/*','skill_catalog.json','schemas/*.json']
+        needed=['web_static/*','web_static/fonts/*','skill_catalog.json','schemas/*.json']
         miss=[x for x in needed if x not in data]
         self.ok('package-data declarations','web static, schemas, and skill catalog are package data') if not miss else self.fail('package-data declarations','missing '+', '.join(miss))
         deps=py['project'].get('dependencies',[]); opt=py['project'].get('optional-dependencies',{})
@@ -186,6 +186,11 @@ class Audit:
             self.ok('static asset locality','no inline script or external static asset')
         else:
             self.fail('static asset locality','inline or external static asset detected')
+        css=(self.root/'outrider/web_static/app.css').read_text(encoding='utf-8')
+        if 'http://' not in css and 'https://' not in css:
+            self.ok('stylesheet asset locality','app.css has no remote stylesheet or font import')
+        else:
+            self.fail('stylesheet asset locality','app.css references a remote URL; inline or vendor the asset under /static instead')
         if 'engagement_onboarding' in web_app and 'automatic_discovery' in web_app and 'guided_workflow' in web_app:
             self.ok('onboarding capability projection','onboarding and negative capability fields exist')
         else:
