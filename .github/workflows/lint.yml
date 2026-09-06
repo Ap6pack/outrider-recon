@@ -239,6 +239,8 @@ jobs:
                       assert "googleapis" not in client.get("/static/app.css").text
                       assert web_static_path("index.html").exists()
                       assert health.json()["capabilities"]["guided_workflow"] is True
+                      assert health.json()["capabilities"]["legacy_import"] is True
+                      assert health.json()["capabilities"]["materialize"] is True
               ''')
               subprocess.check_call([py, '-c', smoke])
           PY

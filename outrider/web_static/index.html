@@ -52,11 +52,34 @@
       <p id="create-run-message" class="form-message" aria-live="polite"></p>
     </form>
   </section>
+  <section id="import" class="panel" aria-labelledby="import-title" hidden>
+    <h2 id="import-title">Import a Legacy Target</h2>
+    <p class="muted">Create a governed run from an existing target workspace folder. Its files are registered as evidence (hash and size); no findings are created. You supply the scope and authorization.</p>
+    <form id="import-form" class="transition-form">
+      <fieldset><legend>Source</legend>
+        <label><span>Target workspace folder</span><select id="import-source" required></select><small>Subfolders of the targets base only.</small></label>
+      </fieldset>
+      <fieldset><legend>Governed metadata</legend>
+        <label><span>Target domain</span><input id="import-target-domain" required autocomplete="off"></label>
+        <label><span>Operator name</span><input id="import-actor" required autocomplete="off"><small>Attribution, not authenticated identity.</small></label>
+        <label><span>Authorization reference</span><input id="import-auth" required autocomplete="off"><small>Program name/URL, ticket number, or rules-of-engagement reference.</small></label>
+        <label><span>In-scope rules</span><textarea id="import-scope-in" rows="4" required></textarea></label>
+        <label><span>Out-of-scope rules</span><textarea id="import-scope-out" rows="3"></textarea></label>
+      </fieldset>
+      <fieldset><legend>Confirm</legend>
+        <label class="inline"><input id="import-confirm" type="checkbox" required> I am authorized to assess the listed scope and understand the folder's files will be registered as evidence.</label>
+      </fieldset>
+      <button id="import-submit" type="submit">Import Target</button>
+      <p id="import-message" class="form-message" aria-live="polite"></p>
+    </form>
+  </section>
   <section id="workspace" class="panel" aria-labelledby="workspace-title" hidden>
     <h2 id="workspace-title">Engagement summary</h2>
     <div id="engagement-summary"></div>
     <button id="review-scope" type="button">Review Scope</button>
     <button id="open-advanced" type="button">Open Advanced Workspace</button>
+    <button id="materialize-engagement" type="button">Materialize to targets/</button>
+    <p id="materialize-message" class="form-message" aria-live="polite"></p>
     <section id="advanced-workspace" hidden>
       <h3>Advanced Workspace</h3>
       <nav id="tabs" class="tabs" aria-label="Run sections"><button data-view="overview">Overview</button><button data-view="scope">Scope</button><button data-view="state">State</button><button data-view="evidence">Evidence</button><button data-view="approvals">Approvals</button><button data-view="contracts">Contracts</button><button data-view="findings">Findings</button><button data-view="enrichment">Enrichment</button><button data-view="integrity">Integrity</button></nav>

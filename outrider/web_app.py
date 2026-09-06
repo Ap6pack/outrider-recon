@@ -6,6 +6,7 @@ from pathlib import Path
 from uuid import UUID
 
 from outrider import web_view
+from outrider import bridge
 from outrider.evidence import (EvidenceRefusalError, EvidenceValidationError, evidence_revision, list_artifact_candidates, load_evidence_registry, normalize_evidence_path, register_evidence, verify_all_evidence)
 from outrider.approval import (
     ACTION_TYPES, APPROVABLE, ApprovalPolicyError, ApprovalValidationError,
@@ -23,9 +24,9 @@ TOKEN_HEADER = "X-Outrider-Control-Token"
 
 
 def _capabilities(mcp_enrichment_enabled: bool) -> dict:
-    return {"state_transition": True, "run_creation": True, "web_first_launcher": True, "engagement_onboarding": True, "engagement_creation": True, "engagement_resume": True, "guided_workflow": True, "next_action_engine": True, "guided_state_progression": True, "automatic_discovery": False, "guided_discovery": False, "automatic_evidence_capture": False, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_catalog": True, "mcp_preflight": True, "mcp_invocation": mcp_enrichment_enabled, "mcp_enrichment_enabled": mcp_enrichment_enabled, "fixed_outbound_enrichment_tools": 5, "recon_execution": False, "report_generation": False}
+    return {"state_transition": True, "run_creation": True, "web_first_launcher": True, "engagement_onboarding": True, "engagement_creation": True, "engagement_resume": True, "guided_workflow": True, "next_action_engine": True, "guided_state_progression": True, "automatic_discovery": False, "guided_discovery": False, "automatic_evidence_capture": False, "scope_edit": True, "scope_check": True, "approval_mutation": True, "action_check": True, "artifact_inventory": True, "evidence_registration": True, "evidence_verification": True, "artifact_upload": False, "artifact_download": False, "contract_mutation": True, "contract_request_creation": True, "contract_validation": True, "contract_result_creation": False, "contract_upload": False, "skill_execution": False, "finding_candidate_inventory": True, "finding_promotion": True, "finding_verification": True, "automatic_finding_promotion": False, "finding_edit": False, "finding_delete": False, "mcp_catalog": True, "mcp_preflight": True, "mcp_invocation": mcp_enrichment_enabled, "mcp_enrichment_enabled": mcp_enrichment_enabled, "fixed_outbound_enrichment_tools": 5, "recon_execution": False, "report_generation": False, "legacy_import": True, "materialize": True}
 
-def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_enrichment_enabled: bool = False, enrichment_executor=None):
+def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_enrichment_enabled: bool = False, enrichment_executor=None, targets_root: str | Path | None = None):
     try:
         from fastapi import FastAPI, HTTPException, Request
         from fastapi.responses import FileResponse, JSONResponse
@@ -34,6 +35,7 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_e
         raise RuntimeError('Install web dependencies with: python -m pip install -e ".[web]"') from exc
 
     root = Path(runs_root)
+    targets_dir = Path(targets_root) if targets_root is not None else root.parent / "targets"
     token = control_token if control_token is not None else secrets.token_urlsafe(32)
     mutation_lock = threading.Lock()
     enrichment_executor = enrichment_executor
@@ -134,6 +136,77 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_e
                 return error(422, str(exc) or "run creation request is invalid")
             except Exception:
                 return error(500, "run creation failed")
+
+    @app.get("/api/import/sources")
+    def import_sources():
+        names = []
+        try:
+            for child in sorted(targets_dir.iterdir(), key=lambda p: p.name):
+                if child.is_dir() and not child.is_symlink():
+                    names.append(child.name)
+        except OSError:
+            names = []
+        return json({"base": str(targets_dir), "sources": names})
+
+    @app.post("/api/import-target")
+    async def import_target_run(request: Request):
+        require_mutation_guard(request)
+        body, err = await read_json_object(request)
+        if err: return err
+        allowed = {"source", "target", "actor", "authorization_reference", "in_scope", "out_of_scope", "engagement_platform", "confirmed"}
+        if set(body) - allowed: return error(422, "unknown field")
+        for field in ("source", "target", "actor", "authorization_reference"):
+            if not isinstance(body.get(field), str) or not body[field].strip():
+                return error(422, f"{field} must be a non-empty string")
+        if body.get("confirmed") is not True:
+            return error(422, "authorization confirmation is required")
+        for field, limit in (("actor", 200), ("authorization_reference", 500)):
+            if len(body[field]) > limit or any(ch in body[field] for ch in "\0\r\n"):
+                return error(422, f"{field} is invalid")
+        if "in_scope" not in body or "out_of_scope" not in body:
+            return error(422, "in_scope and out_of_scope are required")
+        source_dir = bridge.resolve_import_source(targets_dir, body["source"])
+        if source_dir is None:
+            return error(422, "source must be an existing subdirectory of the targets base")
+        with mutation_lock:
+            try:
+                run_dir = create_web_run_atomic(root, WebRunRequest(body["target"], body["actor"], body["authorization_reference"], body["in_scope"], body["out_of_scope"], body.get("engagement_platform"), None))
+            except RunConflictError:
+                return error(409, "An engagement for this target already exists. Resume the existing engagement or use a different target.")
+            except (RunSetupError, ScopeValidationError, ValueError) as exc:
+                return error(422, str(exc) or "run creation request is invalid")
+            except Exception:
+                return error(500, "run creation failed")
+            try:
+                summary = bridge.import_files_as_evidence(run_dir, source_dir, actor=body["actor"])
+            except Exception:
+                return error(500, "import failed after run creation")
+            manifest = load_manifest(run_dir)
+            payload = {"ok": True, "run": web_view.run_overview(run_dir), "scope": web_view.scope_view(run_dir), "imported": {k: summary[k] for k in ("copied", "registered", "skipped_existing", "skipped_large")}}
+            return JSONResponse(payload, status_code=201, headers={"Location": f"/api/runs/{manifest.run_id}/overview"})
+
+    @app.post("/api/runs/{run_id}/materialize")
+    async def materialize_run_endpoint(run_id: str, request: Request):
+        try:
+            UUID(run_id)
+        except ValueError:
+            return error(422, "run_id must be a UUID")
+        require_mutation_guard(request)
+        run_dir = web_view._run_dir_for_id(root, run_id)
+        if run_dir is None:
+            return error(404, "run not found")
+        body, err = await read_json_object(request)
+        if err: return err
+        if set(body) - {"force"}: return error(422, "unknown field")
+        with mutation_lock:
+            try:
+                name = bridge.default_run_name(run_dir)
+                out = bridge.materialize_run(run_dir, targets_dir, name=name, force=bool(body.get("force", False)))
+            except FileExistsError as exc:
+                return error(409, str(exc))
+            except Exception:
+                return error(500, "materialize failed")
+        return json({"ok": True, "name": name, "path": str(out)})
 
     @app.put("/api/runs/{run_id}/scope")
     async def replace_scope(run_id: str, request: Request):

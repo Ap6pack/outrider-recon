@@ -151,7 +151,7 @@ def launch_local_portal(args: argparse.Namespace, *, create_default_root: bool =
                 print('Run:')
                 print('python -m pip install -e ".[web,enrichment]"')
                 return 2
-        app = create_app(root, mcp_enrichment_enabled=getattr(args, "enable_mcp_enrichment", False))
+        app = create_app(root, mcp_enrichment_enabled=getattr(args, "enable_mcp_enrichment", False), targets_root=getattr(args, "targets_root", None))
         url = _browser_url(args.host, args.port)
         print("Outrider is running locally:")
         print(url)
@@ -892,6 +892,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument("--version", action="version", version=f"outrider-recon {package_version()}")
     parser.add_argument("--runs-root", default="./runs", help="Runs root for the default local web portal. Defaults to ./runs.")
+    parser.add_argument("--targets-root", dest="targets_root", default=None, help="Targets base for portal import/materialize. Defaults to a 'targets' folder beside the runs root.")
     parser.add_argument("--host", default="127.0.0.1", choices=sorted(LOOPBACK_WEB_HOSTS), help="Loopback host for the default local web portal.")
     parser.add_argument("--port", type=_valid_web_port, default=8765, help="Loopback port for the default local web portal.")
     parser.add_argument("--no-browser", action="store_true", help="Start the local portal without opening a browser.")
@@ -1096,6 +1097,7 @@ def build_parser() -> argparse.ArgumentParser:
     web_serve_parser.add_argument("--host", default="127.0.0.1", choices=sorted(LOOPBACK_WEB_HOSTS))
     web_serve_parser.add_argument("--port", type=_valid_web_port, default=8765)
     web_serve_parser.add_argument("--enable-mcp-enrichment", action="store_true", help="Explicitly enable five fixed policy-gated MCP enrichment tools in the loopback web UI.")
+    web_serve_parser.add_argument("--targets-root", dest="targets_root", default=None, help="Targets base for portal import/materialize. Defaults to a 'targets' folder beside the runs root.")
     web_serve_parser.add_argument("--no-browser", action="store_true", help=argparse.SUPPRESS)
     web_serve_parser.set_defaults(func=web_serve)
 
