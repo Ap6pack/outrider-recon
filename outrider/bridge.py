@@ -20,6 +20,7 @@ import mimetypes
 import re
 from pathlib import Path, PurePosixPath
 from typing import Any
+from urllib.parse import urlparse
 
 from . import web_view
 from .evidence import register_evidence, EvidenceRefusalError
@@ -273,11 +274,17 @@ def _parse_in_scope_assets(text: str) -> list[str]:
         if not line.startswith("|"):
             continue
         cell = line.strip("|").split("|")[0].strip()
+        # The governed scope model accepts hosts/domains/IPs/CIDRs, not URLs with
+        # paths — so reduce a URL asset to its host (e.g. https://www.x.com/book/
+        # -> www.x.com). Path-level scope is the operator's discipline to keep.
         url = re.search(r"https?://[^\s)|\]]+", cell)
-        value = url.group(0) if url else None
-        if value is None:
+        if url:
+            value = urlparse(url.group(0)).hostname
+        else:
             dm = _DOMAIN_RE.search(cell)
             value = dm.group(1) if dm else None
+        if value:
+            value = value.strip().lower().rstrip(".")
         if value and value not in seen:
             seen.add(value)
             out.append(value[:253])
@@ -328,6 +335,13 @@ def parse_target_memory(source_dir: str | Path) -> dict[str, Any]:
         assets = _parse_in_scope_assets(text)
         if assets:
             result["in_scope"] = assets
+            # The governed model requires the target to be inside its own scope
+            # (run_setup: "target is not allowed by scope"). If the memory's
+            # Target line (often the apex) isn't among the explicit in-scope
+            # hosts, use the primary in-scope host so the prefill imports cleanly
+            # without over-scoping to an unlisted apex.
+            if result.get("target") not in assets:
+                result["target"] = assets[0]
     except Exception:
         return result
     return result
