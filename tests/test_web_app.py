@@ -337,3 +337,78 @@ class OnboardingApiTests(unittest.TestCase):
             self.assertEqual(client.post('/api/runs', headers={'X-Outrider-Control-Token':'tok'}, json=payload).status_code, 422)
             payload.pop('run_id'); payload['engagement_platform']='Unsupported'
             self.assertEqual(client.post('/api/runs', headers={'X-Outrider-Control-Token':'tok'}, json=payload).status_code, 422)
+
+
+@unittest.skipIf(TestClient is None, "FastAPI web extra is not installed")
+class WebAppBridgeTests(unittest.TestCase):
+    H = {'X-Outrider-Control-Token': 'fixture'}
+
+    def _env(self, td):
+        td = Path(td)
+        runs = td / 'runs'; runs.mkdir()
+        targets = td / 'targets'; (targets / 'legacy-one' / 'sub').mkdir(parents=True)
+        (targets / 'legacy-one' / 'memory.md').write_text('# notes\napi.example.com\n', encoding='utf-8')
+        (targets / 'legacy-one' / 'sub' / 'recon.txt').write_text('recon', encoding='utf-8')
+        client = TestClient(create_app(runs, control_token='fixture', targets_root=targets))
+        return runs, targets, client
+
+    def test_capabilities_and_source_listing(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs, targets, c = self._env(td)
+            caps = c.get('/api/health').json()['capabilities']
+            self.assertTrue(caps['legacy_import'] and caps['materialize'])
+            src = c.get('/api/import/sources').json()
+            self.assertEqual(src['sources'], ['legacy-one'])
+            self.assertEqual(src['base'], str(targets))
+
+    def test_import_creates_run_and_registers_evidence(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs, targets, c = self._env(td)
+            body = {'source': 'legacy-one', 'target': 'example.com', 'actor': 'op', 'authorization_reference': 'ROE', 'in_scope': ['example.com', '*.example.com'], 'out_of_scope': [], 'confirmed': True}
+            r = c.post('/api/import-target', headers=self.H, json=body)
+            self.assertEqual(r.status_code, 201, r.text)
+            self.assertEqual(r.json()['imported']['registered'], 2)
+            rid = r.json()['run']['run_id']
+            ev = web_view.evidence_view(runs / 'example.com')
+            paths = {rec['relative_artifact_path'] for rec in ev['records']}
+            self.assertEqual(ev['evidence_count'], 2)
+            self.assertIn('artifacts/imported/memory.md', paths)
+            self.assertIn('artifacts/imported/sub/recon.txt', paths)
+            self.assertTrue(rid)
+
+    def test_import_guards_and_rejections(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs, targets, c = self._env(td)
+            good = {'source': 'legacy-one', 'target': 'example.com', 'actor': 'op', 'authorization_reference': 'ROE', 'in_scope': ['example.com'], 'out_of_scope': [], 'confirmed': True}
+            # no token
+            self.assertEqual(c.post('/api/import-target', json=good).status_code, 403)
+            # traversal / absolute / unknown source
+            for bad_source in ['../etc', '/etc', 'nope', 'legacy-one/../..']:
+                b = dict(good, source=bad_source)
+                self.assertEqual(c.post('/api/import-target', headers=self.H, json=b).status_code, 422, bad_source)
+            # confirmation required
+            self.assertEqual(c.post('/api/import-target', headers=self.H, json=dict(good, confirmed=False)).status_code, 422)
+            # unknown field
+            self.assertEqual(c.post('/api/import-target', headers=self.H, json=dict(good, bogus=1)).status_code, 422)
+
+    def test_materialize_endpoint(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs, targets, c = self._env(td)
+            rid = c.post('/api/import-target', headers=self.H, json={'source': 'legacy-one', 'target': 'example.com', 'actor': 'op', 'authorization_reference': 'ROE', 'in_scope': ['example.com'], 'out_of_scope': [], 'confirmed': True}).json()['run']['run_id']
+            # guard
+            self.assertEqual(c.post(f'/api/runs/{rid}/materialize', json={}).status_code, 403)
+            # happy path
+            m = c.post(f'/api/runs/{rid}/materialize', headers=self.H, json={})
+            self.assertEqual(m.status_code, 200, m.text)
+            out = Path(m.json()['path'])
+            self.assertTrue(out.is_file())
+            self.assertEqual(out, targets / 'example.com' / 'OUTRIDER-RUN.md')
+            self.assertIn('Outrider engagement: example.com', out.read_text(encoding='utf-8'))
+            # unknown run -> 404
+            self.assertEqual(c.post('/api/runs/00000000-0000-4000-8000-000000000000/materialize', headers=self.H, json={}).status_code, 404)
+            # bad run_id -> 422
+            self.assertEqual(c.post('/api/runs/not-a-uuid/materialize', headers=self.H, json={}).status_code, 422)
+            # non-generated clobber -> 409, then force -> 200
+            out.write_text('hand-written, no banner', encoding='utf-8')
+            self.assertEqual(c.post(f'/api/runs/{rid}/materialize', headers=self.H, json={}).status_code, 409)
+            self.assertEqual(c.post(f'/api/runs/{rid}/materialize', headers=self.H, json={'force': True}).status_code, 200)

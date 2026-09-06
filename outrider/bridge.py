@@ -210,3 +210,41 @@ def default_run_name(run_dir: str | Path) -> str:
     """Directory-safe engagement name derived from the run's manifest target."""
     target = load_manifest(run_dir).target
     return target.strip().replace("https://", "").replace("http://", "").strip("/")
+
+
+def resolve_import_source(base: str | Path, name: str) -> Path | None:
+    """Resolve an import source directory strictly under ``base``.
+
+    Used by the loopback portal so a browser can only import from subfolders of
+    the configured targets base — never an absolute path, ``..`` traversal, or a
+    symlink that escapes the base. Returns the real directory or ``None`` if the
+    name is unsafe or does not resolve to a directory inside ``base``.
+    """
+    if not name or not isinstance(name, str):
+        return None
+    if name.startswith("/") or "\\" in name or "\x00" in name:
+        return None
+    parts = PurePosixPath(name).parts
+    if not parts or any(p in ("", ".", "..") for p in parts):
+        return None
+    try:
+        base_real = Path(base).resolve(strict=True)
+    except OSError:
+        return None
+    candidate = base_real
+    for part in parts:
+        candidate = candidate / part
+        try:
+            if candidate.is_symlink():
+                return None
+        except OSError:
+            return None
+    try:
+        real = candidate.resolve(strict=True)
+    except OSError:
+        return None
+    try:
+        real.relative_to(base_real)
+    except ValueError:
+        return None
+    return real if real.is_dir() else None

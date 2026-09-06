@@ -57,6 +57,7 @@ globalThis.fetch = function () { return new Promise(function () {}); };
 const EXPORTS = [
   'text', 'button', 'kv', 'option', 'badge', 'card', 'records', 'labelInput', 'postTransition',
   'renderProgress', 'renderMilestones', 'renderScopeReview', 'renderGuidedAction', 'renderTransitionForm',
+  'showImport', 'loadImportSources', 'createImport', 'materializeEngagement',
 ];
 // ---- Assertions -------------------------------------------------------------
 function fail(msg) { console.error('web js runtime check FAILED: ' + msg); process.exit(1); }
@@ -96,6 +97,9 @@ try {
 
   // State-transition form exercises card() + labelInput() + option().
   expectNode('renderTransitionForm', H.renderTransitionForm({ current_state: 'initialized', allowed_transitions: [{ new_state: 'scoped', reason_required: false }] }));
+
+  // Import flow: showImport toggles panels and kicks loadImportSources (fetch is stubbed pending).
+  H.showImport();
 } catch (err) {
   fail((err && err.message) || String(err));
 }

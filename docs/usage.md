@@ -169,6 +169,15 @@ Recommended flow: `import-target` your legacy engagements once so they appear in
 the dashboard as governed runs, then treat `runs/` as the source of truth and
 `materialize` the `targets/` view as needed.
 
+The same two directions are available in the local portal without the terminal:
+the dashboard's **Import Legacy Target** button creates a governed run from a
+target workspace folder (a dropdown of subfolders of the targets base — the
+browser can only import from inside that base, never an arbitrary path), and each
+engagement has a **Materialize to targets/** button. The portal's targets base
+defaults to a `targets/` folder beside the runs root; override it with
+`outrider web serve <runs> --targets-root <dir>` (or `--targets-root` on the
+default launcher).
+
 ## Tips
 
 ### Ask for skill references in the response
