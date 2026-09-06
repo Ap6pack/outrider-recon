@@ -58,7 +58,7 @@ const EXPORTS = [
   'text', 'button', 'kv', 'option', 'badge', 'card', 'records', 'labelInput', 'postTransition',
   'renderProgress', 'renderMilestones', 'renderScopeReview', 'renderGuidedAction', 'renderTransitionForm',
   'showImport', 'loadImportSources', 'createImport', 'materializeEngagement',
-  'syncImportScope', 'syncImportTargetFromSource',
+  'syncImportScope', 'syncImportTargetFromSource', 'applyImportSuggestion',
 ];
 // ---- Assertions -------------------------------------------------------------
 function fail(msg) { console.error('web js runtime check FAILED: ' + msg); process.exit(1); }
