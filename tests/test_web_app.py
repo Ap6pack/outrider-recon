@@ -361,6 +361,24 @@ class WebAppBridgeTests(unittest.TestCase):
             self.assertEqual(src['sources'], ['legacy-one'])
             self.assertEqual(src['base'], str(targets))
 
+    def test_import_suggest_parses_memory_and_guards_source(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs, targets, c = self._env(td)
+            (targets / 'legacy-one' / 'memory.md').write_text(
+                "**Target:** Example (example.com)\n"
+                "**Program:** HackerOne Public Bug Bounty\n"
+                "**Researcher:** @op\n\n"
+                "## In-Scope Assets\n\n| Asset | Type |\n|---|---|\n| https://www.example.com/book/ | URL |\n",
+                encoding='utf-8')
+            s = c.get('/api/import/suggest', params={'source': 'legacy-one'}).json()['suggested']
+            self.assertEqual(s['target'], 'example.com')
+            self.assertEqual(s['engagement_platform'], 'HackerOne')
+            self.assertEqual(s['actor'], 'op')
+            self.assertEqual(s['in_scope'], ['https://www.example.com/book/'])
+            # base-dir guard applies to the read-only suggest endpoint too
+            for bad in ['../etc', '/etc', 'nope']:
+                self.assertEqual(c.get('/api/import/suggest', params={'source': bad}).status_code, 422, bad)
+
     def test_import_creates_run_and_registers_evidence(self):
         with tempfile.TemporaryDirectory() as td:
             runs, targets, c = self._env(td)

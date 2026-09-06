@@ -17,6 +17,7 @@ and reads/writes only the gitignored ``runs/`` and ``targets/`` trees.
 from __future__ import annotations
 
 import mimetypes
+import re
 from pathlib import Path, PurePosixPath
 from typing import Any
 
@@ -248,3 +249,85 @@ def resolve_import_source(base: str | Path, name: str) -> Path | None:
     except ValueError:
         return None
     return real if real.is_dir() else None
+
+
+_DOMAIN_RE = re.compile(r"([a-z0-9](?:[a-z0-9-]*[a-z0-9])?(?:\.[a-z0-9-]+)+)", re.IGNORECASE)
+
+
+def _memory_field(text: str, label: str) -> str | None:
+    m = re.search(rf"^\*\*{re.escape(label)}:\*\*\s*(.+?)\s*$", text, re.MULTILINE | re.IGNORECASE)
+    return m.group(1).strip() if m else None
+
+
+def _parse_in_scope_assets(text: str) -> list[str]:
+    """Extract explicit in-scope assets from the primary ## In-Scope Assets table
+    only (stops at the next heading, so nuanced 'related domains' tables are not
+    swept in as authorized scope)."""
+    section = re.search(r"^##\s+In-?\s*Scope\s+Assets\s*$(.*?)(^#{2,}\s|\Z)", text, re.MULTILINE | re.IGNORECASE | re.DOTALL)
+    if not section:
+        return []
+    out: list[str] = []
+    seen: set[str] = set()
+    for line in section.group(1).splitlines():
+        line = line.strip()
+        if not line.startswith("|"):
+            continue
+        cell = line.strip("|").split("|")[0].strip()
+        url = re.search(r"https?://[^\s)|\]]+", cell)
+        value = url.group(0) if url else None
+        if value is None:
+            dm = _DOMAIN_RE.search(cell)
+            value = dm.group(1) if dm else None
+        if value and value not in seen:
+            seen.add(value)
+            out.append(value[:253])
+        if len(out) >= 50:
+            break
+    return out
+
+
+def parse_target_memory(source_dir: str | Path) -> dict[str, Any]:
+    """Best-effort extraction of engagement metadata from a legacy target's
+    ``memory.md`` for prefilling the import form. Suggestions only — the operator
+    reviews and confirms. Reads only ``memory.md``; never raises; returns just the
+    fields it confidently finds."""
+    try:
+        mem = Path(source_dir) / "memory.md"
+        if mem.is_symlink() or not mem.is_file():
+            return {}
+        text = mem.read_text(encoding="utf-8", errors="replace")[:200_000]
+    except OSError:
+        return {}
+    result: dict[str, Any] = {}
+    try:
+        target_line = _memory_field(text, "Target")
+        if target_line:
+            paren = re.search(r"\(([^)]+)\)", target_line)
+            dm = _DOMAIN_RE.search(paren.group(1)) if paren else None
+            dm = dm or _DOMAIN_RE.search(target_line)
+            if dm:
+                result["target"] = dm.group(1).lower()[:253]
+        program = _memory_field(text, "Program")
+        if program:
+            low = program.lower()
+            result["engagement_platform"] = (
+                "HackerOne" if "hackerone" in low else
+                "Bugcrowd" if "bugcrowd" in low else
+                "Internal assessment" if "internal" in low else
+                "Client engagement" if "client" in low else
+                "Other"
+            )
+            result["authorization_reference"] = program[:500]
+        if "authorization_reference" not in result:
+            msu = _memory_field(text, "Main Scope URL")
+            if msu:
+                result["authorization_reference"] = msu[:500]
+        researcher = _memory_field(text, "Researcher")
+        if researcher:
+            result["actor"] = researcher.lstrip("@").strip()[:200]
+        assets = _parse_in_scope_assets(text)
+        if assets:
+            result["in_scope"] = assets
+    except Exception:
+        return result
+    return result

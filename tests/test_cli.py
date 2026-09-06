@@ -427,3 +427,37 @@ class BridgeCliTests(unittest.TestCase):
             status, out = self.run_cli("materialize", "not-a-real-run", "--runs-root", str(td), "--targets-root", str(td))
             self.assertEqual(status, 1)
             self.assertIn("run not found", out)
+
+    def test_parse_target_memory_extracts_labelled_fields_and_scoped_assets(self):
+        from outrider import bridge
+        mem = (
+            "# Example — Testing Memory\n\n"
+            "**Target:** Example (example.com)\n"
+            "**Program:** HackerOne Public Bug Bounty\n"
+            "**Researcher:** @op\n"
+            "**Main Scope URL:** https://www.example.com/book/\n\n"
+            "## In-Scope Assets\n\n"
+            "| Asset | Type | Notes |\n|---|---|---|\n"
+            "| https://www.example.com/book/ | URL | Primary |\n\n"
+            "### Known Related Domains\n\n"
+            "| Domain | Purpose |\n|---|---|\n"
+            "| *.related.example | related, NOT authorized scope |\n\n"
+            "## High-Value Attack Surfaces\n1. booking flow\n"
+        )
+        with tempfile.TemporaryDirectory() as td:
+            src = Path(td) / "legacy"; src.mkdir()
+            (src / "memory.md").write_text(mem, encoding="utf-8")
+            s = bridge.parse_target_memory(src)
+            self.assertEqual(s["target"], "example.com")
+            self.assertEqual(s["engagement_platform"], "HackerOne")
+            self.assertEqual(s["actor"], "op")
+            self.assertEqual(s["authorization_reference"], "HackerOne Public Bug Bounty")
+            self.assertEqual(s["in_scope"], ["https://www.example.com/book/"])
+            # the nuanced "related domains" table must not be swept into scope
+            self.assertNotIn("*.related.example", "\n".join(s["in_scope"]))
+            # no memory.md -> {}
+            empty = Path(td) / "empty"; empty.mkdir()
+            self.assertEqual(bridge.parse_target_memory(empty), {})
+            # malformed content -> never raises, returns at most partial
+            bad = Path(td) / "bad"; bad.mkdir(); (bad / "memory.md").write_text("\x00 not a header", encoding="utf-8")
+            self.assertIsInstance(bridge.parse_target_memory(bad), dict)

@@ -148,6 +148,13 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_e
             names = []
         return json({"base": str(targets_dir), "sources": names})
 
+    @app.get("/api/import/suggest")
+    def import_suggest(source: str = ""):
+        source_dir = bridge.resolve_import_source(targets_dir, source)
+        if source_dir is None:
+            return error(422, "source must be an existing subdirectory of the targets base")
+        return json({"suggested": bridge.parse_target_memory(source_dir)})
+
     @app.post("/api/import-target")
     async def import_target_run(request: Request):
         require_mutation_guard(request)
