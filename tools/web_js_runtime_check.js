@@ -58,6 +58,7 @@ const EXPORTS = [
   'text', 'button', 'kv', 'option', 'badge', 'card', 'records', 'labelInput', 'postTransition',
   'renderProgress', 'renderMilestones', 'renderScopeReview', 'renderGuidedAction', 'renderTransitionForm',
   'showImport', 'loadImportSources', 'createImport', 'materializeEngagement',
+  'syncImportScope', 'syncImportTargetFromSource',
 ];
 // ---- Assertions -------------------------------------------------------------
 function fail(msg) { console.error('web js runtime check FAILED: ' + msg); process.exit(1); }
@@ -100,6 +101,12 @@ try {
 
   // Import flow: showImport toggles panels and kicks loadImportSources (fetch is stubbed pending).
   H.showImport();
+
+  // Smart-prefill behavior: setting the target auto-fills in-scope as target + *.target.
+  document.getElementById('import-target-domain').value = 'ex.com';
+  H.syncImportScope();
+  const scopeVal = document.getElementById('import-scope-in').value;
+  if (scopeVal !== 'ex.com\n*.ex.com') fail('syncImportScope did not auto-fill scope (got: ' + JSON.stringify(scopeVal) + ')');
 } catch (err) {
   fail((err && err.message) || String(err));
 }

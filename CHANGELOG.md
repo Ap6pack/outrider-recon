@@ -24,6 +24,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The portal's Import Legacy Target form now prefills to cut repeated typing: selecting a folder seeds the target field, the in-scope box auto-fills as `target` + `*.target` while untouched (mirroring the New Engagement wizard), and the operator name is remembered across imports in the same session. It reads only the folder name the operator picked — never the folder's contents — and the authorization reference and final scope stay manual. No browser storage is used.
 - Packaged the benchmark ground-truth corpus and the new contract schemas so the loop and harness work from an installed wheel; the release-readiness smoke now exercises the new subcommands and runs the corpus offline.
 - Replaced each skill's non-functional `triggers:` list with the supported `when_to_use` frontmatter field and dropped the ignored per-skill `version:`. Neither old field exists in the Agent Skills specification, so the authored trigger vocabulary never reached skill dispatch. Lint, release audit, and contributor docs now enforce the real contract.
 - Merged the archiver pointers from the former evidence-preservation method file into `analysis-and-reporting` §8, and eight failure modes not already covered into `osint-methodology` §5.
