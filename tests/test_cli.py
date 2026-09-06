@@ -438,7 +438,8 @@ class BridgeCliTests(unittest.TestCase):
             "**Main Scope URL:** https://www.example.com/book/\n\n"
             "## In-Scope Assets\n\n"
             "| Asset | Type | Notes |\n|---|---|---|\n"
-            "| https://www.example.com/book/ | URL | Primary |\n\n"
+            "| https://www.example.com/book/ | URL | Primary |\n"
+            "| https://www.example.com/account/cashback | URL | Also |\n\n"
             "### Known Related Domains\n\n"
             "| Domain | Purpose |\n|---|---|\n"
             "| *.related.example | related, NOT authorized scope |\n\n"
@@ -448,11 +449,13 @@ class BridgeCliTests(unittest.TestCase):
             src = Path(td) / "legacy"; src.mkdir()
             (src / "memory.md").write_text(mem, encoding="utf-8")
             s = bridge.parse_target_memory(src)
-            self.assertEqual(s["target"], "example.com")
+            # target is made consistent with the explicit in-scope host
+            self.assertEqual(s["target"], "www.example.com")
             self.assertEqual(s["engagement_platform"], "HackerOne")
             self.assertEqual(s["actor"], "op")
             self.assertEqual(s["authorization_reference"], "HackerOne Public Bug Bounty")
-            self.assertEqual(s["in_scope"], ["https://www.example.com/book/"])
+            # URLs are reduced to their host and deduped (scope model is host-based)
+            self.assertEqual(s["in_scope"], ["www.example.com"])
             # the nuanced "related domains" table must not be swept into scope
             self.assertNotIn("*.related.example", "\n".join(s["in_scope"]))
             # no memory.md -> {}

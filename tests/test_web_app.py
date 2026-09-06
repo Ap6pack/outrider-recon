@@ -371,10 +371,10 @@ class WebAppBridgeTests(unittest.TestCase):
                 "## In-Scope Assets\n\n| Asset | Type |\n|---|---|\n| https://www.example.com/book/ | URL |\n",
                 encoding='utf-8')
             s = c.get('/api/import/suggest', params={'source': 'legacy-one'}).json()['suggested']
-            self.assertEqual(s['target'], 'example.com')
+            self.assertEqual(s['target'], 'www.example.com')
             self.assertEqual(s['engagement_platform'], 'HackerOne')
             self.assertEqual(s['actor'], 'op')
-            self.assertEqual(s['in_scope'], ['https://www.example.com/book/'])
+            self.assertEqual(s['in_scope'], ['www.example.com'])
             # base-dir guard applies to the read-only suggest endpoint too
             for bad in ['../etc', '/etc', 'nope']:
                 self.assertEqual(c.get('/api/import/suggest', params={'source': bad}).status_code, 422, bad)
