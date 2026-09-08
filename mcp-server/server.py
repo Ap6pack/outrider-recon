@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """outrider-recon MCP server -- policy-gated OSINT enrichment tools."""
-# Copyright (c) 2025 Veritas Aequitas Holdings LLC. All rights reserved.
+
 from __future__ import annotations
 from typing import Any, Callable
 
