@@ -69,4 +69,4 @@ node_modules/
 CLAUDE.md
 docs/OWASP_WSTG_Checklist.xlsx
 ~/.claude-osint/
-.claude/*
+.claude/*.testcreds
