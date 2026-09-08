@@ -184,7 +184,7 @@ default launcher).
 evaluated first, so an exclusion wins over any inclusion.
 
 | Rule | Matches |
-|---|---|
+| --- | --- |
 | `example.com` | that exact host |
 | `*.example.com` | any subdomain (not the apex — list `example.com` too if you need it) |
 | `192.0.2.10`, `198.51.100.0/24`, `2001:db8::/32` | that IP or network |
