@@ -61,3 +61,25 @@ class WebEngagementMetadataTests(unittest.TestCase):
                 create_web_run_atomic(root, WebRunRequest('example.com','op','auth',['example.com'],[], 'HackerOne', {'name':'Authorization','value':'secret'}))
             with self.assertRaises(RunSetupError):
                 create_web_run_atomic(root, WebRunRequest('other.com','op','auth',['other.com'],[], 'HackerOne', {'name':'X-Bug-Bounty'}))
+
+    def test_url_path_in_scope_with_host_target_succeeds_and_enforces_path(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            # Host target is in scope by reachability against a URL/path rule.
+            run_dir = create_web_run_atomic(
+                root,
+                WebRunRequest('www.example.com', 'op', 'auth', ['www.example.com/book/'], []),
+            )
+            self.assertEqual(evaluate_scope_path(run_dir, 'www.example.com').decision, 'allow')
+            self.assertEqual(evaluate_scope_path(run_dir, 'https://www.example.com/book/x').decision, 'allow')
+            self.assertEqual(evaluate_scope_path(run_dir, 'https://www.example.com/admin').decision, 'deny')
+
+    def test_url_path_scope_rejects_target_host_not_referenced(self):
+        with tempfile.TemporaryDirectory() as td:
+            root = Path(td)
+            # apex isn't the host of any rule -> not reachable -> rejected at setup
+            with self.assertRaises(RunSetupError):
+                create_web_run_atomic(
+                    root,
+                    WebRunRequest('example.com', 'op', 'auth', ['www.example.com/book/'], []),
+                )

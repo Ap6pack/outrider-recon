@@ -16,10 +16,10 @@ from urllib.parse import urlsplit
 
 import yaml
 
-CandidateType = Literal['domain', 'ip']
+CandidateType = Literal['domain', 'ip', 'url']
 DecisionValue = Literal['allow', 'deny', 'error']
 RuleSource = Literal['in_scope', 'out_of_scope', 'none']
-RuleType = Literal['domain', 'wildcard', 'ip', 'cidr']
+RuleType = Literal['domain', 'wildcard', 'ip', 'cidr', 'url']
 
 class ScopeValidationError(ValueError):
     pass
@@ -50,10 +50,33 @@ _UniqueKeySafeLoader.add_constructor(
 
 
 @dataclass(frozen=True)
+class UrlPattern:
+    scheme: str | None
+    host: str
+    port: int | None
+    path: str | None
+    has_glob: bool
+
+    def __str__(self) -> str:
+        return f"{self.scheme or '*'}|{self.host}|{self.port if self.port is not None else '*'}|{self.path or '/'}"
+
+
+@dataclass(frozen=True)
+class _Candidate:
+    kind: CandidateType
+    normalized: str
+    host: str | None = None
+    ip: IPv4Address | IPv6Address | None = None
+    scheme: str | None = None
+    port: int | None = None
+    path: str | None = None
+
+
+@dataclass(frozen=True)
 class ScopeRule:
     original: str
     kind: RuleType
-    value: str | IPv4Address | IPv6Address | IPv4Network | IPv6Network
+    value: str | IPv4Address | IPv6Address | IPv4Network | IPv6Network | UrlPattern
 
 
 @dataclass(frozen=True)
@@ -113,26 +136,26 @@ def load_scope(run_dir: str | Path) -> ScopeConfig:
 
 def evaluate_scope(config: ScopeConfig, candidate: str) -> ScopeDecision:
     try:
-        normalized, candidate_type, candidate_value = _normalize_candidate(candidate)
+        cand = _normalize_candidate(candidate)
     except ScopeValidationError as exc:
         return ScopeDecision(candidate, None, None, 'error', None, 'none', str(exc))
     for rule in config.out_of_scope:
-        if _rule_matches(rule, candidate_type, candidate_value):
+        if _rule_matches(rule, cand, 'out_of_scope'):
             return ScopeDecision(
                 candidate,
-                normalized,
-                candidate_type,
+                cand.normalized,
+                cand.kind,
                 'deny',
                 rule.original,
                 'out_of_scope',
                 'candidate matches out_of_scope rule',
             )
     for rule in config.in_scope:
-        if _rule_matches(rule, candidate_type, candidate_value):
+        if _rule_matches(rule, cand, 'in_scope'):
             return ScopeDecision(
                 candidate,
-                normalized,
-                candidate_type,
+                cand.normalized,
+                cand.kind,
                 'allow',
                 rule.original,
                 'in_scope',
@@ -140,8 +163,8 @@ def evaluate_scope(config: ScopeConfig, candidate: str) -> ScopeDecision:
             )
     return ScopeDecision(
         candidate,
-        normalized,
-        candidate_type,
+        cand.normalized,
+        cand.kind,
         'deny',
         None,
         'none',
@@ -164,19 +187,25 @@ def _parse_rule(rule: Any, source: str) -> ScopeRule:
     text = rule.strip().lower()
     if not text:
         raise ScopeValidationError(f'{source} contains an empty rule')
-    if '://' in text or '?' in text or '#' in text or '@' in text:
+    if '?' in text or '#' in text or '@' in text:
         raise ScopeValidationError(
-            f'invalid {source} rule {original!r}: scope rules must be domains, '
-            'wildcard domains, IPs, or CIDRs, not URLs or paths'
+            f'invalid {source} rule {original!r}: query strings, fragments, and '
+            'credentials are not allowed in scope rules'
         )
     if text == '*':
         raise ScopeValidationError(f'invalid {source} rule {original!r}: bare wildcard is not allowed')
-    try:
-        if '/' in text:
+    # Scheme-qualified URL rule (https://host[:port]/path).
+    if '://' in text:
+        return _parse_url_rule(original, text, source)
+    if '/' in text:
+        # A CIDR (IP network) still wins; otherwise host[:port]/path is a URL rule.
+        head = text.split('/', 1)[0]
+        try:
             return ScopeRule(original, 'cidr', ip_network(text, strict=True))
-    except ValueError as exc:
-        if '/' in text:
-            raise ScopeValidationError(f'invalid {source} CIDR rule {original!r}: {exc}') from exc
+        except ValueError as exc:
+            if _looks_like_ip_literal(head):
+                raise ScopeValidationError(f'invalid {source} CIDR rule {original!r}: {exc}') from exc
+        return _parse_url_rule(original, text, source)
     try:
         return ScopeRule(original, 'ip', ip_address(text))
     except ValueError:
@@ -191,18 +220,58 @@ def _parse_rule(rule: Any, source: str) -> ScopeRule:
         apex = text[2:]
         _validate_domain(apex, original, source)
         return ScopeRule(original, 'wildcard', apex)
-    if '/' in text or ':' in text:
-        raise ScopeValidationError(
-            f'invalid {source} rule {original!r}: '
-            'domain rules must not contain paths, ports, or credentials'
-        )
+    if ':' in text:
+        # host:port (no path, no scheme) is a URL rule.
+        return _parse_url_rule(original, text, source)
     _validate_domain(text, original, source)
     return ScopeRule(original, 'domain', text)
 
 
-def _normalize_candidate(
-    candidate: str,
-) -> tuple[str, CandidateType, str | IPv4Address | IPv6Address]:
+def _parse_url_rule(original: str, text: str, source: str) -> ScopeRule:
+    scheme: str | None = None
+    rest = text
+    if '://' in rest:
+        scheme, _, rest = rest.partition('://')
+        if scheme not in ('http', 'https'):
+            raise ScopeValidationError(
+                f'invalid {source} rule {original!r}: only http and https schemes are supported'
+            )
+    if '/' in rest:
+        hostport, _, path_rest = rest.partition('/')
+        path: str | None = _normalize_path('/' + path_rest)
+    else:
+        hostport, path = rest, None
+    host = hostport
+    port: int | None = None
+    if ':' in hostport:
+        host, _, port_str = hostport.partition(':')
+        if not port_str.isdigit():
+            raise ScopeValidationError(f'invalid {source} rule {original!r}: malformed port')
+        port = int(port_str)
+        if not 1 <= port <= 65535:
+            raise ScopeValidationError(f'invalid {source} rule {original!r}: port out of range')
+    if not host:
+        raise ScopeValidationError(f'invalid {source} rule {original!r}: missing host')
+    if '*' in host:
+        raise ScopeValidationError(
+            f'invalid {source} rule {original!r}: wildcards are only allowed in the path'
+        )
+    _validate_domain(host, original, source)
+    if path is None and port is None and scheme is None:
+        raise ScopeValidationError(f'invalid {source} rule {original!r}')
+    return ScopeRule(original, 'url', UrlPattern(scheme, host, port, path, bool(path and '*' in path)))
+
+
+def _normalize_path(path: str) -> str:
+    p = path.strip().lower()
+    if not p.startswith('/'):
+        p = '/' + p
+    while '//' in p:
+        p = p.replace('//', '/')
+    return p
+
+
+def _normalize_candidate(candidate: str) -> _Candidate:
     if not isinstance(candidate, str):
         raise ScopeValidationError('candidate must be a string')
     text = candidate.strip()
@@ -214,21 +283,36 @@ def _normalize_candidate(
             raise ScopeValidationError('candidate URL is malformed')
         if parsed.username is not None or parsed.password is not None:
             raise ScopeValidationError('candidate URL must not contain embedded credentials')
-        host = parsed.hostname
-        return _normalize_host(host)
-    if any(ch in text for ch in '/?#@'):
+        host = _normalize_host(parsed.hostname)
+        try:
+            port = parsed.port
+        except ValueError as exc:
+            raise ScopeValidationError('candidate URL port is invalid') from exc
+        path = _normalize_path(parsed.path) if parsed.path else None
+        # A URL candidate reduces to its host for identity (so approvals, skill
+        # requests and scope reports key on the host); scheme/port/path are
+        # retained so URL/path scope rules can still be enforced against it.
+        return _Candidate(
+            host.kind, host.normalized, host=host.host, ip=host.ip,
+            scheme=parsed.scheme.lower(), port=port, path=path,
+        )
+    if any(ch in text for ch in '?#@'):
         raise ScopeValidationError('candidate must be a domain, IP address, or URL')
-    if ':' in text and not _can_be_ip(text):
+    if '/' in text:
         raise ScopeValidationError(
-            'candidate contains a port or malformed IPv6 address; '
-            'use a valid URL for host:port values'
+            'candidate must be a domain, IP address, or full URL; use a scheme (https://) '
+            'for path-scoped candidates'
+        )
+    if _can_be_ip(text):
+        return _normalize_host(text)
+    if ':' in text:
+        raise ScopeValidationError(
+            'candidate contains a port or malformed IPv6 address; use a full URL for host:port values'
         )
     return _normalize_host(text)
 
 
-def _normalize_host(
-    host: str,
-) -> tuple[str, CandidateType, str | IPv4Address | IPv6Address]:
+def _normalize_host(host: str) -> _Candidate:
     host = host.strip().lower()
     if host.endswith('.'):
         host = host[:-1]
@@ -236,12 +320,12 @@ def _normalize_host(
         raise ScopeValidationError('candidate hostname is empty')
     try:
         ip = ip_address(host)
-        return str(ip), 'ip', ip
+        return _Candidate('ip', str(ip), ip=ip)
     except ValueError:
         if _looks_like_ip_literal(host):
             raise ScopeValidationError('candidate IP address is malformed')
     _validate_domain(host, host, 'candidate')
-    return host, 'domain', host
+    return _Candidate('domain', host, host=host)
 
 
 def _validate_domain(domain: str, original: str, source: str) -> None:
@@ -257,31 +341,69 @@ def _validate_domain(domain: str, original: str, source: str) -> None:
             raise ScopeValidationError(f'invalid {source} domain {original!r}')
 
 
-def _rule_matches(
-    rule: ScopeRule,
-    candidate_type: CandidateType,
-    candidate_value: str | IPv4Address | IPv6Address,
-) -> bool:
-    if candidate_type == 'ip':
-        if rule.kind == 'ip':
-            return candidate_value == rule.value
-        if rule.kind == 'cidr':
-            return candidate_value in rule.value  # type: ignore[operator]
-        return False
+def _rule_matches(rule: ScopeRule, cand: _Candidate, scope_side: RuleSource) -> bool:
+    if rule.kind == 'ip':
+        return cand.ip is not None and cand.ip == rule.value
+    if rule.kind == 'cidr':
+        return cand.ip is not None and cand.ip in rule.value  # type: ignore[operator]
     if rule.kind == 'domain':
-        return candidate_value == rule.value
+        return cand.host is not None and cand.host == rule.value
     if rule.kind == 'wildcard':
         suffix = '.' + str(rule.value)
-        return (
-            isinstance(candidate_value, str)
-            and candidate_value.endswith(suffix)
-            and candidate_value != rule.value
-        )
+        return cand.host is not None and cand.host.endswith(suffix) and cand.host != rule.value
+    if rule.kind == 'url':
+        return _url_rule_matches(rule.value, cand, scope_side)  # type: ignore[arg-type]
     return False
 
 
+def _url_rule_matches(pat: UrlPattern, cand: _Candidate, scope_side: RuleSource) -> bool:
+    # URL rules are host-based; an IP candidate (no host) never matches.
+    if cand.host is None or cand.host != pat.host:
+        return False
+    cand_port = cand.port
+    if cand_port is None and cand.scheme in ('http', 'https'):
+        cand_port = 443 if cand.scheme == 'https' else 80
+    # scheme / port constraints: an unknown candidate value never blocks reachability
+    # (in_scope) and never triggers a deny (out_of_scope).
+    if pat.scheme is not None:
+        if cand.scheme is None:
+            if scope_side == 'out_of_scope':
+                return False
+        elif cand.scheme != pat.scheme:
+            return False
+    if pat.port is not None:
+        if cand_port is None:
+            if scope_side == 'out_of_scope':
+                return False
+        elif cand_port != pat.port:
+            return False
+    if pat.path is None:
+        return True
+    if cand.path is None:
+        # bare host / host:port candidate: in-scope host is reachable; a path-specific
+        # exclusion does not deny a pathless candidate.
+        return scope_side == 'in_scope'
+    return _path_match(cand.path, pat.path, pat.has_glob)
+
+
+def _path_match(cand_path: str, rule_path: str, has_glob: bool) -> bool:
+    cand_path = cand_path.lower()
+    if not cand_path.startswith('/'):
+        cand_path = '/' + cand_path
+    if has_glob:
+        regex = '[^/]*'.join(re.escape(part) for part in rule_path.split('*'))
+        return re.fullmatch(regex + '(/.*)?', cand_path) is not None
+    prefix = rule_path.rstrip('/')
+    if not prefix:
+        return True
+    return cand_path == prefix or cand_path.startswith(prefix + '/')
+
+
 def _looks_like_ip_literal(text: str) -> bool:
-    return ':' in text or bool(re.fullmatch(r'[0-9.]+', text))
+    # An IPv4-style literal is only digits and dots; an IPv6-style literal uses
+    # '::' compression or has two or more colons. A single colon is a host:port
+    # separator (a URL rule / candidate), not a malformed IP literal.
+    return bool(re.fullmatch(r'[0-9.]+', text)) or text.count(':') >= 2
 
 
 def _can_be_ip(text: str) -> bool:
@@ -299,6 +421,8 @@ from datetime import datetime, timezone
 
 def normalize_rule_key(rule: Any, source: str) -> str:
     parsed = _parse_rule(rule, source)
+    if parsed.kind == 'url':
+        return f"url:{parsed.value}"
     return f"{parsed.kind}:{parsed.value}"
 
 
@@ -309,14 +433,27 @@ def normalized_scope_rules(rules: list[Any], source: str) -> list[ScopeRule]:
 def normalize_target_host(target: str) -> str:
     if not isinstance(target, str):
         raise ScopeValidationError('target must be a string')
-    parsed = urlsplit(target.strip()) if '://' in target.strip() else None
-    if parsed and any(part == '..' for part in Path(parsed.path).parts):
-        raise ScopeValidationError('target URL path must not contain traversal')
-    normalized, ctype, _value = _normalize_candidate(target)
-    if target.strip().startswith('*.') or '/' in normalized:
+    stripped = target.strip()
+    if not stripped:
+        raise ScopeValidationError('target must not be empty')
+    if '://' in stripped:
+        # A URL target is reduced to its bare host (scheme/port/path/query
+        # dropped); path scope belongs in the scope rules, not the manifest
+        # target, which is always a single host.
+        parsed = urlsplit(stripped)
+        if any(part == '..' for part in Path(parsed.path).parts):
+            raise ScopeValidationError('target URL path must not contain traversal')
+        cand = _normalize_candidate(stripped)
+        host = cand.host if cand.host is not None else (str(cand.ip) if cand.ip is not None else None)
+        if host is None:
+            raise ScopeValidationError('target must be a single domain or IP host')
+        return host
+    cand = _normalize_candidate(stripped)
+    # A scheme-less target must be a bare host: a port, path, or CIDR (all parsed
+    # as a url-kind candidate) is not a single host.
+    if cand.kind == 'url' or cand.path is not None or cand.port is not None:
         raise ScopeValidationError('target must be a single domain or IP host')
-    # reject CIDR and path-like values that _normalize_candidate already rejects
-    return normalized
+    return cand.normalized
 
 
 def scope_revision(run_dir: str | Path) -> str:

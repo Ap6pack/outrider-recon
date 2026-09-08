@@ -260,10 +260,61 @@ def _memory_field(text: str, label: str) -> str | None:
     return m.group(1).strip() if m else None
 
 
+def _asset_to_rule(cell: str) -> str | None:
+    """Normalize one ``In-Scope Assets`` cell to a governed scope rule string.
+
+    A URL is emitted as a scheme-agnostic ``host[:port][/path]`` rule (the scope
+    engine now supports URL/path rules natively), so ``https://www.x.com/book/``
+    yields ``www.x.com/book/`` and the exact path scope is preserved instead of
+    being reduced to the bare host. Query strings and fragments are dropped (the
+    scope engine rejects ``?``/``#``). A bare domain stays a domain rule. Returns
+    ``None`` when no host can be found."""
+    url = re.search(r"https?://[^\s)|\]]+", cell)
+    if url:
+        parsed = urlparse(url.group(0))
+        host = (parsed.hostname or "").strip().lower().rstrip(".")
+        if not host:
+            return None
+        rule = host
+        try:
+            if parsed.port is not None:
+                rule = f"{host}:{parsed.port}"
+        except ValueError:
+            return None
+        path = (parsed.path or "").rstrip()
+        if path and path != "/":
+            if not path.startswith("/"):
+                path = "/" + path
+            rule = rule + path
+        return rule
+    dm = _DOMAIN_RE.search(cell)
+    if not dm:
+        return None
+    host = dm.group(1).strip().lower().rstrip(".")
+    rule = host
+    # A scheme-less asset may still carry a :port and/or /path right after the
+    # host (e.g. ``api.x.com:8443/v1``); preserve them as a host:port/path rule.
+    tail = re.match(r"(?::(\d{1,5}))?(/[^\s)|\]?#]*)?", cell[dm.end():])
+    if tail:
+        port_part, path_part = tail.group(1), tail.group(2)
+        if port_part and 1 <= int(port_part) <= 65535:
+            rule = f"{host}:{port_part}"
+        if path_part and path_part != "/":
+            rule = rule + path_part.rstrip().lower()
+    return rule
+
+
+def _rule_host(rule: str) -> str:
+    """Bare host of a scope rule string (drops any ``/path`` and ``:port``)."""
+    host = rule.split("/", 1)[0]
+    return host.split(":", 1)[0]
+
+
 def _parse_in_scope_assets(text: str) -> list[str]:
     """Extract explicit in-scope assets from the primary ## In-Scope Assets table
     only (stops at the next heading, so nuanced 'related domains' tables are not
-    swept in as authorized scope)."""
+    swept in as authorized scope). URL assets are emitted as ``host[/path]`` scope
+    rules so the operator's exact path scope survives the import."""
     section = re.search(r"^##\s+In-?\s*Scope\s+Assets\s*$(.*?)(^#{2,}\s|\Z)", text, re.MULTILINE | re.IGNORECASE | re.DOTALL)
     if not section:
         return []
@@ -274,20 +325,10 @@ def _parse_in_scope_assets(text: str) -> list[str]:
         if not line.startswith("|"):
             continue
         cell = line.strip("|").split("|")[0].strip()
-        # The governed scope model accepts hosts/domains/IPs/CIDRs, not URLs with
-        # paths — so reduce a URL asset to its host (e.g. https://www.x.com/book/
-        # -> www.x.com). Path-level scope is the operator's discipline to keep.
-        url = re.search(r"https?://[^\s)|\]]+", cell)
-        if url:
-            value = urlparse(url.group(0)).hostname
-        else:
-            dm = _DOMAIN_RE.search(cell)
-            value = dm.group(1) if dm else None
-        if value:
-            value = value.strip().lower().rstrip(".")
+        value = _asset_to_rule(cell)
         if value and value not in seen:
             seen.add(value)
-            out.append(value[:253])
+            out.append(value[:512])
         if len(out) >= 50:
             break
     return out
@@ -335,13 +376,15 @@ def parse_target_memory(source_dir: str | Path) -> dict[str, Any]:
         assets = _parse_in_scope_assets(text)
         if assets:
             result["in_scope"] = assets
-            # The governed model requires the target to be inside its own scope
-            # (run_setup: "target is not allowed by scope"). If the memory's
-            # Target line (often the apex) isn't among the explicit in-scope
-            # hosts, use the primary in-scope host so the prefill imports cleanly
-            # without over-scoping to an unlisted apex.
-            if result.get("target") not in assets:
-                result["target"] = assets[0]
+            # The governed model requires the target host to be referenced by
+            # scope (run_setup: "target is not allowed by scope"). A bare host is
+            # in-scope by reachability if it is the host of some URL/domain rule,
+            # so if the memory's Target line (often the apex) isn't among the
+            # in-scope rule hosts, use the primary in-scope host — the target
+            # stays a host, and the exact path scope is kept in the rules.
+            hosts = [h for h in (_rule_host(a) for a in assets) if h]
+            if result.get("target") not in hosts and hosts:
+                result["target"] = hosts[0]
     except Exception:
         return result
     return result

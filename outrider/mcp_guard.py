@@ -148,7 +148,8 @@ def authorize_mcp_tool(tool_name: str, run_dir: str | Path, *, domain: str | Non
         )
 
     try:
-        scope_normalized, candidate_type, _ = _normalize_candidate(normalized)
+        _cand = _normalize_candidate(normalized)
+        scope_normalized, candidate_type = _cand.normalized, _cand.kind
     except ScopeValidationError as exc:
         return _error_decision(
             tool_name, policy, str(exc), run_id=manifest.run_id, workflow_state=state.current_state, original=original, normalized=normalized

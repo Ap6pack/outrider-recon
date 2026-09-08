@@ -374,10 +374,30 @@ class WebAppBridgeTests(unittest.TestCase):
             self.assertEqual(s['target'], 'www.example.com')
             self.assertEqual(s['engagement_platform'], 'HackerOne')
             self.assertEqual(s['actor'], 'op')
-            self.assertEqual(s['in_scope'], ['www.example.com'])
+            # URL assets become host/path scope rules (exact path scope preserved)
+            self.assertEqual(s['in_scope'], ['www.example.com/book/'])
             # base-dir guard applies to the read-only suggest endpoint too
             for bad in ['../etc', '/etc', 'nope']:
                 self.assertEqual(c.get('/api/import/suggest', params={'source': bad}).status_code, 422, bad)
+
+    def test_import_with_url_scope_enforces_path(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs, targets, c = self._env(td)
+            body = {
+                'source': 'legacy-one', 'target': 'www.example.com', 'actor': 'op',
+                'authorization_reference': 'ROE',
+                'in_scope': ['www.example.com/book/'], 'out_of_scope': [], 'confirmed': True,
+            }
+            r = c.post('/api/import-target', headers=self.H, json=body)
+            self.assertEqual(r.status_code, 201, r.text)
+            rid = r.json()['run']['run_id']
+            def decision(cand):
+                resp = c.post(f'/api/runs/{rid}/scope/check', headers=self.H, json={'candidate': cand})
+                self.assertEqual(resp.status_code, 200, resp.text)
+                return resp.json()['decision']
+            self.assertEqual(decision('https://www.example.com/book/x'), 'allow')
+            self.assertEqual(decision('https://www.example.com/admin'), 'deny')
+            self.assertEqual(decision('www.example.com'), 'allow')
 
     def test_import_creates_run_and_registers_evidence(self):
         with tempfile.TemporaryDirectory() as td:

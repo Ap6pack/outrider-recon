@@ -201,10 +201,10 @@ def uuid4str(v: Any, field: str) -> str:
 
 def normalize_candidate(candidate: str) -> tuple[str, str]:
     try:
-        n, t, _ = _normalize_candidate(candidate)
+        c = _normalize_candidate(candidate)
     except ScopeValidationError as exc:
         raise ApprovalValidationError(str(exc)) from exc
-    return n, t
+    return c.normalized, c.kind
 
 
 def action_class(a: str) -> str:

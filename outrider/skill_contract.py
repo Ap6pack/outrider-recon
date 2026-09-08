@@ -220,7 +220,7 @@ def ensure_contract_dirs(run_dir: str|Path)->None:
 
 def _normalize(candidate: str|None)->tuple[str|None,str|None]:
     if candidate is None: return None,None
-    try: n,t,_ = _normalize_candidate(candidate); return n,t
+    try: c = _normalize_candidate(candidate); return c.normalized, c.kind
     except ScopeValidationError as e: raise SkillContractValidationError(str(e)) from e
 
 def _verify_evidence_ids(run_dir:Path, ids:list[str])->tuple[bool,list[str]]:

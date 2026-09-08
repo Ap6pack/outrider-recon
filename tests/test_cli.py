@@ -449,13 +449,17 @@ class BridgeCliTests(unittest.TestCase):
             src = Path(td) / "legacy"; src.mkdir()
             (src / "memory.md").write_text(mem, encoding="utf-8")
             s = bridge.parse_target_memory(src)
-            # target is made consistent with the explicit in-scope host
+            # target reduces to the primary in-scope host (reachability)
             self.assertEqual(s["target"], "www.example.com")
             self.assertEqual(s["engagement_platform"], "HackerOne")
             self.assertEqual(s["actor"], "op")
             self.assertEqual(s["authorization_reference"], "HackerOne Public Bug Bounty")
-            # URLs are reduced to their host and deduped (scope model is host-based)
-            self.assertEqual(s["in_scope"], ["www.example.com"])
+            # URLs are emitted as scheme-agnostic host/path scope rules, preserving
+            # the exact path scope rather than reducing to the bare host
+            self.assertEqual(
+                s["in_scope"],
+                ["www.example.com/book/", "www.example.com/account/cashback"],
+            )
             # the nuanced "related domains" table must not be swept into scope
             self.assertNotIn("*.related.example", "\n".join(s["in_scope"]))
             # no memory.md -> {}

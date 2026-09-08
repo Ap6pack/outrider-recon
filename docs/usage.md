@@ -178,6 +178,37 @@ defaults to a `targets/` folder beside the runs root; override it with
 `outrider web serve <runs> --targets-root <dir>` (or `--targets-root` on the
 default launcher).
 
+## Scope rule syntax
+
+`in_scope` and `out_of_scope` accept one rule per line. `out_of_scope` is always
+evaluated first, so an exclusion wins over any inclusion.
+
+| Rule | Matches |
+|---|---|
+| `example.com` | that exact host |
+| `*.example.com` | any subdomain (not the apex — list `example.com` too if you need it) |
+| `192.0.2.10`, `198.51.100.0/24`, `2001:db8::/32` | that IP or network |
+| `www.example.com/book/` | the host `www.example.com`, and any URL at or under `/book/` |
+| `https://www.example.com/app` | as above, but only over `https` |
+| `api.example.com:8443/v1` | only on port 8443, at or under `/v1` |
+| `www.example.com/api/*/admin` | one wildcard path segment (`*` matches a single segment) |
+
+URL/path rules keep host reachability: the bare host of a URL rule (and the
+manifest target, which is always a single host) is in scope for recon, while a
+URL candidate is checked against the rule's scheme, port, and path. Path matching
+is a directory prefix — `/book` and `/book/` both cover `/book/x` — and is
+case-insensitive. Query strings, fragments, embedded credentials, and non-`http(s)`
+schemes are rejected in rules. To carve a path out of an otherwise in-scope host,
+add it to `out_of_scope` (e.g. `www.example.com/admin`).
+
+Check any candidate against a run's scope from the portal (per-run **Scope** →
+check) or the CLI:
+
+```bash
+outrider scope-check runs/example.com https://www.example.com/book/x   # allow
+outrider scope-check runs/example.com https://www.example.com/admin    # deny
+```
+
 ## Tips
 
 ### Ask for skill references in the response
