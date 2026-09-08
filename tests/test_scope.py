@@ -4,7 +4,13 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from outrider.scope import ScopeValidationError, evaluate_scope, load_scope
+from outrider.scope import (
+    ScopeValidationError,
+    evaluate_scope,
+    load_scope,
+    normalize_rule_key,
+    normalize_target_host,
+)
 
 
 def write_scope(base, text):
@@ -81,17 +87,36 @@ class ScopeLoadingTests(unittest.TestCase):
             "*",
             "api.*.example.com",
             "exa_mple.com",
-            "https://example.com",
-            "example.com/path",
-            "example.com:443",
             "192.0.2.999",
             "192.0.2.1/24",
+            # URL/path rules are supported now, but these variants stay invalid:
+            "ftp://example.com/x",              # unsupported scheme
+            "https://example.com/x?a=b",        # query string
+            "https://example.com/x#frag",       # fragment
+            "https://user@example.com/x",       # embedded credentials
+            "https://*.example.com/x",          # wildcard in host
+            "example.com:99999/x",              # port out of range
+            "example.com:abc/x",                # malformed port
         ]
         for rule in bad_rules:
             with self.subTest(rule=rule), tempfile.TemporaryDirectory() as tmp:
-                run = write_scope(tmp, f"in_scope:\n  - {rule}\n")
+                run = write_scope(tmp, f"in_scope:\n  - {rule!r}\n")
                 with self.assertRaises(ScopeValidationError):
                     load_scope(run)
+
+    def test_valid_url_path_rules_load(self):
+        for rule in [
+            "www.example.com/book/",
+            "https://www.example.com/account/cashback",
+            "www.example.com/api/*/admin",
+            "api.example.com:8443/v1",
+            "api.example.com:8443",
+            "https://www.example.com",
+        ]:
+            with self.subTest(rule=rule), tempfile.TemporaryDirectory() as tmp:
+                run = write_scope(tmp, f"in_scope:\n  - {rule!r}\n")
+                cfg = load_scope(run)
+                self.assertEqual(cfg.in_scope[0].kind, "url")
 
     def test_legacy_none_and_new_empty_out_of_scope(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -159,6 +184,71 @@ class ScopeDecisionTests(unittest.TestCase):
         self.assertEqual(evaluate_scope(cfg, "https:///missing-host").decision, "error")
         self.assertEqual(evaluate_scope(cfg, "api.example.com/path").decision, "error")
         self.assertEqual(evaluate_scope(cfg, "api.example.com:443").decision, "error")
+
+    def test_url_path_scope_rules_matrix(self):
+        cfg = self.config(
+            "in_scope:\n"
+            "  - www.example.com/book/\n"
+            "  - www.example.com/account/cashback\n"
+            "  - www.example.com/api/*/admin\n"
+            "  - api.example.com:8443/v1\n"
+            "  - example.net\n"
+            "out_of_scope:\n"
+            "  - www.example.com/admin\n"
+        )
+        allow = lambda c: self.assertEqual(evaluate_scope(cfg, c).decision, "allow", c)
+        deny = lambda c: self.assertEqual(evaluate_scope(cfg, c).decision, "deny", c)
+        # Reachability: a bare host that a URL rule references is in scope.
+        allow("www.example.com")
+        # Path prefix: /book covers /book/ and children; unlisted path denies.
+        allow("https://www.example.com/book/x")
+        allow("https://www.example.com/book")
+        allow("https://www.example.com/account/cashback/2024")
+        deny("https://www.example.com/private")
+        # out_of_scope path wins over in-scope host reachability.
+        deny("https://www.example.com/admin")
+        deny("https://www.example.com/admin/panel")
+        # Single-segment wildcard.
+        allow("https://www.example.com/api/v2/admin")
+        deny("https://www.example.com/api/v2/v3/admin")
+        # host:port rule: matching port allows, default/other port denies.
+        allow("https://api.example.com:8443/v1/thing")
+        deny("https://api.example.com/v1/thing")
+        # A plain domain rule covers every path/scheme on that host.
+        allow("example.net")
+        allow("https://example.net/anything")
+
+    def test_url_rule_scheme_and_port_constraints(self):
+        cfg = self.config("in_scope:\n  - https://secure.example.com/app\n")
+        self.assertEqual(evaluate_scope(cfg, "https://secure.example.com/app/x").decision, "allow")
+        self.assertEqual(evaluate_scope(cfg, "http://secure.example.com/app/x").decision, "deny")
+        # A scheme-qualified rule still lets the bare host be reachable.
+        self.assertEqual(evaluate_scope(cfg, "secure.example.com").decision, "allow")
+
+    def test_url_rule_ip_candidate_never_matches(self):
+        cfg = self.config("in_scope:\n  - www.example.com/book/\n")
+        self.assertEqual(evaluate_scope(cfg, "https://203.0.113.5/book/").decision, "deny")
+
+    def test_normalize_rule_key_url_dedup_and_target(self):
+        # Scheme-agnostic and scheme-qualified same host+path collapse by host+path.
+        self.assertEqual(
+            normalize_rule_key("www.example.com/book/", "in_scope"),
+            "url:*|www.example.com|*|/book/",
+        )
+        self.assertEqual(
+            normalize_rule_key("https://api.example.com:8443/v1", "in_scope"),
+            "url:https|api.example.com|8443|/v1",
+        )
+        self.assertNotEqual(
+            normalize_rule_key("www.example.com/book/", "in_scope"),
+            normalize_rule_key("www.example.com/admin", "in_scope"),
+        )
+        # A URL target reduces to its bare host; CIDR/port/path targets are rejected.
+        self.assertEqual(normalize_target_host("https://www.example.com/book/"), "www.example.com")
+        for bad in ["192.0.2.0/24", "*.example.com", "example.com:443", "example.com/path"]:
+            with self.subTest(bad=bad):
+                with self.assertRaises(ScopeValidationError):
+                    normalize_target_host(bad)
 
 
 if __name__ == "__main__":

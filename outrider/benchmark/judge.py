@@ -21,8 +21,7 @@ from outrider.skill_contract import list_contract_inventory, load_skill_result, 
 
 def _norm(value: str) -> str:
     try:
-        normalized, _type, _original = _normalize_candidate(value)
-        return normalized
+        return _normalize_candidate(value).normalized
     except (ScopeValidationError, ValueError):
         return value.strip().lower()
 

@@ -58,43 +58,6 @@ async def hudsonrock_lookup(run_dir: str, domain: str) -> dict[str, Any]:
     """Query HudsonRock Cavalier after Outrider policy allows public source lookup."""
     return await mcp_call("hudsonrock_lookup", run_dir, {"domain": domain}, _CompatExecutor())
 
-    Checks whether employees or users of a domain appear in infostealer
-    malware logs (credential leaks from compromised machines).
-
-    Args:
-        domain: Target domain (e.g. "example.com")
-    """
-    url = "https://cavalier.hudsonrock.com/api/json/v2/osint-tools/search-by-domain"
-    try:
-        data = await _get_json(url, params={"domain": domain})
-    except httpx.HTTPStatusError as exc:
-        return {"error": f"HudsonRock returned HTTP {exc.response.status_code}"}
-    except httpx.TimeoutException:
-        return {"error": "HudsonRock request timed out (30s)"}
-    except Exception as exc:
-        return {"error": f"HudsonRock request failed: {exc}"}
-
-    if not isinstance(data, dict):
-        return {"domain": domain, "raw": str(data), "total": 0,
-                "employees_count": 0, "users_count": 0, "stealer_families": []}
-
-    employees = data.get("employees", 0)
-    users = data.get("users", 0)
-    sf_raw = data.get("stealerFamilies", {})
-    stealers = list(sf_raw.keys()) if isinstance(sf_raw, dict) else sf_raw
-    stealers = [s for s in stealers if s != "total"]
-
-    return {
-        "domain": domain,
-        "total": data.get("total", 0),
-        "employees_count": employees,
-        "users_count": users,
-        "stealer_families": stealers,
-        "stealer_counts": {k: v for k, v in sf_raw.items() if k != "total"} if isinstance(sf_raw, dict) else {},
-        "last_employee_compromised": data.get("last_employee_compromised"),
-        "last_user_compromised": data.get("last_user_compromised"),
-    }
-
 
 # ---------------------------------------------------------------------------
 # Tool: epss_score

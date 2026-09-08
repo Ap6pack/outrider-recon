@@ -17,7 +17,7 @@
     "classification": {"const": "validated_finding"},
     "title": {"type": "string", "minLength": 1},
     "affected_candidate": {"type": "string", "minLength": 1},
-    "candidate_type": {"enum": ["domain", "ip"]},
+    "candidate_type": {"enum": ["domain", "ip", "url"]},
     "location": {"type": ["string", "null"], "minLength": 1},
     "severity": {"enum": ["informational", "low", "medium", "high", "critical"]},
     "confidence": {"enum": ["medium", "high"]},
