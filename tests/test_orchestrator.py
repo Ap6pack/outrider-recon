@@ -133,6 +133,30 @@ class OrchestratorLoopTests(unittest.TestCase):
             self.assertTrue(any(e.get("event") == "result_valid" for e in report.log))
             self.assertFalse(any(d["action_type"] == "target_enumeration" for d in report.deferred))
 
+    def test_scope_wide_grant_dispatches_active_hop_unattended(self):
+        # A scope-wide active authorization lets the loop enumerate a newly
+        # discovered in-scope candidate that was never individually approved.
+        with tempfile.TemporaryDirectory() as td:
+            run, ev = self._prepare(td)
+            grant_approval(run, "target_enumeration", None, "authorized-operator", "scope-wide at setup", duration_minutes=10080, scope_wide=True)
+            scripts = {
+                "*": _seed(ev, recommend=[
+                    {"action_type": "target_enumeration", "candidate": "api.example.com", "priority": "high", "reason": "enum"},
+                ]),
+                "api.example.com": ResultScript(status="completed", summary="enum done", claims=[{
+                    "classification": "observation", "subject": "api.example.com",
+                    "statement": "enumerated", "confidence": "medium", "suggested_severity": None,
+                    "evidence_ids": [ev]}]),
+            }
+            report = run_orchestration(
+                run, executor=StubExecutor(scripts), actor="authorized-operator",
+                seeds=[SeedRequest(skill="offensive-osint", action_type="local_analysis", objective="seed")],
+            )
+            self.assertEqual(report.requests_created, 2)  # seed + unattended active hop
+            self.assertFalse(any(d["action_type"] == "target_enumeration" for d in report.deferred))
+            # Intrusive is still handoff-only even under a scope-wide active grant.
+            self.assertEqual(list_findings(run).finding_count, 0)
+
     def test_resume_is_idempotent(self):
         with tempfile.TemporaryDirectory() as td:
             run, ev = self._prepare(td)

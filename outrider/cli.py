@@ -34,7 +34,7 @@ from outrider.evidence import (
     verify_all_evidence,
 )
 from outrider.scope import evaluate_scope_path
-from outrider.run_setup import DEFAULT_FILES, render_scope_yaml, render_findings_md, render_technique_cards_md, render_surface_md, render_report_md, utc_now
+from outrider.run_setup import DEFAULT_FILES, DEFAULT_ACTIVE_AUTH_MINUTES, RunSetupError, authorize_unattended_active, render_scope_yaml, render_findings_md, render_technique_cards_md, render_surface_md, render_report_md, utc_now
 from outrider.skill_contract import (
     SkillContractValidationError,
     create_skill_request,
@@ -259,6 +259,21 @@ def init_run(args: argparse.Namespace) -> int:
     for filename, content in markdown_files.items():
         if write_if_missing(run_dir / filename, content):
             created.append(filename)
+
+    if getattr(args, "auto_active", False):
+        if not (args.actor and args.actor.strip()) or not (args.authorization_reference and args.authorization_reference.strip()):
+            print("--auto-active requires --actor and --authorization-reference.")
+            return 2
+        try:
+            authorize_unattended_active(
+                run_dir,
+                actor=args.actor.strip(),
+                reason=f"Unattended active enumeration authorized at setup ({args.authorization_reference.strip()})"[:2000],
+                duration_minutes=args.active_duration_minutes,
+            )
+            created.append("scope-wide active authorization (target_read_only_request + target_enumeration)")
+        except RunSetupError as exc:
+            print(f"Active authorization not applied: {exc}")
 
     print(f"Initialized Outrider run: {run_dir}")
     if created:
@@ -923,6 +938,23 @@ def build_parser() -> argparse.ArgumentParser:
     init_parser.add_argument("--actor", help="Operator creating the run manifest.")
     init_parser.add_argument(
         "--authorization-reference", help="Opaque authorization reference metadata."
+    )
+    init_parser.add_argument(
+        "--auto-active",
+        action="store_true",
+        help=(
+            "Authorize unattended active enumeration of any in-scope candidate at setup "
+            "(ADR 0021): moves the run to 'scoped' and records a scope-wide active grant "
+            "for target_read_only_request and target_enumeration. Requires --actor and "
+            "--authorization-reference. Findings still require human promotion; intrusive "
+            "and prohibited actions remain handoff-only."
+        ),
+    )
+    init_parser.add_argument(
+        "--active-duration-minutes",
+        type=int,
+        default=DEFAULT_ACTIVE_AUTH_MINUTES,
+        help="Lifetime of the scope-wide active authorization, 1-10080 minutes (default 10080 = 7 days).",
     )
     init_parser.set_defaults(func=init_run)
 

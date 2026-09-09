@@ -57,6 +57,33 @@ class CliCommandTests(unittest.TestCase):
             status = cli.main()
         return status, stdout.getvalue()
 
+    def test_init_auto_active_authorizes_scope_wide(self):
+        from outrider.state import load_state
+        from outrider.approval import list_approvals, evaluate_action
+        with tempfile.TemporaryDirectory() as tmpdir:
+            status, output = self.run_cli(
+                "init", "acme.example", "--output-dir", tmpdir,
+                "--scope", "acme.example", "--scope", "*.acme.example",
+                "--actor", "op", "--authorization-reference", "PROG-1", "--auto-active",
+            )
+            self.assertEqual(status, 0)
+            run = Path(tmpdir) / "acme.example"
+            self.assertEqual(load_state(run).current_state, "scoped")
+            summary = list_approvals(run)
+            self.assertEqual(summary.active_count, 2)
+            self.assertTrue(all(a.candidate_type == "scope" for a in summary.approvals if a.status == "active"))
+            self.assertEqual(evaluate_action(run, "target_enumeration", "sub.acme.example").decision, "allow")
+            self.assertIn("scope-wide active authorization", output)
+
+    def test_init_auto_active_requires_actor_and_authorization(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            status, output = self.run_cli(
+                "init", "noactor.example", "--output-dir", tmpdir,
+                "--scope", "noactor.example", "--auto-active",
+            )
+            self.assertEqual(status, 2)
+            self.assertIn("requires --actor and --authorization-reference", output)
+
     def test_init_creates_expected_run_files_and_preserves_edits(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             status, output = self.run_cli(

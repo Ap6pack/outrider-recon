@@ -33,6 +33,13 @@ PROHIBITED = {
 }
 ACTION_TYPES = LOCAL | PASSIVE | ACTIVE | INTRUSIVE | PROHIBITED
 APPROVABLE = ACTIVE | INTRUSIVE
+# A scope-wide standing authorization (ADR 0021) covers any in-scope candidate for
+# an active action type. It is recorded as an ordinary grant with this sentinel
+# candidate and candidate_type. Only ACTIVE actions may be authorized scope-wide;
+# intrusive/prohibited actions are never scope-wide.
+SCOPE_WIDE_CANDIDATE = "*"
+SCOPE_WIDE_CANDIDATE_TYPE = "scope"
+SCOPE_WIDE_APPROVABLE = ACTIVE
 ALLOWED_STATES = {
     "local_analysis": {
         "initialized",
@@ -306,11 +313,21 @@ def _parse(
             raise ApprovalValidationError("unknown action_type")
         cand = nonempty(data["candidate"], "candidate")
         ctype = nonempty(data["candidate_type"], "candidate_type")
-        n, nt = normalize_candidate(cand)
-        if cand != n or ctype != nt:
-            raise ApprovalValidationError(
-                "candidate or candidate_type is not normalized"
-            )
+        if ctype == SCOPE_WIDE_CANDIDATE_TYPE:
+            if at not in SCOPE_WIDE_APPROVABLE:
+                raise ApprovalValidationError(
+                    "scope-wide authorization is only valid for active action types"
+                )
+            if cand != SCOPE_WIDE_CANDIDATE:
+                raise ApprovalValidationError(
+                    "scope-wide authorization candidate must be the scope sentinel"
+                )
+        else:
+            n, nt = normalize_candidate(cand)
+            if cand != n or ctype != nt:
+                raise ApprovalValidationError(
+                    "candidate or candidate_type is not normalized"
+                )
         exp = parse_ts(data["expires_at"], "expires_at")
         if exp <= occurred:
             raise ApprovalValidationError("expires_at must be later than occurred_at")
@@ -478,6 +495,7 @@ def grant_approval(
     duration_minutes: int | None = None,
     expires_at: str | datetime | None = None,
     conditions=None,
+    scope_wide: bool = False,
     now: datetime | None = None,
 ) -> ApprovalGrant:
     now = now or utc_now_dt()
@@ -486,7 +504,10 @@ def grant_approval(
     if (duration_minutes is None) == (expires_at is None):
         raise ApprovalValidationError("exactly one expiry option is required")
     cls = action_class(action_type)
-    if action_type not in APPROVABLE:
+    if scope_wide:
+        if action_type not in SCOPE_WIDE_APPROVABLE:
+            raise ApprovalPolicyError(f"{action_type} cannot be authorized scope-wide")
+    elif action_type not in APPROVABLE:
         raise ApprovalPolicyError(f"{action_type} cannot be approved")
     if duration_minutes is not None:
         if not isinstance(duration_minutes, int):
@@ -514,18 +535,27 @@ def grant_approval(
         raise ApprovalPolicyError(
             f"approval grant is not permitted in state {state.current_state}"
         )
-    n, ctype = normalize_candidate(candidate)
-    sd = evaluate_scope_path(run_dir, n)
-    if sd.decision == "error":
-        raise ApprovalValidationError(sd.reason)
-    if sd.decision != "allow":
-        raise ApprovalPolicyError("candidate is outside scope")
+    if scope_wide:
+        # No single candidate to validate; scope is enforced per candidate at
+        # evaluate_action time, so a scope-wide grant only ever authorizes
+        # candidates that scope already permits.
+        n, ctype = SCOPE_WIDE_CANDIDATE, SCOPE_WIDE_CANDIDATE_TYPE
+    else:
+        n, ctype = normalize_candidate(candidate)
+        sd = evaluate_scope_path(run_dir, n)
+        if sd.decision == "error":
+            raise ApprovalValidationError(sd.reason)
+        if sd.decision != "allow":
+            raise ApprovalPolicyError("candidate is outside scope")
     summary = load_approval_registry(run_dir, now)
     if any(
         a.status == "active" and a.action_type == action_type and a.candidate == n
         for a in summary.approvals
     ):
-        raise ApprovalPolicyError("active duplicate approval exists")
+        raise ApprovalPolicyError(
+            "active duplicate scope-wide authorization exists" if scope_wide
+            else "active duplicate approval exists"
+        )
     p = _ensure_registry(run_dir)
     ev = ApprovalEvent(
         SCHEMA_VERSION,
@@ -724,6 +754,19 @@ def evaluate_action(
         for a in summary.approvals
         if a.status == "active" and a.action_type == action_type and a.candidate == n
     ]
+    reason = "active exact matching approval exists"
+    if not matches:
+        # No exact per-candidate approval; honor an active scope-wide authorization
+        # for this action type. The candidate is already in scope (checked above),
+        # so a scope-wide grant only ever authorizes scope-permitted candidates.
+        matches = [
+            a
+            for a in summary.approvals
+            if a.status == "active"
+            and a.action_type == action_type
+            and a.candidate_type == SCOPE_WIDE_CANDIDATE_TYPE
+        ]
+        reason = "active scope-wide authorization covers this in-scope candidate"
     if not matches:
         return ActionDecision(
             action_type,
@@ -754,5 +797,5 @@ def evaluate_action(
         True,
         m.approval_id,
         "active",
-        "active exact matching approval exists",
+        reason,
     )

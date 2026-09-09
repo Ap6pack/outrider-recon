@@ -83,3 +83,38 @@ class WebEngagementMetadataTests(unittest.TestCase):
                     root,
                     WebRunRequest('example.com', 'op', 'auth', ['www.example.com/book/'], []),
                 )
+
+
+class UnattendedActiveAuthorizationTests(unittest.TestCase):
+    def _run(self, td):
+        return create_web_run_atomic(Path(td), WebRunRequest('example.com', 'op', 'ROE', ['example.com', '*.example.com'], []))
+
+    def test_authorize_moves_to_scoped_and_grants_both_active_types(self):
+        from outrider.run_setup import authorize_unattended_active
+        from outrider.approval import evaluate_action, list_approvals
+        with tempfile.TemporaryDirectory() as td:
+            run = self._run(td)
+            self.assertEqual(load_state(run).current_state, 'initialized')
+            grants = authorize_unattended_active(run, actor='op', reason='authorized unattended active recon')
+            self.assertEqual(load_state(run).current_state, 'scoped')
+            self.assertEqual({g.action_type for g in grants}, {'target_read_only_request', 'target_enumeration'})
+            self.assertTrue(all(g.candidate_type == 'scope' and g.status == 'active' for g in grants))
+            self.assertEqual(list_approvals(run).active_count, 2)
+            # Any in-scope candidate is now actively enumerable unattended.
+            for cand in ('api.example.com', 'deep.sub.example.com', 'example.com'):
+                self.assertEqual(evaluate_action(run, 'target_enumeration', cand).decision, 'allow', cand)
+                self.assertEqual(evaluate_action(run, 'target_read_only_request', cand).decision, 'allow', cand)
+            self.assertEqual(evaluate_action(run, 'target_enumeration', 'evil.com').decision, 'deny')
+            # Intrusive stays handoff-only even after auto-active authorization.
+            self.assertEqual(evaluate_action(run, 'intrusive_validation', 'api.example.com').decision, 'deny')
+
+    def test_authorize_validates_duration_and_actor(self):
+        from outrider.run_setup import authorize_unattended_active
+        with tempfile.TemporaryDirectory() as td:
+            run = self._run(td)
+            with self.assertRaises(RunSetupError):
+                authorize_unattended_active(run, actor='op', reason='x', duration_minutes=0)
+            with self.assertRaises(RunSetupError):
+                authorize_unattended_active(run, actor='op', reason='x', duration_minutes=10081)
+            with self.assertRaises(RunSetupError):
+                authorize_unattended_active(run, actor='  ', reason='x')
