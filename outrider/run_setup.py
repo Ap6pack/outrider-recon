@@ -11,8 +11,14 @@ import re
 
 import yaml
 
-from outrider.state import initialize_state, load_manifest, load_state
+from outrider.state import initialize_state, load_manifest, load_state, transition_state
 from outrider.scope import ScopeValidationError, evaluate_scope, load_scope, normalize_rule_key, normalized_scope_rules, normalize_target_host, scope_revision
+from outrider.approval import ApprovalPolicyError, ApprovalValidationError, grant_approval
+
+# A scope-wide active-enumeration authorization (ADR 0021) is bounded by the
+# approval lifetime ceiling; default it to the full 7 days (the engagement lifetime).
+DEFAULT_ACTIVE_AUTH_MINUTES = 10080
+ACTIVE_ACTION_TYPES = ("target_read_only_request", "target_enumeration")
 
 DEFAULT_FILES = {
     "assets.json": {"assets": [], "notes": "Discovered assets will be stored here."},
@@ -167,6 +173,30 @@ def validate_engagement_metadata(platform: Any = None, traffic_header: Any = Non
     if not _HEADER_RE.match(name) or name.lower() in SENSITIVE_TRAFFIC_HEADERS:
         raise RunSetupError("Store only program traffic-identification metadata here, not credentials, cookies, API keys, or authorization tokens.")
     return clean_platform, {name: value}
+
+def authorize_unattended_active(run_dir: str | Path, *, actor: str, reason: str, duration_minutes: int = DEFAULT_ACTIVE_AUTH_MINUTES) -> list:
+    """Opt-in post-creation step (ADR 0021): move a freshly created run to
+    ``scoped`` and record a scope-wide active-enumeration authorization for both
+    active action types, so the orchestrator can enumerate any in-scope candidate
+    unattended. Findings stay human-only; intrusive/prohibited stay handoff-only.
+
+    Returns the granted authorizations. Raises :class:`RunSetupError` if the run
+    is not in a grantable state or the authorization is invalid."""
+    actor = _single_line(actor, "actor", 200)
+    reason = _single_line(reason, "reason", 2000)
+    if not isinstance(duration_minutes, int) or not 1 <= duration_minutes <= DEFAULT_ACTIVE_AUTH_MINUTES:
+        raise RunSetupError("active authorization duration must be between 1 and 10080 minutes")
+    try:
+        if load_state(run_dir).current_state == "initialized":
+            transition_state(run_dir, "scoped", actor, reason)
+        grants = [
+            grant_approval(run_dir, action_type, None, actor, reason, duration_minutes=duration_minutes, scope_wide=True)
+            for action_type in ACTIVE_ACTION_TYPES
+        ]
+    except (ApprovalPolicyError, ApprovalValidationError) as exc:
+        raise RunSetupError(f"could not authorize unattended active enumeration: {exc}") from exc
+    return grants
+
 
 def create_web_run_atomic(root: str|Path, req: WebRunRequest) -> Path:
     target=normalize_target_host(req.target); in_s,out_s=validate_scope_lists(req.in_scope, req.out_of_scope)

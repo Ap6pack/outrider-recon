@@ -27,6 +27,53 @@ class ApprovalTests(unittest.TestCase):
         transition_state(run, "scoped", "authorized-operator")
         return tmp, run
 
+    def test_scope_wide_active_authorization(self):
+        tmp, run = self.make_run()
+        self.addCleanup(tmp.cleanup)
+        now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        # Before any grant, an active action on an in-scope candidate is denied.
+        self.assertEqual(
+            evaluate_action(run, "target_enumeration", "api.example.com", now=now).decision,
+            "deny",
+        )
+        g = grant_approval(
+            run, "target_enumeration", None, "authorized-operator",
+            "Scope-wide active authorization at setup",
+            duration_minutes=10080, scope_wide=True, now=now,
+        )
+        self.assertEqual(g.candidate, SCOPE_WIDE_CANDIDATE)
+        self.assertEqual(g.candidate_type, SCOPE_WIDE_CANDIDATE_TYPE)
+        self.assertEqual(g.status, "active")
+        # Any in-scope candidate is authorized without a per-candidate grant.
+        for cand in ("api.example.com", "deep.sub.example.com", "example.com"):
+            d = evaluate_action(run, "target_enumeration", cand, now=now)
+            self.assertEqual(d.decision, "allow", cand)
+            self.assertEqual(d.matched_approval_id, g.approval_id)
+            self.assertIn("scope-wide", d.reason)
+        # Out-of-scope candidate is still denied; explicit exclusion too.
+        self.assertEqual(evaluate_action(run, "target_enumeration", "evil.com", now=now).decision, "deny")
+        self.assertEqual(evaluate_action(run, "target_enumeration", "blocked.example.com", now=now).decision, "deny")
+        # A different active action type is not covered by this grant.
+        self.assertEqual(evaluate_action(run, "target_read_only_request", "api.example.com", now=now).decision, "deny")
+        # The grant survives a ledger reload and lists as scope-wide.
+        summary = load_approval_registry(run, now)
+        self.assertTrue(any(a.candidate_type == SCOPE_WIDE_CANDIDATE_TYPE and a.status == "active" for a in summary.approvals))
+        # Revocation returns the loop to deny for active actions.
+        revoke_approval(run, g.approval_id, "authorized-operator", "engagement complete", now=now)
+        self.assertEqual(evaluate_action(run, "target_enumeration", "api.example.com", now=now).decision, "deny")
+
+    def test_scope_wide_rejects_intrusive_and_duplicates(self):
+        tmp, run = self.make_run()
+        self.addCleanup(tmp.cleanup)
+        now = datetime(2026, 1, 1, tzinfo=timezone.utc)
+        with self.assertRaises(ApprovalPolicyError):
+            grant_approval(run, "intrusive_validation", None, "op", "no", duration_minutes=60, scope_wide=True, now=now)
+        with self.assertRaises(ApprovalPolicyError):
+            grant_approval(run, "public_source_lookup", None, "op", "no", duration_minutes=60, scope_wide=True, now=now)
+        grant_approval(run, "target_enumeration", None, "op", "first", duration_minutes=60, scope_wide=True, now=now)
+        with self.assertRaises(ApprovalPolicyError):
+            grant_approval(run, "target_enumeration", None, "op", "dup", duration_minutes=60, scope_wide=True, now=now)
+
     def test_grant_list_revoke_and_decisions(self):
         tmp, run = self.make_run()
         self.addCleanup(tmp.cleanup)

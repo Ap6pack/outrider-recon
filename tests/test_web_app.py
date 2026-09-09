@@ -39,6 +39,26 @@ def populate(run):
 class WebAppTests(unittest.TestCase):
     def client(self, root, token='tok'): return TestClient(create_app(root, control_token=token))
 
+    def test_create_run_auto_active_authorizes_unattended_enumeration(self):
+        with tempfile.TemporaryDirectory() as td:
+            runs_root = Path(td) / 'runs'; runs_root.mkdir()
+            c = self.client(runs_root, token='fixture'); h = {'X-Outrider-Control-Token': 'fixture'}
+            body = {'target': 'example.com', 'actor': 'authorized-operator', 'authorization_reference': 'ROE-9',
+                    'in_scope': ['example.com', '*.example.com'], 'out_of_scope': [], 'confirmed': True, 'auto_active': True}
+            r = c.post('/api/runs', json=body, headers=h)
+            self.assertEqual(r.status_code, 201, r.text)
+            self.assertTrue(r.json()['auto_active'])
+            self.assertEqual(r.json()['run']['current_state'], 'scoped')
+            rid = r.json()['run']['run_id']
+            # A newly discovered in-scope host is authorized for active enumeration without a per-host grant.
+            for cand in ('https://api.example.com/x', 'deep.sub.example.com'):
+                dec = c.post(f'/api/runs/{rid}/scope/check', json={'candidate': cand}, headers=h)
+                self.assertEqual(dec.json()['decision'], 'allow', cand)
+            # Non-boolean auto_active is rejected; omitting it leaves the run initialized (no auto-authorization).
+            self.assertEqual(c.post('/api/runs', json={**body, 'target': 'x.example', 'in_scope': ['x.example'], 'auto_active': 'yes'}, headers=h).status_code, 422)
+            plain = c.post('/api/runs', json={'target': 'plain.example', 'actor': 'op', 'authorization_reference': 'R', 'in_scope': ['plain.example'], 'out_of_scope': [], 'confirmed': True}, headers=h)
+            self.assertEqual(plain.status_code, 201, plain.text)
+            self.assertEqual(plain.json()['run']['current_state'], 'initialized')
 
     def test_focused_web_run_scope_smoke(self):
         with tempfile.TemporaryDirectory() as td:

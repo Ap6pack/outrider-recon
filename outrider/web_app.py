@@ -15,7 +15,7 @@ from outrider.approval import (
 from outrider.state import InvalidTransitionError, StateValidationError, load_manifest, load_state, transition_state
 from outrider.workflow_guide import GUIDE_ACTION_TARGETS, build_workflow_guide
 from outrider.scope import ScopeValidationError, evaluate_scope, load_scope, replace_scope_rules_atomic, scope_revision
-from outrider.run_setup import PLATFORM_OPTIONS, RunConflictError, RunSetupError, WebRunRequest, create_web_run_atomic
+from outrider.run_setup import PLATFORM_OPTIONS, RunConflictError, RunSetupError, WebRunRequest, authorize_unattended_active, create_web_run_atomic
 from outrider.skill_contract import (REQUEST_ACTIONS, SkillContractValidationError, contract_revision, create_skill_request, find_skill_request_by_id, find_skill_result_by_id, list_known_skills, load_skill_request, load_skill_result, validate_skill_request, validate_skill_result)
 from outrider.finding import (PROMOTED_CONFIDENCES, SEVERITIES, VALIDATION_BASES, FindingPromotionRefusal, FindingValidationError, finding_revision, promote_finding_by_ids, verify_all_findings)
 from outrider.mcp_enrichment import EnrichmentError, InputError, FixedEnrichmentExecutor, catalog as mcp_catalog, preflight as mcp_preflight, invoke as mcp_invoke, _SCOPE_NOTE, _NOTICE
@@ -112,13 +112,16 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_e
         require_mutation_guard(request)
         body, err = await read_json_object(request)
         if err: return err
-        allowed = {"target", "actor", "authorization_reference", "engagement_platform", "traffic_header", "in_scope", "out_of_scope", "confirmed"}
+        allowed = {"target", "actor", "authorization_reference", "engagement_platform", "traffic_header", "in_scope", "out_of_scope", "confirmed", "auto_active"}
         if set(body) - allowed: return error(422, "unknown field")
         for field in ("target", "actor", "authorization_reference"):
             if not isinstance(body.get(field), str) or not body[field].strip():
                 return error(422, f"{field} must be a non-empty string")
         if body.get("confirmed") is not True:
             return error(422, "authorization confirmation is required")
+        auto_active = body.get("auto_active", False)
+        if not isinstance(auto_active, bool):
+            return error(422, "auto_active must be a boolean")
         for field, limit in (("actor", 200), ("authorization_reference", 500)):
             if len(body[field]) > limit or any(ch in body[field] for ch in "\0\r\n"):
                 return error(422, f"{field} is invalid")
@@ -127,8 +130,14 @@ def create_app(runs_root: str | Path, *, control_token: str | None = None, mcp_e
         with mutation_lock:
             try:
                 run_dir = create_web_run_atomic(root, WebRunRequest(body["target"], body["actor"], body["authorization_reference"], body["in_scope"], body["out_of_scope"], body.get("engagement_platform"), body.get("traffic_header")))
+                if auto_active:
+                    authorize_unattended_active(
+                        run_dir,
+                        actor=body["actor"].strip(),
+                        reason=f"Unattended active enumeration authorized at setup ({body['authorization_reference'].strip()})"[:2000],
+                    )
                 manifest = load_manifest(run_dir)
-                payload = {"ok": True, "run": web_view.run_overview(run_dir), "scope": web_view.scope_view(run_dir)}
+                payload = {"ok": True, "run": web_view.run_overview(run_dir), "scope": web_view.scope_view(run_dir), "auto_active": bool(auto_active)}
                 return JSONResponse(payload, status_code=201, headers={"Location": f"/api/runs/{manifest.run_id}/overview"})
             except RunConflictError:
                 return error(409, "An engagement for this target already exists. Resume the existing engagement or use a different target.")

@@ -136,6 +136,31 @@ outrider benchmark run --tally-only
 outrider benchmark analyze-misses --json
 ```
 
+### Unattended active enumeration
+
+By default the loop auto-dispatches only local and passive actions; active
+enumeration waits for a human-granted approval, and each approval is per
+candidate. To let the loop enumerate the whole engagement unattended — the human
+only sets up the engagement — authorize active enumeration **scope-wide** at
+setup (ADR 0021):
+
+```bash
+# Grants a scope-wide, time-bounded, revocable active-enumeration authorization
+# for any in-scope candidate, and moves the run to `scoped`. Findings still
+# require human promotion; intrusive/prohibited actions stay handoff-only.
+outrider init acme.example --output-dir runs \
+  --scope acme.example --scope '*.acme.example' \
+  --actor authorized-operator --authorization-reference PROGRAM-ROE-001 \
+  --auto-active --active-duration-minutes 10080
+```
+
+In the portal, tick **"Authorize unattended active enumeration"** in the New
+Engagement wizard's Review step. The authorization is a normal entry in the
+approvals registry: it appears in `outrider approval list`, expires (≤ 7 days),
+and is revocable by id, which returns the loop to handoff-only for active
+actions. Scope is still enforced per candidate, so a scope-wide grant only ever
+authorizes assets the scope already allows.
+
 ## Bridging legacy targets and governed runs
 
 The governed control-plane lives under `runs/` (manifest, scope, append-only
