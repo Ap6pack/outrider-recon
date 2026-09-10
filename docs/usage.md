@@ -8,7 +8,7 @@ How to actually use these skills during an engagement.
 
 | What you want to do                    | What to type                                                                                  | Skills triggered                                           |
 | -------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Plan an external recon engagement      | "Plan a 1-day external recon on acme.com (in-scope BB)"                                       | osint-methodology + offensive-osint                        |
+| Plan an external recon engagement      | "Plan a 1-day external recon on example.com (in-scope BB)"                                       | osint-methodology + offensive-osint                        |
 | Get probe paths for a specific surface | "What paths should I probe to find Swagger on a webapp?"                                      | web-surface §1                                             |
 | Triage a discovered asset              | "I found a hard-coded JWT in a JS bundle. Walk me through triage."                            | post-discovery §4                                          |
 | Pivot a finding                        | "I have an AWS access key. Confirm it's live (read-only) and enumerate scope."                | secrets-and-dorks §4 + post-discovery §1                   |
@@ -17,7 +17,7 @@ How to actually use these skills during an engagement.
 | Severity assessment                    | "How serious is `android:debuggable=true` on a prod Android app?"                             | analysis-and-reporting §4                                  |
 | Write a client report                  | "Write the executive summary for an engagement that found 2 CRIT, 5 HIGH, 12 MED"             | osint-methodology §14 + report-template §2                 |
 | Submit a bug bounty report             | "Format my finding as a HackerOne report. Finding: unauth POST /api/users on api.example.com" | osint-methodology §13 + report-template §1                 |
-| Generate phishing shortlist            | "Generate phishing-feasibility shortlist for acme.com (authorized)"                           | osint-methodology §11 + identity-fabric §2                 |
+| Generate phishing shortlist            | "Generate phishing-feasibility shortlist for example.com (authorized)"                           | osint-methodology §11 + identity-fabric §2                 |
 
 ## Conversation patterns
 
@@ -47,7 +47,7 @@ Claude: [no scope check needed; proceeds with §7 pipeline]
 ### Pipeline-driven engagement
 
 ```text
-You: Walk me through a 1-week deep recon engagement on acme.com.
+You: Walk me through a 1-week deep recon engagement on example.com.
      Authorized red team, ~500 employees, M365 + GitHub + AWS shop.
 
 Claude: [pulls osint-methodology §7.2 1-week deep profile + §10 medium-org tactics +
@@ -160,6 +160,19 @@ approvals registry: it appears in `outrider approval list`, expires (≤ 7 days)
 and is revocable by id, which returns the loop to handoff-only for active
 actions. Scope is still enforced per candidate, so a scope-wide grant only ever
 authorizes assets the scope already allows.
+
+> **Path-scoped programs + `--auto-active`.** For *any* URL/path-scoped program
+> (ADR 0020), the bare host of a path rule stays in scope for reachability even
+> when only a path is authorized — that is what keeps the manifest target
+> reachable. A scope-wide active grant therefore authorizes **host-level active
+> enumeration of every in-scope host**, while specific off-path URLs remain
+> denied. This is independent of which paths a program scopes; it is a property
+> of path scoping itself. If a program deliberately narrows the authorized
+> surface to a path subtree, prefer leaving `--auto-active` off (so host
+> enumeration stays handoff-only) or confirm the program authorizes host-wide
+> active work before enabling it. Note that an `out_of_scope` path rule carves
+> out that path but does **not** deny the bare host, so it will not, by itself,
+> constrain host-level active enumeration.
 
 ## Bridging legacy targets and governed runs
 

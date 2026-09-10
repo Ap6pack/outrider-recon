@@ -278,10 +278,10 @@ foreach ($s in @("","-my","-admin")) {
 }
 ```
 
-**OneDrive personal site probe** (for a known email `<alice@acme.com>`):
+**OneDrive personal site probe** (for a known email `<alice@example.com>`):
 
 ```bash
-USER_TOKEN=$(echo "alice@acme.com" | tr '@.' '__')
+USER_TOKEN=$(echo "alice@example.com" | tr '@.' '__')
 STEM="acme"
 curl -sk -m 10 -I "https://${STEM}-my.sharepoint.com/personal/${USER_TOKEN}/Documents/" -w '%{http_code}\n'
 # 401 = exists; 404 = not provisioned
@@ -468,11 +468,11 @@ Person:
   location:    "Boston, MA"
   linkedin_url: https://www.linkedin.com/in/alicedoe
   derived_emails:
-    - alice.doe@acme.com    (TENTATIVE)
-    - adoe@acme.com         (TENTATIVE)
-    - alice@acme.com        (TENTATIVE)
+    - alice.doe@example.com    (TENTATIVE)
+    - adoe@example.com         (TENTATIVE)
+    - alice@example.com        (TENTATIVE)
   breach_hits:
-    - alice.doe@acme.com    (HudsonRock; cleartext password redacted; FIRM)
+    - alice.doe@example.com    (HudsonRock; cleartext password redacted; FIRM)
   pretext_hooks:
     - "DevOps tooling vendor evaluation" (recent posts)
     - "Boston DevOps Days speaker" (conference activity)

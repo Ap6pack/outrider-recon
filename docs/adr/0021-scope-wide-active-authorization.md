@@ -52,3 +52,13 @@ removes the per-target human checkpoint for active enumeration; it is therefore 
 never the default, and its blast radius is exactly the engagement's authorized scope for
 its bounded lifetime. Revoking it (or letting it expire) returns the loop to
 handoff-only for active actions.
+
+One interaction with URL/path scope (ADR 0020) is worth stating explicitly: a
+path rule keeps its bare host in scope for reachability, so a scope-wide grant
+authorizes host-level active enumeration of every in-scope host even for a
+program that scopes only a path subtree (specific off-path URLs stay denied).
+This is a property of path scoping, not of any particular path. For a program
+that deliberately narrows the authorized surface to a path, the operator should
+leave the grant off (host enumeration stays handoff-only) or confirm host-wide
+active work is authorized; an `out_of_scope` path rule does not deny the bare
+host and so does not, by itself, constrain host-level active enumeration.

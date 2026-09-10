@@ -105,7 +105,7 @@ curl -sk -m 15 \
   "https://www.postman.com/_api/ws/proxy" \
   -H 'Content-Type: application/json' \
   -H 'X-Entity-Team-Id: 0' \
-  -d '{"service":"search","method":"POST","path":"/search-all","body":{"queryIndices":["collaboration.workspace","runtime.collection","runtime.request"],"queryText":"acme.com","size":100,"from":0,"clientTraceId":"","queryAllIndices":false,"domain":"public"}}' | jq '.data[]'
+  -d '{"service":"search","method":"POST","path":"/search-all","body":{"queryIndices":["collaboration.workspace","runtime.collection","runtime.request"],"queryText":"example.com","size":100,"from":0,"clientTraceId":"","queryAllIndices":false,"domain":"public"}}' | jq '.data[]'
 ```
 
 Pagination via `from` (0, 100, 200...). Run secret catalog over every env var, pre-request script, and request body extracted.

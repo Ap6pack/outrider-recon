@@ -294,7 +294,7 @@ class Audit:
     def check_changelog(self):
         text=(self.root/'CHANGELOG.md').read_text(errors='ignore')
         unreleased=text.split('## [Unreleased]',1)[1].split('---',1)[0] if '## [Unreleased]' in text else ''
-        if re.search(r'## \[Python 0\.3\.0\] -- 2026-07-14', text) and re.search(r'## \[Claude plugin/content 3\.1\.0\] -- 2026-07-14', text):
+        if re.search(r'## \[Python 0\.3\.0\] - 2026-07-14', text) and re.search(r'## \[Claude plugin/content 3\.1\.0\] - 2026-07-14', text):
             self.ok('release-domain changelog sections','Python and plugin/content 3.1.0 sections are dated')
         else:
             self.fail('release-domain changelog sections','missing dated release-domain sections')

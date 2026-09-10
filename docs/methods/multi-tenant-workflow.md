@@ -47,7 +47,7 @@ Every engagement gets a `scope.json`. Nothing runs without a scope check.
 ```json
 {
   "in_scope": {
-    "domains": ["acme.example", "*.acme.example", "acme-corp.io"],
+    "domains": ["acme.example", "*.acme.example", "example.com"],
     "ip_ranges": ["203.0.113.0/24", "198.51.100.0/24"]
   },
   "exclusions": {

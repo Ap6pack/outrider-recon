@@ -179,7 +179,7 @@ response = client.messages.create(
     model="claude-sonnet-4-6",
     max_tokens=4096,
     system=system_prompt,
-    messages=[{"role": "user", "content": "Plan a 4-hour external recon on acme.com (in-scope BB)"}]
+    messages=[{"role": "user", "content": "Plan a 4-hour external recon on example.com (in-scope BB)"}]
 )
 print(response.content[0].text)
 ```
