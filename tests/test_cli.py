@@ -84,6 +84,32 @@ class CliCommandTests(unittest.TestCase):
             self.assertEqual(status, 2)
             self.assertIn("requires --actor and --authorization-reference", output)
 
+    def test_repair_verb_diagnoses_then_applies(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.run_cli("init", "acme.example", "--output-dir", tmpdir, "--scope", "acme.example", "--actor", "op", "--authorization-reference", "ROE")
+            run = Path(tmpdir) / "acme.example"
+            (run / "evidence.jsonl").write_text('{"a":1}\n{"partial": ', encoding="utf-8")
+            (run / "assets.json").unlink()
+            status, out = self.run_cli("repair", str(run))
+            self.assertEqual(status, 0)
+            self.assertIn("dry run", out)
+            self.assertIn("trailing_malformed_line", out)
+            status2, out2 = self.run_cli("repair", str(run), "--apply")
+            self.assertEqual(status2, 0)
+            self.assertIn("Repaired", out2)
+            status3, out3 = self.run_cli("repair", str(run))
+            self.assertEqual(status3, 0)
+            self.assertIn("No issues found", out3)
+
+    def test_repair_verb_exit_1_when_manual_issue_remains(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            self.run_cli("init", "acme.example", "--output-dir", tmpdir, "--scope", "acme.example", "--actor", "op", "--authorization-reference", "ROE")
+            run = Path(tmpdir) / "acme.example"
+            (run / "evidence.jsonl").write_text('{"a":1}\nGARBAGE\n{"b":2}\n', encoding="utf-8")  # mid-file damage
+            status, out = self.run_cli("repair", str(run), "--apply")
+            self.assertEqual(status, 1)
+            self.assertIn("Manual attention", out)
+
     def test_init_creates_expected_run_files_and_preserves_edits(self):
         with tempfile.TemporaryDirectory() as tmpdir:
             status, output = self.run_cli(

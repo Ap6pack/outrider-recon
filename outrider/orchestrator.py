@@ -23,8 +23,8 @@ import time
 from pathlib import Path
 from typing import Any
 
-from outrider.approval import ACTIVE, INTRUSIVE, LOCAL, PASSIVE, PROHIBITED, evaluate_action
-from outrider.executors import Executor, ExecutorError
+from outrider.approval import ACTIVE, INTRUSIVE, LOCAL, PASSIVE, PROHIBITED, action_class, evaluate_action
+from outrider.executors import Executor, ExecutorError, TransientExecutorError
 from outrider.skill_contract import (
     SkillContractValidationError,
     contract_revision,
@@ -48,6 +48,11 @@ class OrchestrationBounds:
     max_requests: int = 50
     max_wall_clock_seconds: float = 300.0
     per_action_caps: dict[str, int] = field(default_factory=dict)
+    # Self-healing (ADR 0022).
+    max_transient_retries: int = 2
+    retry_backoff_seconds: float = 0.0
+    replan_passive_fallback: bool = True
+    retry_interrupted_active: bool = False
 
 
 @dataclass(frozen=True)
@@ -70,7 +75,10 @@ class OrchestrationReport:
     results_valid: int = 0
     results_invalid: int = 0
     candidates_discovered: int = 0
+    transient_retries: int = 0
+    replanned: int = 0
     deferred: list[dict[str, Any]] = field(default_factory=list)
+    interrupted: list[dict[str, Any]] = field(default_factory=list)
     log: list[dict[str, Any]] = field(default_factory=list)
     start_state_revision: str | None = None
     end_state_revision: str | None = None
@@ -169,8 +177,8 @@ def run_orchestration(
     )
 
     pending, requested_keys = _pending_requests(run)
-    queue: list[str] = list(pending)
     created_by_action: dict[str, int] = {}
+    queue: list[str] = _resume_queue(run, pending, report, bounds)
 
     # Seed new requests (deduped against existing ones).
     for seed in seeds or []:
@@ -203,15 +211,17 @@ def run_orchestration(
             report.log.append({"event": "load_request_failed", "path": request_rel, "reason": str(exc)})
             continue
 
-        try:
-            result_path = executor.run(run, request)
-        except ExecutorError as exc:
-            report.log.append({"event": "executor_failed", "request_id": request.request_id, "reason": str(exc)})
-            report.hops += 1
+        _mark_inflight(run, request.request_id)
+        result_path, permanent_error = _dispatch_with_retry(run, executor, request, report, bounds)
+        report.hops += 1
+        if permanent_error is not None:
+            _clear_inflight(run, request.request_id)
+            report.log.append({"event": "executor_failed", "request_id": request.request_id, "reason": permanent_error})
+            _replan_passive_fallback(run, report, requested_keys, created_by_action, bounds, actor=actor, route_skill=route_skill, request=request, queue=queue)
             continue
 
-        report.hops += 1
         rel_result = Path(result_path).resolve().relative_to(run.resolve()).as_posix()
+        _clear_inflight(run, request.request_id)
         validation = validate_skill_result(run, rel_result)
         if validation.overall_status != "valid":
             report.results_invalid += 1
@@ -220,6 +230,7 @@ def run_orchestration(
                 "result_path": rel_result, "status": validation.overall_status,
                 "reason": "; ".join(validation.errors),
             })
+            _replan_passive_fallback(run, report, requested_keys, created_by_action, bounds, actor=actor, route_skill=route_skill, request=request, queue=queue)
             continue
 
         report.results_valid += 1
@@ -313,6 +324,107 @@ def _create_hop(
     created_by_action[action_type] = created_by_action.get(action_type, 0) + 1
     report.requests_created += 1
     return path.resolve().relative_to(run.resolve()).as_posix()
+
+
+def _dispatch_with_retry(run, executor, request, report, bounds):
+    """Run the executor for one request, retrying transient failures with backoff.
+
+    Returns ``(result_path, None)`` on success, or ``(None, message)`` on a
+    permanent failure — including a transient failure that exhausted its retry
+    budget. The caller re-plans a passive fallback from the message."""
+    attempt = 0
+    while True:
+        try:
+            return executor.run(run, request), None
+        except TransientExecutorError as exc:
+            if attempt >= bounds.max_transient_retries:
+                return None, f"transient failure exhausted after {attempt} retries: {exc}"
+            attempt += 1
+            report.transient_retries += 1
+            report.log.append({"event": "transient_retry", "request_id": request.request_id, "attempt": attempt, "reason": str(exc)})
+            if bounds.retry_backoff_seconds:
+                time.sleep(bounds.retry_backoff_seconds * attempt)
+        except ExecutorError as exc:
+            return None, str(exc)
+
+
+def _replan_passive_fallback(run, report, requested_keys, created_by_action, bounds, *, actor, route_skill, request, queue) -> None:
+    """On a hard failure, enqueue one bounded, deduped passive lookup on the same
+    candidate. Never escalates action class: the fallback is always
+    ``public_source_lookup`` (auto-dispatchable), and a failed passive lookup is
+    not re-planned (there is no safe de-escalation from passive)."""
+    if not bounds.replan_passive_fallback or report.requests_created >= bounds.max_requests:
+        return
+    action = request.requested_action.get("action_type")
+    candidate = request.requested_action.get("candidate")
+    if action == "public_source_lookup" or not candidate:
+        return
+    new_rel = _create_hop(
+        run, report, requested_keys, created_by_action, bounds,
+        skill=route_skill, actor=actor, objective="passive fallback after a failed hop",
+        action_type="public_source_lookup", candidate=candidate,
+        evidence_ids=None, max_items=100, notes=None, precheck=True,
+    )
+    if new_rel:
+        report.replanned += 1
+        report.log.append({"event": "replanned", "request_id": request.request_id, "candidate": candidate, "fallback": "public_source_lookup"})
+        queue.append(new_rel)
+
+
+def _resume_queue(run: Path, pending: list[str], report: OrchestrationReport, bounds: OrchestrationBounds) -> list[str]:
+    """Build the resume queue from unanswered requests, classifying any that were
+    in-flight when a previous run crashed. Interrupted local/passive hops are
+    idempotent and re-enqueued; interrupted active/intrusive (or unclassifiable)
+    hops are deferred for human review rather than silently re-fired."""
+    inflight = _inflight_ids(run)
+    queue: list[str] = []
+    for rel in pending:
+        try:
+            req = load_skill_request(run, rel)
+        except SkillContractValidationError:
+            queue.append(rel)
+            continue
+        if req.request_id not in inflight:
+            queue.append(rel)
+            continue
+        action = req.requested_action.get("action_type")
+        cls = _safe_action_class(action)
+        if bounds.retry_interrupted_active or cls in ("local", "passive"):
+            report.log.append({"event": "resume_interrupted", "request_id": req.request_id, "action_class": cls})
+            queue.append(rel)
+        else:
+            report.interrupted.append({"request_id": req.request_id, "action_type": action, "action_class": cls, "reason": "interrupted mid-flight; deferred for human review"})
+            report.deferred.append({"action_type": action, "candidate": req.requested_action.get("candidate"), "reason": "interrupted mid-flight; deferred for human review"})
+            _clear_inflight(run, req.request_id)
+    return queue
+
+
+def _safe_action_class(action_type) -> str:
+    try:
+        return action_class(action_type)
+    except Exception:
+        return "unknown"
+
+
+def _inflight_dir(run: Path) -> Path:
+    return run / "contracts" / "inflight"
+
+
+def _mark_inflight(run: Path, request_id: str) -> None:
+    d = _inflight_dir(run)
+    d.mkdir(parents=True, exist_ok=True)
+    (d / request_id).write_text("", encoding="utf-8")
+
+
+def _clear_inflight(run: Path, request_id: str) -> None:
+    (_inflight_dir(run) / request_id).unlink(missing_ok=True)
+
+
+def _inflight_ids(run: Path) -> set[str]:
+    d = _inflight_dir(run)
+    if not d.is_dir():
+        return set()
+    return {p.name for p in d.iterdir() if p.is_file()}
 
 
 def _safe_state_revision(run: Path) -> str | None:
