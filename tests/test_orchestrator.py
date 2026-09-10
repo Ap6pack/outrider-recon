@@ -7,12 +7,15 @@ from outrider.state import transition_state, state_revision
 from outrider.evidence import register_evidence
 from outrider.approval import grant_approval
 from outrider.finding import list_finding_candidates, list_findings
-from outrider.executors import StubExecutor, ResultScript, ExecutorError
+from outrider.executors import StubExecutor, ResultScript, ExecutorError, TransientExecutorError
+from outrider.skill_contract import create_skill_request
 from outrider.orchestrator import (
     run_orchestration,
     orchestration_status,
     OrchestrationBounds,
     SeedRequest,
+    _mark_inflight,
+    _inflight_ids,
 )
 
 
@@ -156,6 +159,112 @@ class OrchestratorLoopTests(unittest.TestCase):
             self.assertFalse(any(d["action_type"] == "target_enumeration" for d in report.deferred))
             # Intrusive is still handoff-only even under a scope-wide active grant.
             self.assertEqual(list_findings(run).finding_count, 0)
+
+    def test_transient_executor_error_is_an_executor_error(self):
+        self.assertTrue(issubclass(TransientExecutorError, ExecutorError))
+
+    def test_transient_failure_is_retried_then_succeeds(self):
+        with tempfile.TemporaryDirectory() as td:
+            run, ev = self._prepare(td)
+
+            class Flaky(StubExecutor):
+                fails = 2
+                def run(self, run_dir, request):
+                    if self.fails:
+                        self.fails -= 1
+                        raise TransientExecutorError("timeout")
+                    return super().run(run_dir, request)
+
+            report = run_orchestration(
+                run, executor=Flaky({"*": _seed(ev, recommend=[])}), actor="authorized-operator",
+                seeds=[SeedRequest(skill="offensive-osint", action_type="local_analysis", objective="seed")],
+                bounds=OrchestrationBounds(max_transient_retries=2, retry_backoff_seconds=0.0),
+            )
+            self.assertEqual(report.transient_retries, 2)
+            self.assertEqual(report.results_valid, 1)
+            self.assertEqual(report.stop_reason, "quiescent")
+            self.assertEqual(_inflight_ids(run), set())  # marker cleared on success
+
+    def test_exhausted_transient_triggers_passive_replan(self):
+        with tempfile.TemporaryDirectory() as td:
+            run, ev = self._prepare(td)
+
+            class SeedTransient(StubExecutor):
+                def run(self, run_dir, request):
+                    if request.requested_action.get("action_type") == "local_analysis":
+                        raise TransientExecutorError("always down")
+                    return super().run(run_dir, request)
+
+            report = run_orchestration(
+                run, executor=SeedTransient({"*": _seed(ev, recommend=[])}), actor="authorized-operator",
+                seeds=[SeedRequest(skill="offensive-osint", action_type="local_analysis", objective="seed", candidate="api.example.com")],
+                bounds=OrchestrationBounds(max_transient_retries=1, retry_backoff_seconds=0.0),
+            )
+            self.assertEqual(report.transient_retries, 1)
+            self.assertEqual(report.replanned, 1)
+            self.assertTrue(any(e["event"] == "replanned" for e in report.log))
+            self.assertEqual(_inflight_ids(run), set())
+
+    def test_permanent_failure_triggers_passive_replan(self):
+        with tempfile.TemporaryDirectory() as td:
+            run, ev = self._prepare(td)
+
+            class SeedFails(StubExecutor):
+                def run(self, run_dir, request):
+                    if request.requested_action.get("action_type") == "local_analysis":
+                        raise ExecutorError("boom")
+                    return super().run(run_dir, request)
+
+            report = run_orchestration(
+                run, executor=SeedFails({"*": _seed(ev, recommend=[])}), actor="authorized-operator",
+                seeds=[SeedRequest(skill="offensive-osint", action_type="local_analysis", objective="seed", candidate="api.example.com")],
+            )
+            self.assertEqual(report.replanned, 1)
+            events = [e["event"] for e in report.log]
+            self.assertEqual(events, ["executor_failed", "replanned", "result_valid"])  # fallback lookup ran and validated
+
+    def test_invalid_result_triggers_passive_replan(self):
+        with tempfile.TemporaryDirectory() as td:
+            run, ev = self._prepare(td)
+            # The seed candidate's script cites an unregistered evidence id -> invalid result;
+            # the fallback public_source_lookup on the same candidate has no such problem.
+            scripts = {
+                "*": _seed(ev, recommend=[]),  # seed (local_analysis) is fine
+            }
+
+            class SeedInvalid(StubExecutor):
+                def run(self, run_dir, request):
+                    if request.requested_action.get("action_type") == "local_analysis":
+                        payload_script = ResultScript(status="completed", summary="bad", claims=[{
+                            "classification": "observation", "subject": "api.example.com",
+                            "statement": "cites missing evidence", "confidence": "high",
+                            "suggested_severity": None, "evidence_ids": ["00000000-0000-4000-8000-000000000000"]}])
+                        from outrider.executors import build_result_payload, _write_result_atomic
+                        return _write_result_atomic(Path(run_dir), build_result_payload(
+                            run_dir, request, status=payload_script.status, summary=payload_script.summary,
+                            claims=payload_script.claims))
+                    return super().run(run_dir, request)
+
+            report = run_orchestration(
+                run, executor=SeedInvalid(scripts), actor="authorized-operator",
+                seeds=[SeedRequest(skill="offensive-osint", action_type="local_analysis", objective="seed", candidate="api.example.com")],
+            )
+            self.assertEqual(report.results_invalid, 1)
+            self.assertEqual(report.replanned, 1)
+
+    def test_interrupted_active_hop_is_deferred_on_resume(self):
+        with tempfile.TemporaryDirectory() as td:
+            run, ev = self._prepare(td)
+            # A standing approval lets us create an active request that then "crashed" mid-flight.
+            grant_approval(run, "target_enumeration", "api.example.com", "authorized-operator", "auth", duration_minutes=60)
+            req, _path, _cid = create_skill_request(run, "offensive-osint", "authorized-operator", "enum", "target_enumeration", "api.example.com", [], 100, None)
+            _mark_inflight(run, req.request_id)  # simulate crash after dispatch, before result
+            report = run_orchestration(run, executor=StubExecutor({"*": _seed(ev, recommend=[])}), actor="authorized-operator")
+            # The interrupted ACTIVE request is deferred for human review, never re-dispatched.
+            self.assertEqual(report.hops, 0)
+            self.assertTrue(any(i["action_type"] == "target_enumeration" for i in report.interrupted))
+            self.assertTrue(any(d.get("reason", "").startswith("interrupted") for d in report.deferred))
+            self.assertEqual(_inflight_ids(run), set())  # stale marker cleared
 
     def test_resume_is_idempotent(self):
         with tempfile.TemporaryDirectory() as td:

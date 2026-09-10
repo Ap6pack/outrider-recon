@@ -43,6 +43,11 @@ class ExecutorError(RuntimeError):
     """Raised when an executor cannot produce a result for a request."""
 
 
+class TransientExecutorError(ExecutorError):
+    """A transient executor failure (timeout, network reset) worth retrying with
+    backoff before the orchestrator gives up and re-plans."""
+
+
 @runtime_checkable
 class Executor(Protocol):
     """Turns a validated ``SkillRequest`` into a ``skill_result`` file.
@@ -233,6 +238,8 @@ class ClaudeSubprocessExecutor:
         ]
         try:
             subprocess.run(argv, cwd=str(run), timeout=self.timeout_seconds, check=True, capture_output=True)
+        except subprocess.TimeoutExpired as exc:
+            raise TransientExecutorError(f"agent execution timed out after {self.timeout_seconds}s") from exc
         except (OSError, subprocess.SubprocessError) as exc:
             raise ExecutorError(f"agent execution failed: {exc}") from exc
         after = self._result_ids(run)
