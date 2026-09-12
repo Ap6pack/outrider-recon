@@ -1,70 +1,60 @@
 # Outrider release notes
 
-Outrider uses independent version domains:
+Outrider ships as a single product under one unified version:
 
-- Python package releases use the Python distribution version.
-- Claude plugin/content releases use `.claude-plugin/plugin.json`.
-- Individual skill frontmatter versions are skill-local and did not change for Python 0.3.0 / plugin 3.1.0.
+- The Python package version (`pyproject.toml`) and the Claude plugin/content bundle version (`.claude-plugin/plugin.json`) are the same number.
+- Individual skill frontmatter versions are skill-local and are not bumped per release; skill content ships with the unified release.
 - Runtime JSON schemas and the release manifest schema remain schema version 1.
+
+Historical releases used separate `python-v*` and `plugin-v*` version lines; the per-domain notes in this directory are retained as accurate history.
 
 ## Current release candidates
 
-This preparation branch defines unsigned release candidates for future GitHub release records:
+This preparation branch defines an unsigned release candidate for a future GitHub release record:
 
-- Python package `0.3.0`: tag `python-v0.3.0`, future release page <https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.3.0>.
-- Claude plugin/content `3.1.0`: tag `plugin-v3.1.0`, future release page <https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.1.0>.
+- Outrider `4.0.0`: tag `v4.0.0`, future release page <https://github.com/Ap6pack/outrider-recon/releases/tag/v4.0.0>.
 
-The two future tags identify separate release domains. This PR does not create tags, GitHub releases, PyPI publication, or Claude Marketplace publication.
+This is the first unified release, superseding the earlier separate Python `0.3.0` and plugin/content `3.1.0` lines. This PR does not create tags, GitHub releases, PyPI publication, or Claude Marketplace publication.
 
 ## Candidate artifact assignments
 
-Python release artifacts:
+The unified `4.0.0` release ships three artifacts under one tag:
 
-- `outrider_recon-0.3.0-py3-none-any.whl`
-- `outrider_recon-0.3.0.tar.gz`
+- `outrider_recon-4.0.0-py3-none-any.whl`
+- `outrider_recon-4.0.0.tar.gz`
+- `outrider-recon-bundle-4.0.0.zip`
 - `SHA256SUMS`
 
-Plugin/content release artifacts:
-
-- `outrider-recon-bundle-3.1.0.zip`
-- `SHA256SUMS`
-
-The same `SHA256SUMS` file covers all three release artifacts across the two release domains. If all artifacts from both release pages are downloaded into one artifact directory, run:
+The same `SHA256SUMS` file covers all three release artifacts. If all artifacts are downloaded into one artifact directory, run:
 
 ```bash
 sha256sum -c SHA256SUMS
 ```
 
-If only the plugin bundle is downloaded, filter to that entry so `sha256sum` does not report the missing Python artifacts:
+If only the plugin/content bundle is downloaded, filter to that entry so `sha256sum` does not report the missing Python artifacts:
 
 ```bash
-grep 'outrider-recon-bundle-3.1.0.zip' SHA256SUMS | sha256sum -c -
+grep 'outrider-recon-bundle-4.0.0.zip' SHA256SUMS | sha256sum -c -
 ```
 
-If only the Python wheel and sdist are downloaded, filter to those entries so `sha256sum` does not report the missing plugin bundle:
+If only the Python wheel and sdist are downloaded, filter to those entries so `sha256sum` does not report the missing bundle:
 
 ```bash
-grep -E 'outrider_recon-0.3.0-py3-none-any.whl|outrider_recon-0.3.0.tar.gz' SHA256SUMS | sha256sum -c -
+grep -E 'outrider_recon-4.0.0-py3-none-any.whl|outrider_recon-4.0.0.tar.gz' SHA256SUMS | sha256sum -c -
 ```
 
 An unfiltered `sha256sum -c SHA256SUMS` expects every filename in the checksum file to exist in the current artifact directory.
 
-## Tag namespaces
+## Tag namespace
 
-Current independent tag namespaces are:
-
-- Python: `python-v<python-version>` such as `python-v0.3.0`.
-- Plugin/content: `plugin-v<plugin-version>` such as `plugin-v3.1.0`.
-
-For future releases, select unambiguous future tags only after the manual release checklist is complete. Do not reuse or move existing tags.
+The unified tag namespace is `v<version>`, such as `v4.0.0`. Historical tags (`python-v0.3.0`, `plugin-v3.1.0`, and earlier) are retained as immutable history and are not reused or moved.
 
 ## Future release order
 
 1. Build and verify unsigned candidates from the selected commit.
-2. Create the Python tag if the Python artifacts are accepted.
-3. Create the plugin/content tag if the plugin bundle is accepted.
-4. Create GitHub release records and attach only the matching artifacts.
-5. Optionally publish Python artifacts to PyPI as a separate maintainer action.
+2. Create the unified `v<version>` tag once the wheel, sdist, and bundle are accepted.
+3. Create the GitHub release record and attach all three artifacts plus the shared `SHA256SUMS`.
+4. Optionally publish the Python artifacts to PyPI as a separate maintainer action.
 
 ## Manual candidate workflow
 

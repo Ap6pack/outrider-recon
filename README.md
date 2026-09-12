@@ -209,22 +209,21 @@ The repository does not claim to execute full automated recon on its own. It is 
 
 ## Releases and versioning
 
-Outrider uses independent version domains:
+Outrider ships as a single product under one version:
 
-- Python package: `0.3.0`
-- Claude plugin/content bundle: `3.1.0`
-- individual skills: versioned as part of the plugin/content bundle (no separate per-skill version)
+- Unified project version: `4.0.0` — the Python package and the Claude plugin/content bundle share this number.
+- individual skills: versioned as part of the release (no separate per-skill version)
 - JSON contract schema version: `1`
 
-Do not assume the Python package version and Claude plugin/content version move together. GitHub release artifacts are checksum-verifiable; the project does not currently claim cryptographic signing or PyPI / Claude Marketplace publication.
+The Python package (`pyproject.toml`) and the plugin/content bundle (`.claude-plugin/plugin.json`) are released together at the same version. GitHub release artifacts are checksum-verifiable; the project does not currently claim cryptographic signing or PyPI / Claude Marketplace publication.
 
-See [Release documentation](docs/releases/README.md) for version domains, artifacts, checksums, and release notes. See [Release readiness](docs/release-readiness.md) for maintainer-facing release checks.
+See [Release documentation](docs/releases/README.md) for artifacts, checksums, and release notes. See [Release readiness](docs/release-readiness.md) for maintainer-facing release checks.
 
 ---
 
 ## Current release candidates
 
-Python 0.3.0 and Claude plugin/content 3.1.0 are prepared as unsigned release candidates. The candidate tags are [`python-v0.3.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.3.0) and [`plugin-v3.1.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.1.0). The same `SHA256SUMS` file covers all three candidate artifacts across both release domains; the manual release-candidate workflow does not publish automatically. Work merged since these tags is tracked under **[Unreleased]** in the [changelog](CHANGELOG.md).
+Outrider `4.0.0` is prepared as an unsigned release candidate — the first unified release, superseding the separate Python `0.3.0` and plugin/content `3.1.0` version lines. The candidate tag is [`v4.0.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/v4.0.0). The same `SHA256SUMS` file covers all three candidate artifacts (wheel, sdist, and plugin/content bundle); the manual release-candidate workflow does not publish automatically. New work lands under **[Unreleased]** in the [changelog](CHANGELOG.md).
 
 ---
 

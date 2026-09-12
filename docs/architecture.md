@@ -11,7 +11,7 @@ This document describes both implemented behavior and architectural design inten
 - **Individual skills**: Implemented per `skills/*/SKILL.md`. Skill content ships and is versioned as part of the plugin/content release (`.claude-plugin/plugin.json`); skills do not carry a separate per-file `version:`.
 - **MCP server**: Implemented as optional live enrichment. Version source: MCP server files and dependency metadata. The MCP server provides five live enrichment tools and enforces explicit run context, fixed action mappings, scope, workflow-state, and approval decisions before HTTP or DNS activity.
 
-These version domains do not have to use the same number. A plugin/content release can advance independently from the Python CLI package, individual skill frontmatter, or MCP implementation.
+The Python package and the plugin/content bundle are released together under a single unified version; individual skill frontmatter and the MCP implementation ship as part of that same release.
 
 The asset graph, output schema, sidecar coordination, validator discipline, and approval/scope concepts below are the intended architecture. Deterministic Python controls now implement scope validation, stable run manifests, workflow-state events and transitions, evidence registration and integrity verification, approval records and action-policy evaluation, MCP tool-boundary enforcement, skill request/result contract creation and validation, deterministic human-reviewed finding promotion and verification, the packaged skill catalog and schemas, and optional local loopback-only web control plane with guarded workflow-state transitions, guarded run creation, initialized-only scope replacement, browser scope checks, approval grant/revocation, action-policy checks, evidence controls, contract controls, explicit human finding promotion, finding verification, and fixed policy-gated MCP enrichment controls. Still not implemented: unrestricted or fully autonomous recon orchestration by the Python CLI (the governed orchestrator loop is bounded, policy-gated on every hop, and never promotes findings), authenticated approver identity, automatic evidence capture from every skill, unrestricted skill execution by Python, concurrent multi-writer coordination, public or authenticated web deployment, report/export generation, arbitrary MCP servers, result upload, skill execution, or artifact download/mutation through the web plane. Skills cannot self-certify `validated_finding`; human reviewer attribution is recorded metadata, not authenticated identity.
 
@@ -216,13 +216,13 @@ Semantic versioning applies within each release domain rather than requiring all
 | Python CLI package        | `pyproject.toml` and `outrider/__init__.py`     | The installable Python package and `outrider` console script.                                                  |
 | MCP server implementation | `mcp-server/` source and dependency files       | Optional live enrichment server behavior and dependencies.                                                     |
 
-Skill content is versioned as part of the plugin/content release — individual `SKILL.md` files no longer carry their own `version:` field. Bump the plugin/content version for content changes:
+Skill content is versioned as part of the unified release — individual `SKILL.md` files no longer carry their own `version:` field. Bump the unified version for content changes:
 
 - **MAJOR** — section renumbering, breaking `when_to_use`/routing changes, schema changes to Finding output.
 - **MINOR** — new skills, new sections, new techniques, expanded catalogs.
 - **PATCH** — typo fixes, link updates, severity-tier corrections.
 
-The published plugin/content GitHub release is v3.1.0. The Python CLI package is a separate version domain and may use a different number.
+The published GitHub release is v4.0.0, shared by the Python package and the plugin/content bundle.
 
 ## Renumbering policy
 

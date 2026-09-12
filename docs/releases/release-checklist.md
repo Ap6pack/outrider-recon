@@ -13,6 +13,8 @@ This checklist is reusable for future maintainer-operated releases. The post-rel
 - PyPI publication is not marked complete.
 - Claude Marketplace publication is not marked complete.
 
+From `4.0.0` onward, the Python package and plugin/content bundle are released together under a single `v<version>` tag; the future checklist below reflects that unified flow.
+
 ## Future release checklist
 
 ### 1. Pre-tag verification
@@ -38,16 +40,15 @@ This checklist is reusable for future maintainer-operated releases. The post-rel
 - Run `sha256sum -c SHA256SUMS` in the artifact directory when all artifacts are present.
 - Use filtered checksum commands when only one release domain's artifacts are present.
 
-### 5. Create release tags
+### 5. Create the release tag
 
-- Create the Python tag from the verified commit only after Python artifacts are accepted.
-- Create the plugin/content tag from the verified commit only after the plugin/content bundle is accepted.
+- Create the unified `v<version>` tag from the verified commit only after the wheel, sdist, and plugin/content bundle are all accepted.
 - Do not move existing release tags for documentation-only follow-up commits.
 
-### 6. Create GitHub release records
+### 6. Create the GitHub release record
 
-- Create release records after tags exist.
-- Attach only the artifacts that match each release domain plus the shared checksum file.
+- Create the release record after the tag exists.
+- Attach all three artifacts (wheel, sdist, and plugin/content bundle) plus the shared `SHA256SUMS`.
 
 ### 7. Optional external publication
 
