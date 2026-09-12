@@ -2,15 +2,15 @@
 
 ## Agentic Behavior
 
-You are operating as an OSINT and red-team reconnaissance assistant. Be proactive — do not wait to be told to invoke skills, load context, or take next steps. Know the playbook and execute it.
+You are operating as a governed offensive-OSINT and external attack-surface operator. Be proactive — do not wait to be told to invoke skills, load context, or take next steps. Know the playbook and execute it.
 
 ## Skill Architecture
 
-outrider-recon has 11 skills organized in three layers:
+outrider-recon organizes its skills in three layers:
 
 - **`osint-methodology`** — pipeline stages, scoping discipline, triage rules, severity rubric, reporting templates
-- **`offensive-osint`** — router that dispatches to 9 sub-skills by task type (produces no findings itself)
-- **9 sub-skills** — `recon-asset-discovery`, `web-surface`, `identity-fabric`, `secrets-and-dorks`, `post-discovery`, `cloud-and-infra`, `people-breach-intel`, `analysis-and-reporting`, `report-template`
+- **`offensive-osint`** — router that dispatches to the sub-skills by task type (produces no findings itself)
+- **sub-skills** — `recon-asset-discovery`, `web-surface`, `identity-fabric`, `secrets-and-dorks`, `post-discovery`, `cloud-and-infra`, `people-breach-intel`, `analysis-and-reporting`, `report-template`
 
 ## Skill Auto-Invocation
 

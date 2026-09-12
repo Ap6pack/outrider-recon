@@ -3,16 +3,14 @@
 # outrider-recon
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Skills](https://img.shields.io/badge/skills-11-green.svg)](#project-structure)
-[![Capabilities](https://img.shields.io/badge/capabilities-90-orange.svg)](docs/capabilities.md)
 [![Claude Code](https://img.shields.io/badge/Claude_Code-plugin-8A05FF.svg)](#quick-start)
-[![MCP Server](https://img.shields.io/badge/MCP-5_tools-dc2626.svg)](mcp-server/)
+[![MCP Server](https://img.shields.io/badge/MCP-enrichment-dc2626.svg)](mcp-server/)
 
-> **Claude-native external recon and attack-surface management for authorized bug bounty, pentest, and security teams.**
+> **Claude-native, governed offensive-OSINT and external attack-surface platform for authorized security teams.**
 
-Outrider turns public, read-only recon signals into prioritized, evidence-backed leads. It combines Claude skills, deterministic local controls, optional MCP enrichment, and report scaffolding so operators can understand what exists, why it matters, and where to safely continue.
+Outrider is the governed front half of the offensive workflow. It runs authorized, multi-agent OSINT and external attack-surface recon — across web and API, identity and SSO, cloud and infrastructure, secrets, and people/breach intelligence — under deterministic scope, evidence, and approval controls, then turns what it finds into prioritized, evidence-backed, human-reviewed findings to hand off to validation and pen-testing.
 
-Outrider is intentionally not an exploitation framework. It is a navigation and control layer for authorized external recon: map the surface, preserve evidence, rank likely attack paths, and hand off to the right next workflow.
+Outrider is intentionally not an exploitation framework. Active enumeration is approval-gated, intrusive validation is a human hand-off, and exploitation is out of scope by design.
 
 ---
 
@@ -101,7 +99,7 @@ This is the minimum successful path. For complete setup options, see [Installati
 curl -fsSL https://raw.githubusercontent.com/Ap6pack/outrider-recon/main/install.sh | bash
 ```
 
-This clones to `~/.local/share/outrider-recon` and symlinks all 11 skills into `~/.claude/skills/`, so re-running it updates in place. For manual copies, Claude Desktop/API setups, and uninstall steps, see [Installation](docs/installation.md).
+This clones to `~/.local/share/outrider-recon` and symlinks all skills into `~/.claude/skills/`, so re-running it updates in place. For manual copies, Claude Desktop/API setups, and uninstall steps, see [Installation](docs/installation.md).
 
 ### 2. Install or download the Python CLI
 
@@ -152,19 +150,27 @@ The design keeps reasoning and enrichment separate from durable authorization, s
 
 ## Capabilities
 
-The current content bundle includes 11 implemented Claude skills, 90 documented capabilities, 48 secret patterns, 70 dorks, 9 read-only validator procedures, 35 attack-path templates, and an optional MCP server for live enrichment.
+**Recon & OSINT domains** — Claude skills spanning the external attack surface:
 
-Capability areas include:
+- external asset discovery and surface mapping (subdomains, DNS, certificates, WHOIS);
+- web and API surface (OpenAPI/GraphQL, endpoints, security headers, JavaScript, email security, vendor/product fingerprints, cloud buckets);
+- identity fabric — SSO/IdP fingerprinting, Microsoft 365 deep enumeration, and employee enumeration;
+- cloud and infrastructure (cloud-native services, Kubernetes/containers, CI/CD, TLS);
+- secrets and dorking, with read-only credential validation;
+- people and breach intelligence (infostealer/breach correlation, package-registry leaks);
+- post-credential enumeration (gated, read-only) for validated keys;
+- analysis, scoring, attack-path hints, and bug-bounty / client reporting.
 
-- external asset discovery and surface mapping;
-- web, API, JavaScript, documentation, and bucket review;
-- identity fabric, SSO, SaaS, cloud, CI/CD, and package-registry signals;
-- secrets, public-code, dorking, breach, and people intelligence;
-- public disclosure research and bug-bounty technique references;
-- evidence-backed analysis, scoring, finding cards, handoff notes, and reports;
-- a governed agent-to-agent loop with an independent advisory verifier and a deterministic benchmark harness, all inside the scope/approval/evidence controls.
+**Governance & orchestration** — the controls that make the above safe to run:
 
-See [Capabilities](docs/capabilities.md) for the complete inventory and [Coverage](docs/coverage.md) for practitioner coverage by engagement phase.
+- deterministic scope, workflow-state, evidence-integrity, and approval controls;
+- a governed agent-to-agent orchestrator that runs the skills through those controls (self-healing, crash-safe, bounded);
+- an independent advisory verifier, a deterministic benchmark harness, and human-only finding promotion;
+- optional policy-gated MCP enrichment, plus a CLI and a loopback-only web control plane.
+
+**Where this fits** — Outrider is the governed recon half of the offensive life-cycle (recon → validation → reporting). Active enumeration is approval-gated and intrusive validation is a human hand-off today; extending the governed loop toward agent-to-agent validation is on the roadmap.
+
+See [Capabilities](docs/capabilities.md) for the capability breakdown by domain and [Coverage](docs/coverage.md) for coverage by engagement phase.
 
 ---
 
@@ -279,7 +285,7 @@ The local portal now guides new engagements through scope review, explicit scope
 
 ## About
 
-Outrider codifies external attack-surface tradecraft into Claude-native skills, local deterministic controls, and reviewable evidence workflows. It is engagement-platform agnostic: slot it into the ASM, ticketing, asset-graph, bug-bounty, or pentest workflow you already use.
+Outrider codifies offensive-OSINT and external attack-surface tradecraft into Claude-native skills, deterministic controls, governed agent-to-agent orchestration, and reviewable evidence workflows. It is engagement-platform agnostic: slot it into the ASM, ticketing, asset-graph, bug-bounty, or pentest workflow you already use, and hand its findings off to validation and pen-testing.
 
 **Author:** [Ap6pack](https://github.com/Ap6pack)
 **Forked from:** [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT)

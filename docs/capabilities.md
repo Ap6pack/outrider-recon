@@ -1,6 +1,6 @@
 # Capabilities
 
-90 capabilities across 15 domains. Categorized by function -- pick a domain to drill in.
+Outrider's capabilities, by domain. Categorized by function -- pick a domain to drill in.
 
 ---
 

@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "outrider-recon"
 version = "4.0.0"
-description = "Claude-native external recon and ASM harness for prioritized, evidence-backed handoff."
+description = "Claude-native, governed offensive-OSINT and external attack-surface platform: multi-agent recon across web, identity, cloud, secrets, and breach intelligence, under deterministic scope/evidence/approval controls, producing human-reviewed findings for hand-off to validation. Not an exploitation framework."
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }
