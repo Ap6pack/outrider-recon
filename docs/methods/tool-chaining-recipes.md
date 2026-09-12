@@ -25,15 +25,15 @@
 recon-ng
 workspaces create acme-corp
 modules load recon/domains-hosts/hackertarget
-options set SOURCE acme-corp.com
+options set SOURCE example.com
 run
 modules load recon/domains-hosts/certificate_transparency
-options set SOURCE acme-corp.com
+options set SOURCE example.com
 run
 modules load recon/hosts-hosts/resolve
 run
 modules load recon/domains-contacts/whois_pocs
-options set SOURCE acme-corp.com
+options set SOURCE example.com
 run
 modules load reporting/json
 options set FILENAME /tmp/acme-corp-recon.json
@@ -57,10 +57,10 @@ keys add censys_api <key>
 spiderfoot -l 127.0.0.1:5001
 
 # CLI -- specific data types, CSV output
-spiderfoot -s acme-corp.com -t EMAILADDR,INTERNET_NAME -o csv > sf-acme.csv
+spiderfoot -s example.com -t EMAILADDR,INTERNET_NAME -o csv > sf-acme.csv
 
 # CLI -- passive-only with explicit modules
-spiderfoot -s acme-corp.com -t EMAILADDR,INTERNET_NAME,IP_ADDRESS \
+spiderfoot -s example.com -t EMAILADDR,INTERNET_NAME,IP_ADDRESS \
   -m sfp_dnsresolve,sfp_crt,sfp_whois -o csv
 ```
 
@@ -113,7 +113,7 @@ Recon-ng CSV:     File > Import > CSV Table (map columns to entity types)
 **Subdomain discovery pipeline:**
 
 ```bash
-subfinder -d acme-corp.com -silent | \
+subfinder -d example.com -silent | \
   httpx -silent -status-code -title -tech-detect -o alive.txt | \
   awk '{print $1}' | \
   nuclei -t cves/ -t exposures/ -t misconfiguration/ -jsonl -o findings.jsonl
@@ -133,7 +133,7 @@ jq -r '.detector' findings.jsonl | sort | uniq -c | sort -rn
 **DNS recon pipeline:**
 
 ```bash
-DOMAIN="acme-corp.com"
+DOMAIN="example.com"
 for TYPE in A AAAA MX NS TXT CNAME SOA; do
   dig +noall +answer "$DOMAIN" "$TYPE" 2>/dev/null
 done | awk '{print $1, $4, $5}' | sort -u > dns-records.txt

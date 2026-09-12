@@ -47,7 +47,7 @@ Intended for assets the operator owns or has **written authorization** to assess
 
 > _"Quick scope check: is this a target you own or have written authorization to assess? I want to make sure we stay on the right side of the engagement boundary."_
 
-Once asserted, don't re-ask. If the engagement type is stated ("pentest of acme.com under contract"), proceed.
+Once asserted, don't re-ask. If the engagement type is stated ("pentest of example.com under contract"), proceed.
 
 **Always-on guardrails:**
 

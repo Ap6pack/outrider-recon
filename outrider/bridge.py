@@ -264,8 +264,8 @@ def _asset_to_rule(cell: str) -> str | None:
     """Normalize one ``In-Scope Assets`` cell to a governed scope rule string.
 
     A URL is emitted as a scheme-agnostic ``host[:port][/path]`` rule (the scope
-    engine now supports URL/path rules natively), so ``https://www.x.com/book/``
-    yields ``www.x.com/book/`` and the exact path scope is preserved instead of
+    engine now supports URL/path rules natively), so ``https://www.example.com/book/``
+    yields ``www.example.com/book/`` and the exact path scope is preserved instead of
     being reduced to the bare host. Query strings and fragments are dropped (the
     scope engine rejects ``?``/``#``). A bare domain stays a domain rule. Returns
     ``None`` when no host can be found."""
@@ -293,7 +293,7 @@ def _asset_to_rule(cell: str) -> str | None:
     host = dm.group(1).strip().lower().rstrip(".")
     rule = host
     # A scheme-less asset may still carry a :port and/or /path right after the
-    # host (e.g. ``api.x.com:8443/v1``); preserve them as a host:port/path rule.
+    # host (e.g. ``api.example.com:8443/v1``); preserve them as a host:port/path rule.
     tail = re.match(r"(?::(\d{1,5}))?(/[^\s)|\]?#]*)?", cell[dm.end():])
     if tail:
         port_part, path_part = tail.group(1), tail.group(2)

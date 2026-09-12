@@ -216,7 +216,7 @@ Outrider uses independent version domains:
 - individual skills: versioned as part of the plugin/content bundle (no separate per-skill version)
 - JSON contract schema version: `1`
 
-Do not assume the Python package version and Claude plugin/content version move together. Future GitHub release artifacts are checksum-verifiable, but this repository does not claim cryptographic signing or PyPI / Claude Marketplace publication in this PR.
+Do not assume the Python package version and Claude plugin/content version move together. GitHub release artifacts are checksum-verifiable; the project does not currently claim cryptographic signing or PyPI / Claude Marketplace publication.
 
 See [Release documentation](docs/releases/README.md) for version domains, artifacts, checksums, and release notes. See [Release readiness](docs/release-readiness.md) for maintainer-facing release checks.
 
@@ -224,7 +224,7 @@ See [Release documentation](docs/releases/README.md) for version domains, artifa
 
 ## Current release candidates
 
-Python 0.3.0 and Claude plugin/content 3.1.0 are prepared as unsigned release candidates. Future tags are [`python-v0.3.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.3.0) and [`plugin-v3.1.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.1.0). The same `SHA256SUMS` file covers all three candidate artifacts across both release domains; the manual release-candidate workflow does not publish automatically.
+Python 0.3.0 and Claude plugin/content 3.1.0 are prepared as unsigned release candidates. The candidate tags are [`python-v0.3.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.3.0) and [`plugin-v3.1.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.1.0). The same `SHA256SUMS` file covers all three candidate artifacts across both release domains; the manual release-candidate workflow does not publish automatically. Work merged since these tags is tracked under **[Unreleased]** in the [changelog](CHANGELOG.md).
 
 ---
 

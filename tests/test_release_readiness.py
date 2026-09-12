@@ -186,8 +186,8 @@ class ReleaseReadinessTests(unittest.TestCase):
     def test_release_notes_changelog_and_workflow(self):
         changelog=(ROOT/'CHANGELOG.md').read_text()
         self.assertIn('## [Unreleased]', changelog)
-        self.assertRegex(changelog, r'## \[Python 0\.3\.0\] -- 2026-07-14')
-        self.assertRegex(changelog, r'## \[Claude plugin/content 3\.1\.0\] -- 2026-07-14')
+        self.assertRegex(changelog, r'## \[Python 0\.3\.0\] - 2026-07-14')
+        self.assertRegex(changelog, r'## \[Claude plugin/content 3\.1\.0\] - 2026-07-14')
         unreleased=changelog.split('## [Unreleased]',1)[1].split('---',1)[0]
         self.assertNotIn('deterministic scope checks', unreleased)
         for rel in ['README.md','python-0.3.0.md','plugin-3.1.0.md','release-checklist.md']:

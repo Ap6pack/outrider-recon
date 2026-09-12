@@ -1,9 +1,14 @@
 # Changelog
 
-All notable changes to these skills are documented here.
+All notable changes to this project are documented here.
 
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+Outrider tracks independent version domains (see
+[Releases and versioning](README.md#releases-and-versioning)): the Python
+package and the Claude plugin/content bundle are versioned separately, so some
+release headings below name their domain explicitly.
 
 ---
 
@@ -15,8 +20,8 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added `outrider repair <run> [--apply]` (and `orchestrate run --repair`) to safely recover a run damaged by a crash: it drops a crash-truncated trailing line from a JSONL ledger (backing the bytes up to `<file>.corrupt-<ts>`) and recreates missing static template files/directories, but never fabricates evidence/approval/finding records and refuses (reporting for human attention) when the manifest, state log, or scope is missing or a ledger is damaged mid-file.
 - Added a scope-wide active-enumeration authorization so an engagement can run unattended after setup (ADR 0021). `grant_approval(..., scope_wide=True)` records a single, revocable, time-bounded (≤ 7 days) authorization — a normal approvals-registry entry with the sentinel candidate `*` and `candidate_type: scope` — that lets the orchestrator loop actively enumerate *any in-scope* candidate for the two active action types (`target_read_only_request`, `target_enumeration`) without a per-candidate grant. `evaluate_action` still normalizes and scope-checks every candidate first, so a scope-wide grant only ever authorizes scope-permitted assets; intrusive/prohibited actions stay handoff-only and findings still require human promotion. Opt in at setup with `outrider init … --auto-active [--active-duration-minutes N]` or the New Engagement wizard's "Authorize unattended active enumeration" checkbox (`auto_active` on `POST /api/runs`), which moves the run to `scoped` and records the authorization.
 - Added first-class URL/path scope rules to the governed scope engine (ADR 0020). Scope rules can now be `host/path` (`www.example.com/book/`), scheme-qualified (`https://www.example.com/app`), host:port (`api.example.com:8443/v1`), or wildcard-path (`www.example.com/api/*/admin`) in addition to domains, wildcards, IPs and CIDRs. A bare host that a URL rule references is in scope for reachability; a URL candidate is enforced against the rule's scheme, port, and path (directory-prefix match, `*` matching one path segment), so `https://www.example.com/book/x` allows while `https://www.example.com/admin` denies. `out_of_scope` still wins over `in_scope`. The manifest target stays a single host (a URL target reduces to its host; CIDR/port/path/wildcard targets are rejected), and `candidate_type` in the finding schema now permits `url`. Query strings, fragments, embedded credentials, and non-http(s) schemes remain rejected in scope rules.
-- Added deterministic guided engagement progress and server-derived next actions.
-- Added explicit beginner scope confirmation and guarded forward workflow actions.
+- Added a web-first onboarding experience — a launcher that starts the loopback portal and opens the browser, and guided beginner engagement onboarding (authorization, platform, scope, traffic-identification metadata, review, creation, and resume) — making the browser the primary human entry point while CLI subcommands remain for advanced and automated use.
+- Added deterministic guided engagement progress with server-derived next actions, and explicit beginner scope confirmation with guarded forward workflow actions.
 - Added a governed agent-to-agent orchestrator loop (`outrider orchestrate run|status`) that advances a run by creating each hop through the existing request/result contract, re-evaluating scope, approval, and workflow state on every hop. It auto-dispatches only local and passive actions, requires a standing approval for active enumeration, treats intrusive and prohibited actions as handoff-only, is bounded and resumable, and never promotes findings. Skill execution is delegated to an injected executor; live execution is off by default. (ADR 0017)
 - Added an independent advisory verifier (`outrider verify candidates`) that attempts to falsify each finding candidate against its cited evidence and current scope, recording `supported`, `refuted`, or `insufficient_evidence` verdicts under `contracts/verification/`. Verdicts never promote, never delete, and never gate promotion eligibility. (ADR 0018)
 - Added a deterministic benchmark harness (`outrider benchmark run|analyze-misses`) that drives the loop over a synthetic ground-truth corpus with a stub executor and scores schema conformance, discovered-candidate precision/recall, and finding-candidate coverage. Metrics are reproducible with no model or network; a shipped corpus and the `ground-truth-v1` and `verification-v1` contracts back it. (ADR 0019)
@@ -61,7 +66,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [Python 0.3.0] -- 2026-07-14
+## [Python 0.3.0] - 2026-07-14
 
 ### Added
 
@@ -69,12 +74,19 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Added guarded run creation, workflow-state transitions, initialized-only scope replacement, scope checks, approval controls, action-policy checks, evidence controls, contract controls, human finding promotion, and finding verification to the optional local web plane.
 - Added fixed five-tool MCP catalog review, network-free preflight, and explicitly enabled transient invocation through the shared policy-gated enrichment module.
 - Added isolated clean-install validation for base, web, enrichment, combined web/enrichment, MCP, full optional, and source-checkout MCP requirements installations.
+- Added append-only `findings.jsonl` validated-finding records with human-reviewed promotion from evidence-backed `finding_candidate` claims, source-result/source-claim provenance, source-result SHA-256 recording, evidence-integrity enforcement, current-scope and workflow-state checks, and finding list/show/verify CLI commands without automatic execution or automatic promotion.
+- Added versioned skill request/result contracts, a deterministic shipped-skill catalog, policy-aware request creation and validation, evidence-backed result validation with candidate/action assessments, and shared contract instructions for all shipped skills without adding skill execution or finding promotion.
+- Added existing-artifact evidence registration and evidence integrity verification in the local web control plane without artifact upload or download.
+- Added guarded browser creation of policy-checked `skill_request` v1 contracts without executing skills.
+- Added point-in-time browser validation of existing request and result contracts, including evidence, linked-request, scope, and recommended-action assessments.
+- Added Python 0.3.0 release notes with upgrade, artifact, checksum, optional-extra, and limitation guidance.
 
 ### Changed
 
 - Prepared the Python package as `0.3.0`, a minor pre-1.0 release for substantial backward-compatible expansion from read-only review into a guarded local control plane.
 - Kept FastAPI, Uvicorn, HTTPX, MCP, and DNS-related dependencies out of the mandatory base install.
 - Updated release-candidate workflow, deterministic bundle construction, package artifact names, release audit assumptions, and release-readiness assertions for Python 0.3.0.
+- Updated installation, usage, architecture, security, release-readiness, MCP, contract, and web-control-plane documentation for the completed implementation.
 
 ### Fixed
 
@@ -86,29 +98,24 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - Preserved loopback-only, unauthenticated, token-guarded mutation semantics and no-CORS/no-docs web defaults.
 - Verified MCP enrichment remains disabled by default and creates no artifacts, evidence, contracts, findings, reports, jobs, or state events.
 
-### Documentation
-
-- Added Python 0.3.0 release notes with upgrade, artifact, checksum, optional-extra, and limitation guidance.
-- Updated installation, usage, architecture, security, release-readiness, MCP, contract, and web-control-plane documentation for the completed implementation.
-
 ---
 
-## [Claude plugin/content 3.1.0] -- 2026-07-14
+## [Claude plugin/content 3.1.0] - 2026-07-14
+
+### Added
+
+- Added plugin/content 3.1.0 release notes.
 
 ### Changed
 
 - Prepared the Claude plugin/content bundle as `3.1.0`; the bundle now includes Python 0.3.0 and the completed local control plane resources.
 - Updated deterministic bundle metadata, artifact names, MCP implementation references, and current documentation.
 - Corrected plugin metadata to describe 11 Claude-native skills, deterministic Python controls, the optional loopback-only limited-control web plane, human-reviewed finding promotion, optional fixed policy-gated MCP enrichment, and no autonomous recon orchestration.
-
-### Documentation
-
-- Added plugin/content 3.1.0 release notes.
 - Preserved all 11 individual skill frontmatter versions and all schema versions.
 
 ---
 
-## [3.0] -- 2026-05-29
+## [3.0] - 2026-05-29
 
 ### Added
 
@@ -130,7 +137,7 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.4] -- 2026-05-29
+## [2.4] - 2026-05-29
 
 ### Added
 
@@ -145,16 +152,11 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ---
 
-## [2.3] — 2026-05-29
-
-### Architecture
-
-- **Three-layer content separation.** Skill files (SKILL.md) now contain only agent-executable content — behavioral contracts, API endpoints, regex patterns, scoring rubrics, decision logic. Techniques and procedures moved to `docs/methods/`. Tool directories and reference material moved to `docs/reference/`.
-- **Behavioral contracts added to all 11 skills.** Every SKILL.md now starts with a standardized contract: when triggered → execute steps → output format → severity rules → gating rules → chain to next skill.
-- **Removed obsolete `scripts/sync-skill-content.sh`** — the two-tier content model (stubs + full-skills/) it supported was replaced by in-place SKILL.md files.
+## [2.3] - 2026-05-29
 
 ### Added
 
+- **Behavioral contracts added to all 11 skills.** Every SKILL.md now starts with a standardized contract: when triggered → execute steps → output format → severity rules → gating rules → chain to next skill.
 - **`docs/methods/`** — 5 files: copy-paste probes, CDN bypass techniques, active sweep scripts, anti-patterns, evidence preservation.
 - **`docs/reference/`** — 3 files: consolidated tool directory, tooling install commands, specialty domain guides.
 - **`web-surface`** — JS guess-paths (11 paths), endpoint extraction regex tiers (3 tiers), subdomain takeover provider fingerprints (27 providers), cloud bucket permutation arsenal (6 prefixes × 15 suffixes × 47 stems).
@@ -174,21 +176,9 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - **`cloud-and-infra` §3** — CircleCI added to CI/CD platform exposure table.
 - **`web-surface` §14** — Legacy-extension Wayback pivot for brochure-ware sites.
 
-### Fixed
-
-- Corrected 6 wrong skill attributions in `docs/capabilities.md` (AWS account-ID, LinkedIn, KEV/EPSS, sat imagery, public records).
-- Fixed 2 phantom capabilities (DMARC vendor inference, MX-to-IdP) by implementing the content.
-- Fixed CHANGELOG dork count (80+ → 70).
-- Fixed stale "Both skills" → "All skills" across README, smoke tests, and docs.
-- Fixed offensive-osint router overpromises (removed geospatial, crypto, media claims).
-- Added report-template (S9) to router dispatch table and architecture Mermaid diagram.
-- Fixed roadmap version ordering in `docs/coverage.md`.
-- Updated `CLAUDE.md.example` for router + sub-skill architecture.
-- Removed duplicate OneLogin row in `identity-fabric` §1.5.
-- Fixed ambiguous `scripts/` paths to `skills/offensive-osint/scripts/`.
-
 ### Changed
 
+- **Three-layer content separation.** Skill files (SKILL.md) now contain only agent-executable content — behavioral contracts, API endpoints, regex patterns, scoring rubrics, decision logic. Techniques and procedures moved to `docs/methods/`. Tool directories and reference material moved to `docs/reference/`.
 - **Skill line counts:**
 
 | Skill                    | Before | After  |
@@ -204,13 +194,26 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 | `docs/reference/`        | —      | 551    |
 | **Grand total**          | ~3,224 | ~3,928 |
 
+### Fixed
+
+- Corrected 6 wrong skill attributions in `docs/capabilities.md` (AWS account-ID, LinkedIn, KEV/EPSS, sat imagery, public records).
+- Fixed 2 phantom capabilities (DMARC vendor inference, MX-to-IdP) by implementing the content.
+- Fixed CHANGELOG dork count (80+ → 70).
+- Fixed stale "Both skills" → "All skills" across README, smoke tests, and docs.
+- Fixed offensive-osint router overpromises (removed geospatial, crypto, media claims).
+- Added report-template (S9) to router dispatch table and architecture Mermaid diagram.
+- Fixed roadmap version ordering in `docs/coverage.md`.
+- Updated `CLAUDE.md.example` for router + sub-skill architecture.
+- Removed duplicate OneLogin row in `identity-fabric` §1.5.
+- Fixed ambiguous `scripts/` paths to `skills/offensive-osint/scripts/`.
+
+### Removed
+
+- **Removed obsolete `scripts/sync-skill-content.sh`** — the two-tier content model (stubs + full-skills/) it supported was replaced by in-place SKILL.md files.
+
 ---
 
-## [2.2.1] — 2026-05-24
-
-### Changed
-
-- **`osint-methodology` trimmed from 1,694 → 455 lines.** Retained full methodology core: confidence levels + upgrade workflows, 5-stage pipeline + time budgets, asset graph + triage rules, severity rubric, OpSec + detectability + back-off, breach × identity correlation, anti-patterns, bug-bounty submission, client deliverable templates. Removed duplicate implementation content now covered by the offensive-osint sub-skills.
+## [2.2.1] - 2026-05-24
 
 ### Added
 
@@ -224,37 +227,37 @@ and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   - `analysis-and-reporting` (303 lines) — scoring rubrics, attack-path hints, severity decision matrix, sector-specific notes.
 - **Updated README.md** — structure block and What is this? section updated to list all sub-skills.
 
+### Changed
+
+- **`osint-methodology` trimmed from 1,694 → 455 lines.** Retained full methodology core: confidence levels + upgrade workflows, 5-stage pipeline + time budgets, asset graph + triage rules, severity rubric, OpSec + detectability + back-off, breach × identity correlation, anti-patterns, bug-bounty submission, client deliverable templates. Removed duplicate implementation content now covered by the offensive-osint sub-skills.
+
 ---
 
-## [2.2] — 2026-05-24
+## [2.2] - 2026-05-24
 
-### Architecture
+### Added
 
-- **Refactored `offensive-osint` from monolith to router + sub-skills.** The 4,168-line single file has been replaced with a 62-line router (`skills/offensive-osint/SKILL.md`) that dispatches to focused sub-skills by task type. Each sub-skill is self-contained and under 500 lines, preventing context overload in long sessions.
 - **Added `identity-fabric` sub-skill** (426 lines) — Entra, Okta, ADFS, SAML, M365 deep enum, GraphQL field-suggestion, LinkedIn employee enum.
 - **Added `report-template` skill** — generic bug-bounty report scaffold.
-
-### Setup
-
 - **Added `CLAUDE.md.example`** — boilerplate Claude project config for users to copy and customise. Replaces the practice of committing engagement-specific `CLAUDE.md` files to the repo. Users run `cp CLAUDE.md.example CLAUDE.md` after cloning and fill in their own platform and handle.
-
-### Added scripts
-
 - **`skills/offensive-osint/scripts/h1_reference.py`** — stdlib-only Python script (no API key required) that queries HackerOne's public GraphQL API for disclosed reports. Supports top-voted/top-bounty sort, keyword search with cursor pagination, severity and CWE filters, program-specific lookups, JSON output.
 
-### Repo hygiene
+### Changed
 
+- **Refactored `offensive-osint` from monolith to router + sub-skills.** The 4,168-line single file has been replaced with a 62-line router (`skills/offensive-osint/SKILL.md`) that dispatches to focused sub-skills by task type. Each sub-skill is self-contained and under 500 lines, preventing context overload in long sessions.
 - **Updated `.gitignore`** — added: `findings/`, `mcp-proxy.jar`, `refreshSession.js`, `skills/hackerone/`, `.claude/settings.local.json`, `CLAUDE.md`. These are engagement artifacts and local config that must never be committed to a public repo.
 - **Updated README.md** — structure block, tagline, What is this?, capability map, usage steps, and scripts section updated to reflect new architecture.
 - **Updated CONTRIBUTING.md** — step 3 covers adding new sub-skills as peer directories; restored `CODE_OF_CONDUCT.md` link.
 
 ---
 
-## [2.1] — 2026-04-27
+## [2.1] - 2026-04-27
 
 Comprehensive expansion based on a 32-prompt smoke-test gap analysis. PASS rate moved from C-grade (1 PASS / 9 PARTIAL / 22 FAIL) to A-grade (31 PASS / 1 PARTIAL / 0 FAIL).
 
-### `osint-methodology` — added 11 new sections / subsections
+### Added
+
+#### `osint-methodology` — 11 new sections / subsections
 
 - **§2.1 Confidence Upgrade Workflows** — per-asset-type transition rules (subdomain, IP, webapp, email, bucket, endpoint, credential, person, repo, mobile app, certificate, SSO tenant).
 - **§6.4 Detection-Aware Probing** — signs of detection (429s, captcha, WAF page, status drift, banner change, NXDOMAIN, honeypot bait, direct contact) + back-off ladder (slow down → switch endpoints → switch persona → switch IP → pause → consult).
@@ -268,9 +271,9 @@ Comprehensive expansion based on a 32-prompt smoke-test gap analysis. PASS rate 
 - **§30 Bug Bounty Submission & Responsible Disclosure** — platform basics (HackerOne/Bugcrowd/Intigriti/YesWeHack/HackenProof/Open BB/security.txt), universal report structure, severity inference per program, CVD process, cloud provider disclosure channels.
 - **§31 Client Deliverable Templates** — executive summary template, per-finding report card template, risk translation matrix (11+ technical findings → business-language impact), reporting cadence, reproduction package contents.
 
-### `offensive-osint` — added 11 new §16 subsections + 7 new top-level sections + many expansions
+#### `offensive-osint` — 11 new §16 subsections + 7 new top-level sections + many expansions
 
-#### New §16 subsections (Pre-built Wordlists & Probe Paths)
+New §16 subsections (Pre-built Wordlists & Probe Paths):
 
 - **§16.13 Copy-Paste Probes** — curl one-liners for every check (15 always-on HTTP, 8 SSO prefixes, 5 SAML paths, S3/GCS/Azure HEAD+GET, GraphQL introspection POST, all 9 read-only validators, httpx bulk).
 - **§16.14 Email Security Analysis** — SPF/DMARC/DKIM/BIMI/MTA-STS/DNSSEC parsing + SaaS tenant inference table + 25+ TXT verification token patterns.
@@ -284,12 +287,12 @@ Comprehensive expansion based on a 32-prompt smoke-test gap analysis. PASS rate 
 - **§16.22 DNS Record Catalog** — per-record-type rubric + TXT verification token table mapping ~25 patterns to SaaS tenants (Google Workspace, M365, Atlassian, Adobe, DocuSign, Dropbox, Box, Webex, Zoom, Notion, Slack EG, Asana, MongoDB Atlas, etc.) + CAA + SOA serial pattern analysis.
 - **§16.23 Wayback CDX Deep Usage** — full CDX API filter parameters + diff workflow + bulk archived JS extraction.
 
-#### Catalog & corpus expansions
+Catalog & corpus expansions:
 
 - **§17 Secret-Pattern Catalog** expanded from 29 to **48 patterns**. Added: Anthropic API key (`sk-ant-`), OpenAI legacy + project keys, OpenAI session, HuggingFace (`hf_`), Cloudflare API key (typed + global), DigitalOcean (`dop_v1_`), npm (`npm_`), PyPI (`pypi-`), Docker Hub (`dckr_pat_`), Atlassian (`ATATT3xFfGF0_`), New Relic, DataDog (typed), Sentry DSN, ngrok, Linear, Discord bot token, Telegram bot token.
 - **§18 Dork Corpus** expanded from 50+ to **70 templates** across **9 categories** (added: internal tool exposure, backup/dump file extensions, sector-specific for healthcare/finance/gov).
 
-#### Identity & validators
+Identity & validators:
 
 - **§22.8 Microsoft 365 Deep Enumeration** — Teams federation API, SharePoint subdomain probe (3 patterns), OneDrive personal site enum, M365 OAuth client_id discovery, `device_authorization_endpoint` phishing-target check, Power Platform / Dynamics URLs.
 - **§22.9 GraphQL Field-Suggestion Enumeration** — recipe + tooling (clairvoyance, graphql-cop, InQL) + alias batching + query-depth bypass + subscription enumeration + batched-query bypass.
@@ -297,19 +300,19 @@ Comprehensive expansion based on a 32-prompt smoke-test gap analysis. PASS rate 
 - **§23.12 Post-Discovery Enumeration Workflows** — AWS IAM enum (sts → iam → simulate-principal-policy), GitHub PAT scope/repo enum, Slack workspace enum (auth.test → users.identity → conversations.list), JWT full triage (algorithm-confusion + brute-force + none-bypass), Postman PMAK workspace enum, Anthropic + OpenAI usage enum, generic key provenance enum.
 - **§24 Postman Endpoint** pinned with verified shape (mid-2025+) + DevTools fallback recipe.
 
-#### Audit / vulnerability / measurement
+Audit / vulnerability / measurement:
 
 - **§27.1 Wordlist Sources** — Assetnote, SecLists, jhaddix all.txt, OneListForAll, raft-large-words, fuzzdb, PayloadsAllTheThings + size guidance + tooling examples.
 - **§28.4 TLS Deep Audit** — sslyze + testssl.sh + nmap script alternatives + JA3/JA4 reference DBs + 14-row issue table.
 - **§28.5 Reverse DNS Sweep + IPv6 Enum + BGP route observation** — within-scope sweep, IPv6 considerations, RouteViews / RIPE RIS, third-party PTR pivots.
 - **§29.2 Vulnerability Prioritization Data Sources** — NVD, EPSS, CISA KEV, ExploitDB, Metasploit, InTheWild.io, OpenCVE, Trickest CVE→POC, GitHub Security Advisories, MITRE CVE, OSV.dev, VulnCheck KEV + bulk prioritization workflow.
 
-#### Hints & severity
+Hints & severity:
 
 - **§39 Attack-Path Hint Patterns** expanded with **15 more templates** (open kubelet/etcd, K8s API anonymous, Citrix/F5/vCenter/Cloud Function unauth, npm typosquat, DMARC missing, live AI keys, Slack invite, sourcemap with sourcesContent, etc.).
 - **§40 Severity Decision Matrix** expanded with **30 more worked examples** covering Kubernetes/container, vendor products with KEV CVEs, M365/cloud-native, CI/CD misconfig, documentation leaks, email-security gaps, AI/package-registry credentials, TLS issues.
 
-#### New top-level sections
+New top-level sections:
 
 - **§41 LinkedIn Employee Enumeration** — search techniques (free + Sales Navigator), Google dork, tooling, role-tier prioritization (P0–P5), email-pattern derivation cross-reference, sock-puppet considerations, output schema.
 - **§42 Job Posting Tech-Stack Analysis** — sources (LinkedIn Jobs / Indeed / Glassdoor / Lever / Greenhouse / Workable / AshbyHQ / AngelList / BuiltIn), what to extract, tooling, output schema.
@@ -319,13 +322,15 @@ Comprehensive expansion based on a 32-prompt smoke-test gap analysis. PASS rate 
 - **§46 Tooling Quick-Install** — 35+ install one-liners across 12 categories.
 - **§47 Sector-Specific Recon Notes** — healthcare (DICOM/HL7/FHIR/EHR), finance (SWIFT/FIX/Bloomberg/banking middleware), ICS/SCADA (Modbus/BACnet/S7/DNP3 + caution discipline), IoT (MQTT/CoAP/UPnP), government (FedRAMP/FISMA/USAspending), maritime/aviation/auto.
 
-#### Renumbering
+Renumbering:
 
 - §41 (Runnable Helper) → **§48**
 - §42 (Skill Self-Test) → **§49** (refreshed with v2.1 prompts; expanded to 30 prompts)
 - §43 (Changelog) → **§50** (this entry added)
 
-### File-size delta
+### Changed
+
+- File-size delta:
 
 | File                         | v2.0        | v2.1            |
 | ---------------------------- | ----------- | --------------- |
@@ -333,53 +338,38 @@ Comprehensive expansion based on a 32-prompt smoke-test gap analysis. PASS rate 
 | `offensive-osint.SKILL.md`   | 1,698 lines | **3,828 lines** |
 | Combined                     | 2,879 lines | **5,522 lines** |
 
-### Smoke-test re-grade
-
-After v2.1: **31 PASS / 1 PARTIAL / 0 FAIL** out of 32 (was 1/9/22 in v2.0).
+- Smoke-test re-grade — after v2.1: **31 PASS / 1 PARTIAL / 0 FAIL** out of 32 (was 1/9/22 in v2.0).
 
 ---
 
-## [2.0] — 2026-04-27
+## [2.0] - 2026-04-27
 
 Major rewrite for external red-team posture. Both skills tagged `version: 2.0`.
 
-### `osint-methodology`
+### Added
+
+#### `osint-methodology`
 
 - Added: 5-stage recon pipeline (§7), asset-graph discipline with 29 asset types (§8), findings rubric with severity examples (§9), bug-bounty pivot modes (§10), identity-fabric mapping (§11), API & auth-map methodology (§12), JS deep analysis (§13), mobile attack surface (§14), cloud attack surface (§15), breach × identity correlation (§22), detectability tagging (§6.2), validator discipline (§6.3), cross-module coordination (§24.2), multi-engine corpus run methodology (§24.3), evidence preservation (§24.4), anti-patterns (§26).
 - Strengthened: confidence levels (§2), output format (§3), source hygiene (§4), do-not rules (§5), authorization preamble (§1).
 - Retained: original methodology content (OpSec, Crypto, Image/Video/Chrono, Threat Actor incl. RU/CN, Synthetic Media).
 
-### `offensive-osint`
+#### `offensive-osint`
 
 - Added: pre-built wordlists & probe paths (§16), 29-pattern secret catalog (§17), 50+ dork corpus (§18), GitHub code-search dorks (§19), endpoint interest score 0-100 rubric (§20), mobile ownership confidence (§21), identity-fabric concrete endpoints (§22), 4 read-only secret validators (§23), Postman workspace search (§24), Stack Exchange sweep (§25), public SaaS dorks (§26), subdomain-source stack (§27), domain-level breach severity (§15.1), L2 explorer table (§30.2), USCC + ICP workflow (§14.2), cross-module sidecar coordination (§36), attack-path hint patterns (§39), severity decision matrix (§40), runnable secret-scan helper (§41).
 - Retained: original tool tables (search engines, username/email, people, phone, social, public records, breach, infrastructure, threat intel, crypto, media, geospatial, AI, archiving, automation, regional, telegram).
 
 ---
 
-## [1.x] — pre-2026
+## [1.x] - pre-2026
 
 - `osint-methodology`: original framework based on [SnailSploit/offensive-checklist](https://github.com/SnailSploit/offensive-checklist).
 - `offensive-osint`: original tool-reference cheat sheet.
+- This project is a fork of [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT).
 
-### Attribution
+---
 
-This project is a fork of [elementalsouls/Claude-OSINT](https://github.com/elementalsouls/Claude-OSINT).
-
-## Historical Unreleased Notes
-
-### Added
-
-- Added a web-first `outrider` launcher that safely starts the loopback portal and opens the local browser.
-- Added beginner engagement onboarding with guided authorization, platform, scope, traffic-identification metadata, review, creation, and resume flows.
-
-- Added append-only `findings.jsonl` validated-finding records with human-reviewed promotion from evidence-backed `finding_candidate` claims, source-result/source-claim provenance, source-result SHA-256 recording, evidence-integrity enforcement, current-scope and workflow-state checks, and finding list/show/verify CLI commands without automatic execution or automatic promotion.
-
-- Added versioned skill request/result contracts, a deterministic shipped-skill catalog, policy-aware request creation and validation, evidence-backed result validation with candidate/action assessments, and shared contract instructions for all shipped skills without adding skill execution or finding promotion.
-
-- Added existing-artifact evidence registration and evidence integrity verification in the local web control plane without artifact upload or download.
-- Added guarded browser creation of policy-checked `skill_request` v1 contracts without executing skills.
-- Added point-in-time browser validation of existing request and result contracts, including evidence, linked-request, scope, and recommended-action assessments.
-
-### Changed
-
-- Made the browser onboarding experience the primary human entry point while retaining CLI subcommands for advanced and automated use.
+[Unreleased]: https://github.com/Ap6pack/outrider-recon/compare/python-v0.3.0...HEAD
+[Python 0.3.0]: https://github.com/Ap6pack/outrider-recon/compare/python-v0.2.0...python-v0.3.0
+[Claude plugin/content 3.1.0]: https://github.com/Ap6pack/outrider-recon/compare/plugin-v3.0.1...plugin-v3.1.0
+[3.0]: https://github.com/Ap6pack/outrider-recon/releases/tag/v3.0

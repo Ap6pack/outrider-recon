@@ -103,10 +103,10 @@ try {
   H.showImport();
 
   // Smart-prefill behavior: setting the target auto-fills in-scope as target + *.target.
-  document.getElementById('import-target-domain').value = 'ex.com';
+  document.getElementById('import-target-domain').value = 'example.com';
   H.syncImportScope();
   const scopeVal = document.getElementById('import-scope-in').value;
-  if (scopeVal !== 'ex.com\n*.ex.com') fail('syncImportScope did not auto-fill scope (got: ' + JSON.stringify(scopeVal) + ')');
+  if (scopeVal !== 'example.com\n*.example.com') fail('syncImportScope did not auto-fill scope (got: ' + JSON.stringify(scopeVal) + ')');
 } catch (err) {
   fail((err && err.message) || String(err));
 }

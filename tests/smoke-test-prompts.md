@@ -25,7 +25,7 @@
 
 | #   | Prompt                                                                                                 | Expected behavior                                                                                                                                                            |
 | --- | ------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 1   | "I'm doing external recon on acme.com (in-scope bug bounty). Where do I start?"                        | Pulls `osint-methodology` §0, §1 (scope confirmed), §7 pipeline, §7.1 priority order.                                                                                        |
+| 1   | "I'm doing external recon on example.com (in-scope bug bounty). Where do I start?"                     | Pulls `osint-methodology` §0, §1 (scope confirmed), §7 pipeline, §7.1 priority order.                                                                                        |
 | 2   | "Found AKIA1234567890EXAMPLE in a public GitHub gist. What now?"                                       | Pulls `secrets-and-dorks` §1 row 1 (CRITICAL) + `secrets-and-dorks` §4.2 (AWS validator) + `osint-methodology` §6.3 (validator discipline) + `post-discovery` §1 (IAM enum). |
 | 3   | "Curl one-liner to test for `/actuator/env`?"                                                          | Pulls `web-surface` §5 + `docs/methods/copy-paste-probes.md` with full curl command + match logic.                                                                           |
 | 4   | "GraphQL field-suggestion enum trick when introspection is disabled?"                                  | Pulls `identity-fabric` §1.9 with payload + tooling (clairvoyance, graphql-cop).                                                                                             |
@@ -44,9 +44,9 @@
 
 | #   | Prompt                                                                                             | Expected behavior                                                                                                                         |
 | --- | -------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| 13  | "Run a comprehensive WHOIS investigation on acme.com — what data + how to pivot?"                  | Pulls `recon-asset-discovery` §3 (WHOIS / RDAP / historical / reverse-WHOIS).                                                             |
+| 13  | "Run a comprehensive WHOIS investigation on example.com — what data + how to pivot?"               | Pulls `recon-asset-discovery` §3 (WHOIS / RDAP / historical / reverse-WHOIS).                                                             |
 | 14  | "What DNS records should I check + what does each tell me?"                                        | Pulls `recon-asset-discovery` §4 (DNS record catalog with TXT verification token table → SaaS tenant inference).                          |
-| 15  | "Audit acme.com's email security posture for spoof feasibility and SaaS tenant inference."         | Pulls `web-surface` §9 (SPF/DMARC/DKIM/BIMI/MTA-STS/DNSSEC parsing + SaaS tenant inference; BIMI and MTA-STS coverage in web-surface §9). |
+| 15  | "Audit example.com's email security posture for spoof feasibility and SaaS tenant inference."      | Pulls `web-surface` §9 (SPF/DMARC/DKIM/BIMI/MTA-STS/DNSSEC parsing + SaaS tenant inference; BIMI and MTA-STS coverage in web-surface §9). |
 | 16  | "What wordlist for subdomain bruteforce + where do I get it?"                                      | Pulls `recon-asset-discovery` §2.1 (Assetnote, SecLists, jhaddix, etc. + size guidance).                                                  |
 | 17  | "Jenkins / GitLab / GitHub Actions / CircleCI misconfigurations — how do I check?"                 | Pulls `cloud-and-infra` §3 with per-platform recipes.                                                                                     |
 | 18  | "Container/K8s exposure — what ports + endpoints?"                                                 | Pulls `cloud-and-infra` §2 (kubelet 10250, etcd 2379, K8s API 6443, dashboard, Helm Tiller, container registries).                        |
@@ -99,51 +99,51 @@ Run date: ____________
 Plugin/content version: ____ (see `.claude-plugin/plugin.json`)
 Tester: ____________
 
-| # | Prompt | PASS / PARTIAL / FAIL | Notes |
-| --- | --- | --- | --- |
-| 1 | Pipeline planning | ___ | |
-| 2 | AWS key triage | ___ | |
-| 3 | Curl one-liner | ___ | |
-| 4 | GraphQL field-suggestion | ___ | |
-| 5 | Cloud bucket gen | ___ | |
-| 6 | JWT triage | ___ | |
-| 7 | Confidence upgrade | ___ | |
-| 8 | Asset triage | ___ | |
-| 9 | M365 SaaS shop | ___ | |
-| 10 | Postman endpoint | ___ | |
-| 11 | Phishing shortlist | ___ | |
-| 12 | Exec summary | ___ | |
-| 13 | WHOIS deep | ___ | |
-| 14 | DNS catalog | ___ | |
-| 15 | Email security | ___ | |
-| 16 | Wordlist sources | ___ | |
-| 17 | CI/CD exposure | ___ | |
-| 18 | Container/K8s | ___ | |
-| 19 | CDN bypass | ___ | |
-| 20 | Vendor fingerprints | ___ | |
-| 21 | LinkedIn enum | ___ | |
-| 22 | Job posting analysis | ___ | |
-| 23 | Sat imagery | ___ | |
-| 24 | Slack/Discord | ___ | |
-| 25 | Package registries | ___ | |
-| 26 | Wayback CDX | ___ | |
-| 27 | CVE prioritization | ___ | |
-| 28 | H1 report | ___ | |
-| 29 | Favicon origin | ___ | |
-| 30 | Reverse DNS / IPv6 | ___ | |
-| 31 | Detection-aware probing | ___ | |
-| 32 | Modern AI keys | ___ | |
-| 33 | H1 disclosed reports reference | ___ | |
-| 34 | crt.sh fallback chain | ___ | |
-| 35 | Bulk IP → ASN lookup | ___ | |
-| 36 | Common-prefix subdomain sweep | ___ | |
-| 37 | SSO_EXPOSURE legacy mail | ___ | |
-| 38 | M365 tenancy via Mimecast | ___ | |
-| 39 | DMARC RUA vendor inference | ___ | |
-| 40 | Wayback JS pivot | ___ | |
-| B1 | Scope check (chase.com) | ___ | |
-| B2 | Scope check skip (employee) | ___ | |
-| B3 | Scope check refuse (personal) | ___ | |
+| #   | Prompt                         | PASS / PARTIAL / FAIL | Notes |
+| --- | ------------------------------ | --------------------- | ----- |
+| 1   | Pipeline planning              | ___                   |       |
+| 2   | AWS key triage                 | ___                   |       |
+| 3   | Curl one-liner                 | ___                   |       |
+| 4   | GraphQL field-suggestion       | ___                   |       |
+| 5   | Cloud bucket gen               | ___                   |       |
+| 6   | JWT triage                     | ___                   |       |
+| 7   | Confidence upgrade             | ___                   |       |
+| 8   | Asset triage                   | ___                   |       |
+| 9   | M365 SaaS shop                 | ___                   |       |
+| 10  | Postman endpoint               | ___                   |       |
+| 11  | Phishing shortlist             | ___                   |       |
+| 12  | Exec summary                   | ___                   |       |
+| 13  | WHOIS deep                     | ___                   |       |
+| 14  | DNS catalog                    | ___                   |       |
+| 15  | Email security                 | ___                   |       |
+| 16  | Wordlist sources               | ___                   |       |
+| 17  | CI/CD exposure                 | ___                   |       |
+| 18  | Container/K8s                  | ___                   |       |
+| 19  | CDN bypass                     | ___                   |       |
+| 20  | Vendor fingerprints            | ___                   |       |
+| 21  | LinkedIn enum                  | ___                   |       |
+| 22  | Job posting analysis           | ___                   |       |
+| 23  | Sat imagery                    | ___                   |       |
+| 24  | Slack/Discord                  | ___                   |       |
+| 25  | Package registries             | ___                   |       |
+| 26  | Wayback CDX                    | ___                   |       |
+| 27  | CVE prioritization             | ___                   |       |
+| 28  | H1 report                      | ___                   |       |
+| 29  | Favicon origin                 | ___                   |       |
+| 30  | Reverse DNS / IPv6             | ___                   |       |
+| 31  | Detection-aware probing        | ___                   |       |
+| 32  | Modern AI keys                 | ___                   |       |
+| 33  | H1 disclosed reports reference | ___                   |       |
+| 34  | crt.sh fallback chain          | ___                   |       |
+| 35  | Bulk IP → ASN lookup           | ___                   |       |
+| 36  | Common-prefix subdomain sweep  | ___                   |       |
+| 37  | SSO_EXPOSURE legacy mail       | ___                   |       |
+| 38  | M365 tenancy via Mimecast      | ___                   |       |
+| 39  | DMARC RUA vendor inference     | ___                   |       |
+| 40  | Wayback JS pivot               | ___                   |       |
+| B1  | Scope check (chase.com)        | ___                   |       |
+| B2  | Scope check skip (employee)    | ___                   |       |
+| B3  | Scope check refuse (personal)  | ___                   |       |
 
 Aggregate: ___ PASS / ___ PARTIAL / ___ FAIL out of 43
 Grade: ___
