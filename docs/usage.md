@@ -8,7 +8,7 @@ How to actually use these skills during an engagement.
 
 | What you want to do                    | What to type                                                                                  | Skills triggered                                           |
 | -------------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------- |
-| Plan an external recon engagement      | "Plan a 1-day external recon on example.com (in-scope BB)"                                       | osint-methodology + offensive-osint                        |
+| Plan an external recon engagement      | "Plan a 1-day external recon on example.com (in-scope BB)"                                    | osint-methodology + offensive-osint                        |
 | Get probe paths for a specific surface | "What paths should I probe to find Swagger on a webapp?"                                      | web-surface §1                                             |
 | Triage a discovered asset              | "I found a hard-coded JWT in a JS bundle. Walk me through triage."                            | post-discovery §4                                          |
 | Pivot a finding                        | "I have an AWS access key. Confirm it's live (read-only) and enumerate scope."                | secrets-and-dorks §4 + post-discovery §1                   |
@@ -17,7 +17,7 @@ How to actually use these skills during an engagement.
 | Severity assessment                    | "How serious is `android:debuggable=true` on a prod Android app?"                             | analysis-and-reporting §4                                  |
 | Write a client report                  | "Write the executive summary for an engagement that found 2 CRIT, 5 HIGH, 12 MED"             | osint-methodology §14 + report-template §2                 |
 | Submit a bug bounty report             | "Format my finding as a HackerOne report. Finding: unauth POST /api/users on api.example.com" | osint-methodology §13 + report-template §1                 |
-| Generate phishing shortlist            | "Generate phishing-feasibility shortlist for example.com (authorized)"                           | osint-methodology §11 + identity-fabric §2                 |
+| Generate phishing shortlist            | "Generate phishing-feasibility shortlist for example.com (authorized)"                        | osint-methodology §11 + identity-fabric §2                 |
 
 ## Conversation patterns
 
@@ -245,15 +245,15 @@ default launcher).
 `in_scope` and `out_of_scope` accept one rule per line. `out_of_scope` is always
 evaluated first, so an exclusion wins over any inclusion.
 
-| Rule | Matches |
-| --- | --- |
-| `example.com` | that exact host |
-| `*.example.com` | any subdomain (not the apex — list `example.com` too if you need it) |
-| `192.0.2.10`, `198.51.100.0/24`, `2001:db8::/32` | that IP or network |
-| `www.example.com/book/` | the host `www.example.com`, and any URL at or under `/book/` |
-| `https://www.example.com/app` | as above, but only over `https` |
-| `api.example.com:8443/v1` | only on port 8443, at or under `/v1` |
-| `www.example.com/api/*/admin` | one wildcard path segment (`*` matches a single segment) |
+| Rule                                             | Matches                                                              |
+| ------------------------------------------------ | -------------------------------------------------------------------- |
+| `example.com`                                    | that exact host                                                      |
+| `*.example.com`                                  | any subdomain (not the apex — list `example.com` too if you need it) |
+| `192.0.2.10`, `198.51.100.0/24`, `2001:db8::/32` | that IP or network                                                   |
+| `www.example.com/book/`                          | the host `www.example.com`, and any URL at or under `/book/`         |
+| `https://www.example.com/app`                    | as above, but only over `https`                                      |
+| `api.example.com:8443/v1`                        | only on port 8443, at or under `/v1`                                 |
+| `www.example.com/api/*/admin`                    | one wildcard path segment (`*` matches a single segment)             |
 
 URL/path rules keep host reachability: the bare host of a URL rule (and the
 manifest target, which is always a single host) is in scope for recon, while a
@@ -312,7 +312,7 @@ Claude: [pulls §6.4 detection-aware probing, walks through back-off ladder]
 
 ### Combine with your own tooling
 
-The skills assume you have standard recon tools available (subfinder, httpx, nuclei, etc.). They don't run anything — they tell you _what_ to run. Combine with:
+The skills assume you have standard recon tools available (subfinder, httpx, nuclei, etc.). They don't run anything — they tell you *what* to run. Combine with:
 
 - Your tooling (see `docs/reference/tooling-install.md` for install one-liners).
 - A note-taking system (Hunchly, Obsidian, etc.).
@@ -321,7 +321,7 @@ The skills assume you have standard recon tools available (subfinder, httpx, nuc
 
 ## Anti-patterns
 
-- ❌ Asking Claude to _execute_ probes. Claude doesn't have access to your network. It tells you what to run; you run it.
+- ❌ Asking Claude to *execute* probes. Claude doesn't have access to your network. It tells you what to run; you run it.
 - ❌ Pasting real PII / credentials / breach corpus content into the prompt. Use placeholder data.
 - ❌ Skipping the scope check. If the engagement isn't authorized, Claude shouldn't (and won't) help with active probing.
 - ❌ Treating Claude's output as ground truth without verification. Always validate against `secrets-and-dorks` §1 catalog (regex match), `analysis-and-reporting` §4 severity matrix (worked examples), and your own engagement context.

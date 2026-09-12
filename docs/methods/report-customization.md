@@ -10,13 +10,13 @@
 The report-template skill uses standard placeholders that get replaced at
 render time. Every engagement must define these before generating output:
 
-| Variable                | Description                         | Example                      |
-| ----------------------- | ----------------------------------- | ---------------------------- |
-| `{client_name}`         | Legal entity name of the client     | Acme Corp                    |
-| `{engagement_date}`     | Start date of the engagement        | 2026-05-29                   |
-| `{assessor}`            | Name or handle of the lead assessor | J. Smith                     |
+| Variable                | Description                         | Example                         |
+| ----------------------- | ----------------------------------- | ------------------------------- |
+| `{client_name}`         | Legal entity name of the client     | Acme Corp                       |
+| `{engagement_date}`     | Start date of the engagement        | 2026-05-29                      |
+| `{assessor}`            | Name or handle of the lead assessor | J. Smith                        |
 | `{scope}`               | Agreed-upon scope summary           | \*.example.com, 198.51.100.0/24 |
-| `{methodology_version}` | Version of the methodology applied  | outrider-recon v2.4          |
+| `{methodology_version}` | Version of the methodology applied  | outrider-recon v2.4             |
 
 **Setting variables per engagement:**
 

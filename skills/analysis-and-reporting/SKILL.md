@@ -70,13 +70,13 @@ For score ≥ 70, attach an `attack_path_hint` in evidence (see §3).
 
 Before deep APK static analysis, score whether the app belongs to the target. **Threshold: ≥70 = accept.**
 
-| Signal                                                                      | Points |
-| --------------------------------------------------------------------------- | ------ |
+| Signal                                                                            | Points |
+| --------------------------------------------------------------------------------- | ------ |
 | Package reverse-DNS matches target domain (`com.example.android` ↔ `example.com`) | +40    |
-| Developer email is `<anything>@<target-domain>`                             | +25    |
-| Developer website URL is the target domain                                  | +20    |
-| App name contains a brand keyword from operator brand list                  | +10    |
-| App has ≥ 20 reviews                                                        | +5     |
+| Developer email is `<anything>@<target-domain>`                                   | +25    |
+| Developer website URL is the target domain                                        | +20    |
+| App name contains a brand keyword from operator brand list                        | +10    |
+| App has ≥ 20 reviews                                                              | +5     |
 
 Apps below threshold: tag `mobile_review_pending`. Operator can lower threshold with `--mobile-ownership-threshold 50`.
 
