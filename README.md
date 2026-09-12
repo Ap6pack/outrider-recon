@@ -101,6 +101,15 @@ curl -fsSL https://raw.githubusercontent.com/Ap6pack/outrider-recon/main/install
 
 This clones to `~/.local/share/outrider-recon` and symlinks all skills into `~/.claude/skills/`, so re-running it updates in place. For manual copies, Claude Desktop/API setups, and uninstall steps, see [Installation](docs/installation.md).
 
+**Or install as a Claude Code plugin.** The repo ships a marketplace manifest, so Claude Code can register it and install the plugin — all skills included, namespaced as `outrider-recon:<skill>` — with updates managed through `/plugin`:
+
+```text
+/plugin marketplace add Ap6pack/outrider-recon
+/plugin install outrider-recon@outrider-recon
+```
+
+The Python CLI and web portal below are installed separately from the skills.
+
 ### 2. Install or download the Python CLI
 
 From a source checkout:

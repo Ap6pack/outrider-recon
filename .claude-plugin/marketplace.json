@@ -1,0 +1,35 @@
+{
+  "name": "outrider-recon",
+  "owner": {
+    "name": "Adam Rhys Heaton (Ap6pack)",
+    "url": "https://github.com/Ap6pack"
+  },
+  "description": "Self-hosted Claude Code marketplace for the Outrider Recon plugin.",
+  "plugins": [
+    {
+      "name": "outrider-recon",
+      "source": "./",
+      "description": "Claude-native, governed offensive-OSINT and external attack-surface platform for authorized security teams: multi-agent recon across web/API, identity, cloud, secrets, and people/breach intelligence, with deterministic scope, evidence, and approval controls, a governed agent-to-agent orchestrator, and human-reviewed findings for hand-off to validation and pen-testing. It is not an exploitation framework and does not perform intrusive testing.",
+      "author": {
+        "name": "Adam Rhys Heaton (Ap6pack)",
+        "url": "https://github.com/Ap6pack"
+      },
+      "homepage": "https://github.com/Ap6pack/outrider-recon",
+      "repository": "https://github.com/Ap6pack/outrider-recon",
+      "license": "MIT",
+      "category": "security",
+      "keywords": [
+        "osint",
+        "recon",
+        "red-team",
+        "bug-bounty",
+        "attack-surface",
+        "reconnaissance",
+        "security",
+        "pentesting",
+        "subdomain-enumeration",
+        "secret-scanning"
+      ]
+    }
+  ]
+}
