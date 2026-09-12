@@ -1,7 +1,7 @@
 ---
 name: secrets-and-dorks
-description: "48-pattern secret regex catalog, 70 dork corpus across 9 categories, GitHub code-search dorks, and 9 read-only credential validators for authorized secret discovery and verification."
-when_to_use: "Use for authorized secret discovery and verification: matching API-key/credential regexes (Anthropic, OpenAI, AWS, GitHub PAT, and 40+ more), dorking across GitHub/Google/Bing/DDG, scanning JS/sourcemaps for leaked credentials, or validating found credentials read-only."
+description: "Secret regex catalog, dork corpus, GitHub code-search dorks, and read-only credential validators for authorized secret discovery and verification."
+when_to_use: "Use for authorized secret discovery and verification: matching API-key/credential regexes (Anthropic, OpenAI, AWS, GitHub PAT, and many more), dorking across GitHub/Google/Bing/DDG, scanning JS/sourcemaps for leaked credentials, or validating found credentials read-only."
 ---
 
 # Secrets & Dorks
