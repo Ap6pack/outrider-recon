@@ -32,7 +32,20 @@ The MCP server is optional -- all skills work without it.
 
 The Python package and the Claude plugin/content bundle share one unified version, `4.0.0`.
 
+### Install from PyPI
+
+Outrider 4.0.0 is published on PyPI as `outrider-recon`:
+
+```bash
+python -m pip install outrider-recon
+python -m pip install "outrider-recon[web]"         # optional loopback-only web control plane
+python -m pip install "outrider-recon[enrichment]"  # optional MCP enrichment HTTP client
+python -m pip install "outrider-recon[mcp]"         # optional MCP server dependencies
+```
+
 ### Install from the published GitHub release wheel
+
+The downloaded release wheel is an alternative to PyPI — for example, to verify the `SHA256SUMS` checksum before installing.
 
 1. Open the Outrider 4.0.0 GitHub release page: <https://github.com/Ap6pack/outrider-recon/releases/tag/v4.0.0>.
 2. Download `outrider_recon-4.0.0-py3-none-any.whl` into an artifact directory.
@@ -55,7 +68,7 @@ outrider --version
 python -m outrider --version
 ```
 
-The release documentation does not claim PyPI publication for `outrider-recon==4.0.0`.
+Outrider 4.0.0 is published on PyPI as `outrider-recon` (see [Install from PyPI](#install-from-pypi)); the release wheel above is an alternative install path.
 
 ### Install from a source checkout
 

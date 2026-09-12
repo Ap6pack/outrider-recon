@@ -271,12 +271,15 @@ class Audit:
             self.fail('stale release and implementation claims','; '.join(hits[:10]))
         else:
             self.ok('stale release and implementation claims','no stale unpublished-release or implementation-status claims detected')
-        forbidden_claims = [r'pip install outrider-recon==0\.2\.0', r'published to PyPI', r'PyPI publication is complete', r'Claude Marketplace publication is complete', r'published to Claude Marketplace']
+        # PyPI publication of outrider-recon 4.0.0 is live, so PyPI availability
+        # claims are now permitted. Claude Marketplace is still unpublished, and a
+        # stale pip-install pin for a version that was never on PyPI stays guarded.
+        forbidden_claims = [r'pip install outrider-recon==0\.2\.0', r'Claude Marketplace publication is complete', r'published to Claude Marketplace']
         hits=[pat for pat in forbidden_claims if re.search(pat, combined, re.IGNORECASE)]
         if hits:
-            self.fail('external publication claim boundaries','unexpected PyPI or Claude Marketplace publication claim: '+', '.join(hits))
+            self.fail('external publication claim boundaries','unexpected premature Claude Marketplace publication claim: '+', '.join(hits))
         else:
-            self.ok('external publication claim boundaries','docs avoid PyPI and Claude Marketplace publication claims')
+            self.ok('external publication claim boundaries','docs avoid premature Claude Marketplace publication claims')
         required = [
             'unsigned candidate artifacts for maintainer review',
             'does not publish automatically',

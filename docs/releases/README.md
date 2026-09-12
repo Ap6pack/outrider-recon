@@ -8,6 +8,8 @@ Outrider ships as a single product under one unified version:
 
 Historical releases used separate `python-v*` and `plugin-v*` version lines; the per-domain notes in this directory are retained as accurate history.
 
+Outrider `4.0.0` is published: a GitHub release at [`v4.0.0`](https://github.com/Ap6pack/outrider-recon/releases/tag/v4.0.0) and on PyPI as [`outrider-recon`](https://pypi.org/project/outrider-recon/).
+
 ## Current release candidates
 
 This preparation branch defines an unsigned release candidate for a future GitHub release record:
@@ -59,6 +61,8 @@ The unified tag namespace is `v<version>`, such as `v4.0.0`. Historical tags (`p
 ## Manual candidate workflow
 
 The manual workflow is `release-candidate.yml` and is triggered with `workflow_dispatch` only. It produces unsigned review outputs for maintainers, keeps `contents: read` permissions, and does not automatically tag, publish GitHub releases, upload to PyPI, or publish to any Claude marketplace. Candidate artifacts are checksum-verifiable; this repository does not claim cryptographic signing for them.
+
+PyPI publishing is handled separately by `publish-pypi.yml`, which uses PyPI Trusted Publishing (OIDC) — no API token or repository secret — and runs on `release: published` or `workflow_dispatch`.
 
 ## Verification commands
 
