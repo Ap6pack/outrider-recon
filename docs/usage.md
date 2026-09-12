@@ -174,6 +174,30 @@ authorizes assets the scope already allows.
 > out that path but does **not** deny the bare host, so it will not, by itself,
 > constrain host-level active enumeration.
 
+### Self-healing and resume
+
+An unattended loop recovers on its own (ADR 0022): a transient executor failure
+(timeout) is retried with backoff (`--max-transient-retries`,
+`--retry-backoff-seconds`); a hard failure or invalid result triggers a bounded
+passive fallback (`public_source_lookup`) on the same candidate — never escalating
+action class (`--no-replan` disables it); and the loop is crash-safe — it marks each
+hop in flight, so on resume it re-runs interrupted local/passive hops but defers an
+interrupted active hop for human review rather than re-firing it.
+
+A run whose ledger was truncated by a crash can be repaired:
+
+```bash
+outrider repair runs/example.com            # dry-run diagnosis
+outrider repair runs/example.com --apply     # perform only the safe repairs
+outrider orchestrate run runs/example.com --actor op --repair --live  # repair, then run
+```
+
+Repair is conservative: it drops a crash-truncated trailing ledger line (backing the
+bytes up to `<file>.corrupt-<timestamp>`) and recreates missing static template files
+or directories, but it never fabricates evidence/approval/finding records and refuses
+to touch a damaged state log, a missing scope, or mid-file ledger corruption —
+reporting those for a human instead.
+
 ## Bridging legacy targets and governed runs
 
 The governed control-plane lives under `runs/` (manifest, scope, append-only

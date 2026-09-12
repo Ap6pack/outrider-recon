@@ -789,6 +789,17 @@ def orchestrate_run(args: argparse.Namespace) -> int:
         print("The governed loop dispatches skills through an external agent runtime;")
         print("re-run with --live once Anthropic Cyber Verification enrollment is in place.")
         return 2
+    if getattr(args, "repair", False):
+        from outrider.repair import repair_run
+        rep = repair_run(args.run_dir, apply=True)
+        for r in rep.get("repaired", []):
+            print(f"Repaired {r['kind']}: {r['target']}")
+        manual = [i for i in rep.get("remaining", rep["issues"]) if i["severity"] == "manual"]
+        if manual:
+            print("ERROR: run has issues that require human attention before orchestration:")
+            for i in manual:
+                print(f"  - {i['kind']} {i['target']}: {i['detail']}")
+            return 2
     executor = ClaudeSubprocessExecutor(enabled=True, skills_dir=args.skills_dir, model=args.model)
     seeds = [SeedRequest(
         skill=args.seed_skill, action_type=args.seed_action,
@@ -797,6 +808,9 @@ def orchestrate_run(args: argparse.Namespace) -> int:
     bounds = OrchestrationBounds(
         max_hops=args.max_hops, max_requests=args.max_requests,
         max_wall_clock_seconds=args.max_seconds,
+        max_transient_retries=args.max_transient_retries,
+        retry_backoff_seconds=args.retry_backoff_seconds,
+        replan_passive_fallback=not args.no_replan,
     )
     try:
         report = run_orchestration(
@@ -817,6 +831,34 @@ def orchestrate_run(args: argparse.Namespace) -> int:
         print(f"Candidates discovered: {report.candidates_discovered}")
         print(f"Deferred (handoff/blocked): {len(report.deferred)}")
     return 0
+
+
+def repair_cmd(args: argparse.Namespace) -> int:
+    from outrider.repair import repair_run
+    result = repair_run(args.run_dir, apply=args.apply)
+    if args.json:
+        print(json.dumps(result, sort_keys=True))
+    elif not args.apply:
+        if result["ok"]:
+            print(f"No issues found in {args.run_dir}.")
+        else:
+            print(f"Issues in {args.run_dir} (dry run; pass --apply to fix the safe ones):")
+            for i in result["issues"]:
+                print(f"  [{i['severity']}] {i['kind']} {i['target']}: {i['detail']}")
+    else:
+        for r in result["repaired"]:
+            extra = f" (backup {r['backup']})" if r.get("backup") else ""
+            print(f"Repaired {r['kind']}: {r['target']}{extra}")
+        remaining_manual = [i for i in result.get("remaining", []) if i["severity"] == "manual"]
+        if remaining_manual:
+            print("Manual attention still required:")
+            for i in remaining_manual:
+                print(f"  - {i['kind']} {i['target']}: {i['detail']}")
+        elif not result["repaired"]:
+            print(f"No safe repairs needed in {args.run_dir}.")
+    # Non-zero only when human-only issues remain after an --apply pass.
+    manual_left = [i for i in result.get("remaining", []) if i["severity"] == "manual"]
+    return 1 if (args.apply and manual_left) else 0
 
 
 def orchestrate_status(args: argparse.Namespace) -> int:
@@ -1175,6 +1217,10 @@ def build_parser() -> argparse.ArgumentParser:
     orchestrate_run_parser.add_argument("--max-hops", type=int, default=25)
     orchestrate_run_parser.add_argument("--max-requests", type=int, default=50)
     orchestrate_run_parser.add_argument("--max-seconds", type=float, default=300.0)
+    orchestrate_run_parser.add_argument("--max-transient-retries", type=int, default=2, help="Retries for a transient executor failure (timeout) before re-planning.")
+    orchestrate_run_parser.add_argument("--retry-backoff-seconds", type=float, default=1.0, help="Base backoff between transient retries (multiplied by attempt number).")
+    orchestrate_run_parser.add_argument("--no-replan", action="store_true", help="Disable the passive fallback re-plan after a hard hop failure.")
+    orchestrate_run_parser.add_argument("--repair", action="store_true", help="Run a safe repair pass (outrider repair --apply) before starting the loop.")
     orchestrate_run_parser.add_argument("--live", action="store_true", help="Enable the live agent executor. Off by default.")
     orchestrate_run_parser.add_argument("--model", default="opus")
     orchestrate_run_parser.add_argument("--skills-dir", default=str(Path.home() / ".claude" / "skills"))
@@ -1184,6 +1230,12 @@ def build_parser() -> argparse.ArgumentParser:
     orchestrate_status_parser.add_argument("run_dir")
     orchestrate_status_parser.add_argument("--json", action="store_true")
     orchestrate_status_parser.set_defaults(func=orchestrate_status)
+
+    repair_parser = subcommands.add_parser("repair", help="Diagnose and safely repair a run folder (truncated ledgers, missing template files).")
+    repair_parser.add_argument("run_dir", help="Run folder path, for example runs/acme.example.")
+    repair_parser.add_argument("--apply", action="store_true", help="Perform the safe repairs (default: dry-run diagnosis only).")
+    repair_parser.add_argument("--json", action="store_true", help="Emit the diagnosis/repair result as JSON.")
+    repair_parser.set_defaults(func=repair_cmd)
 
     verify_parser = subcommands.add_parser("verify", help="Independent advisory verification of finding candidates.")
     verify_sub = verify_parser.add_subparsers(dest="verify_command", required=True)
