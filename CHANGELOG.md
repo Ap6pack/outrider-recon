@@ -5,14 +5,20 @@ All notable changes to this project are documented here.
 The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and the project uses [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-Outrider tracks independent version domains (see
-[Releases and versioning](README.md#releases-and-versioning)): the Python
-package and the Claude plugin/content bundle are versioned separately, so some
-release headings below name their domain explicitly.
+From `4.0.0` onward Outrider uses a single unified version for the Python package
+and the Claude plugin/content bundle (see
+[Releases and versioning](README.md#releases-and-versioning)). Release headings
+dated before that unification name their historical version domain explicitly.
 
 ---
 
 ## [Unreleased]
+
+---
+
+## [4.0.0] - 2026-09-11
+
+Outrider `4.0.0` is the first unified release: the Python package and the Claude plugin/content bundle now share one version, superseding the separate Python `0.3.0` and plugin/content `3.1.0` lines.
 
 ### Added
 
@@ -369,7 +375,8 @@ Major rewrite for external red-team posture. Both skills tagged `version: 2.0`.
 
 ---
 
-[Unreleased]: https://github.com/Ap6pack/outrider-recon/compare/python-v0.3.0...HEAD
+[Unreleased]: https://github.com/Ap6pack/outrider-recon/compare/v4.0.0...HEAD
+[4.0.0]: https://github.com/Ap6pack/outrider-recon/compare/plugin-v3.1.0...v4.0.0
 [Python 0.3.0]: https://github.com/Ap6pack/outrider-recon/compare/python-v0.2.0...python-v0.3.0
 [Claude plugin/content 3.1.0]: https://github.com/Ap6pack/outrider-recon/compare/plugin-v3.0.1...plugin-v3.1.0
 [3.0]: https://github.com/Ap6pack/outrider-recon/releases/tag/v3.0

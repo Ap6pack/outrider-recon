@@ -68,7 +68,7 @@ def package_version() -> str:
     try:
         return version("outrider-recon")
     except PackageNotFoundError:  # pragma: no cover - installed metadata should normally exist
-        return "0.2.0"
+        return "4.0.0"
 
 def _valid_web_port(value: str) -> int:
     try:

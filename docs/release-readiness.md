@@ -1,19 +1,19 @@
 # Release-readiness audit
 
-- **Audit date:** 2026-07-14
+- **Audit date:** 2026-09-11
 - **Audited commit:** 57b452d4688cac280f17f3d35867e9129dc3706e plus this audit branch's committed changes
 - **Overall status:** ready_with_limitations
 
 ## Post-release status
 
-This release-preparation PR defines unsigned candidate artifacts for maintainer review. The release-candidate workflow is manual and does not publish automatically, create tags, create GitHub releases, upload to PyPI, or publish to Claude Marketplace. Future tag names are `python-v0.3.0` and `plugin-v3.1.0`.
+This release-preparation PR defines unsigned candidate artifacts for maintainer review. The release-candidate workflow is manual and does not publish automatically, create tags, create GitHub releases, upload to PyPI, or publish to Claude Marketplace. The future tag name is `v4.0.0`, shared by the Python package and the plugin/content bundle.
 
 ## Supported execution modes
 
 | Mode | Status | Notes |
 | --- | --- | --- |
 | Claude skill/content bundle | ready_with_limitations | 11 shipped skills plus `_shared` contract guidance; skills provide methodology and do not bypass deterministic controls. |
-| Base Python CLI | ready | Package version remains `0.3.0`; base runtime depends on PyYAML and provides deterministic run, scope, state, evidence, approval, contract, finding, and discoverability commands. |
+| Base Python CLI | ready | Package version is `4.0.0`; base runtime depends on PyYAML and provides deterministic run, scope, state, evidence, approval, contract, finding, and discoverability commands. |
 | Optional MCP server | ready_with_limitations | Source-checkout companion with five guarded tools; not included as a base wheel dependency. |
 | Optional local web control plane | ready_with_limitations | Installed with `.[web]`; loopback-only limited controls, no artifact download route, no result upload, no skill execution, no Node build. |
 
@@ -23,7 +23,7 @@ Status: **ready**. The package builds as a wheel and source distribution with Py
 
 ## Claude plugin/content status
 
-Status: **ready_with_limitations**. The Claude plugin/content bundle remains version `3.1.0`, independent of the Python package version `0.3.0`. The metadata describes authorized recon methodology and deterministic controls without claiming unrestricted autonomous exploitation.
+Status: **ready_with_limitations**. The Claude plugin/content bundle shares the unified version `4.0.0` with the Python package. The metadata describes authorized recon methodology and deterministic controls without claiming unrestricted autonomous exploitation.
 
 ## Skill catalog status
 
@@ -51,7 +51,7 @@ Status: **ready_with_limitations**. Deterministic controls cover scope, state, e
 
 ## Documentation status
 
-Status: **ready_with_limitations**. Public documentation now distinguishes skill methodology, deterministic Python controls, optional MCP enrichment, optional web control, and independent version domains.
+Status: **ready_with_limitations**. Public documentation now distinguishes skill methodology, deterministic Python controls, optional MCP enrichment, optional web control, and the single unified version.
 
 ## Test and CI status
 
@@ -59,7 +59,7 @@ Status: **ready_with_limitations**. Base-package compatibility is tested on Pyth
 
 ## Known limitations
 
-- The Python package remains pre-1.0 at `0.3.0`; this does not claim stable post-1.0 API guarantees.
+- Outrider `4.0.0` is the first unified release; the Python package and plugin/content bundle now advance together, and CLI/API changes follow semantic versioning from this baseline.
 - The MCP server is a source-checkout companion, not a separately published wheel component.
 - The web control plane has no authentication and is intended for loopback-only local review.
 - Claude skill capabilities are methodology/content capabilities; they are not equivalent to autonomous execution in the Python CLI.

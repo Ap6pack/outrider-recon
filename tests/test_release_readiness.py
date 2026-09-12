@@ -63,11 +63,11 @@ class ReleaseReadinessTests(unittest.TestCase):
             with contextlib.redirect_stdout(buf): code=release_audit.main(['--root',str(root),'--json'])
             self.assertEqual(code, 2)
 
-    def test_version_inventory_and_independent_domains(self):
+    def test_version_inventory_and_unified_domain(self):
         versions=release_audit.Audit(ROOT).versions()
-        self.assertEqual(versions['python_package'],'0.3.0')
-        self.assertEqual(versions['claude_plugin'],'3.1.0')
-        self.assertNotEqual(versions['python_package'], versions['claude_plugin'])
+        self.assertEqual(versions['version'],'4.0.0')
+        self.assertEqual(versions['plugin_version'],'4.0.0')
+        self.assertEqual(versions['version'], versions['plugin_version'])
         self.assertEqual(set(versions['schemas'].values()), {1})
 
     def test_skill_catalog_matches_shipped_dirs_and_installed_metadata(self):
@@ -85,7 +85,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             self.assertEqual(json.loads((ROOT/'contracts'/name).read_text()), schema_json(name))
         for name in ['index.html','app.css','app.js']:
             self.assertTrue(web_static_path(name).exists())
-        self.assertEqual(json.loads((ROOT/'.claude-plugin/plugin.json').read_text())['version'], '3.1.0')
+        self.assertEqual(json.loads((ROOT/'.claude-plugin/plugin.json').read_text())['version'], '4.0.0')
         for i in range(1,8):
             self.assertTrue(list((ROOT/'docs/adr').glob(f'{i:04d}-*.md')))
 
@@ -132,7 +132,7 @@ class ReleaseReadinessTests(unittest.TestCase):
             cp=subprocess.run(cmd, cwd=ROOT, text=True, capture_output=True)
             self.assertEqual(cp.returncode, 0, cp.stderr+cp.stdout)
         from outrider.cli import package_version
-        self.assertEqual(package_version(), '0.3.0')
+        self.assertEqual(package_version(), '4.0.0')
 
 
     def test_lint_workflow_separates_core_and_web_tests(self):
@@ -186,18 +186,16 @@ class ReleaseReadinessTests(unittest.TestCase):
     def test_release_notes_changelog_and_workflow(self):
         changelog=(ROOT/'CHANGELOG.md').read_text()
         self.assertIn('## [Unreleased]', changelog)
-        self.assertRegex(changelog, r'## \[Python 0\.3\.0\] - 2026-07-14')
-        self.assertRegex(changelog, r'## \[Claude plugin/content 3\.1\.0\] - 2026-07-14')
+        self.assertRegex(changelog, r'## \[4\.0\.0\] - 2026-09-11')
         unreleased=changelog.split('## [Unreleased]',1)[1].split('---',1)[0]
-        self.assertNotIn('deterministic scope checks', unreleased)
-        for rel in ['README.md','python-0.3.0.md','plugin-3.1.0.md','release-checklist.md']:
+        self.assertNotIn('scope-wide active-enumeration authorization', unreleased)
+        for rel in ['README.md','4.0.0.md','release-checklist.md']:
             self.assertTrue((ROOT/'docs/releases'/rel).exists())
-        py_notes=(ROOT/'docs/releases/python-0.3.0.md').read_text().lower()
-        self.assertIn('outrider_recon-0.3.0-py3-none-any.whl', py_notes)
-        plugin_notes=(ROOT/'docs/releases/plugin-3.1.0.md').read_text()
-        self.assertIn('Python 0.3.0 is a separate version domain', plugin_notes)
+        notes=(ROOT/'docs/releases/4.0.0.md').read_text().lower()
+        self.assertIn('outrider_recon-4.0.0-py3-none-any.whl', notes)
+        self.assertIn('outrider-recon-bundle-4.0.0.zip', notes)
         docs='\n'.join(p.read_text(errors='ignore') for p in [ROOT/'README.md', ROOT/'docs/installation.md', ROOT/'docs/architecture.md'])
-        self.assertNotIn('Python package version `3.1.0`', docs)
+        self.assertNotIn('independent version domains', docs)
         wf=(ROOT/'.github/workflows/release-candidate.yml').read_text()
         import yaml
         parsed=yaml.safe_load(wf)
@@ -230,31 +228,25 @@ class ReleaseReadinessTests(unittest.TestCase):
 
 
     def test_post_release_documentation_truth_alignment(self):
-        py_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/python-v0.3.0'
-        plugin_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/plugin-v3.1.0'
+        release_link = 'https://github.com/Ap6pack/outrider-recon/releases/tag/v4.0.0'
         readme = (ROOT/'README.md').read_text()
         self.assertIn('## Current release candidates', readme)
-        self.assertIn(py_link, readme)
-        self.assertIn(plugin_link, readme)
+        self.assertIn(release_link, readme)
         self.assertIn('does not publish automatically', readme)
         self.assertNotIn('published as a GitHub release', readme)
         self.assertTrue(readme.rstrip().endswith('> _Raw recon tells you what exists. Outrider helps decide what matters first._'))
         release_index = (ROOT/'docs/releases/README.md').read_text()
-        self.assertIn('python-v0.3.0', release_index)
-        self.assertIn('plugin-v3.1.0', release_index)
+        self.assertIn('v4.0.0', release_index)
         self.assertIn('workflow_dispatch', release_index)
         self.assertIn('does not automatically tag, publish GitHub releases, upload to PyPI', release_index)
-        py_notes = (ROOT/'docs/releases/python-0.3.0.md').read_text()
-        self.assertIn('Python 0.3.0', py_notes)
-        self.assertIn('outrider_recon-0.3.0-py3-none-any.whl', py_notes)
-        self.assertIn('loopback-only', py_notes)
-        self.assertIn(py_link.split('/tag/')[1], py_notes)
-        plugin_notes = (ROOT/'docs/releases/plugin-3.1.0.md').read_text()
-        self.assertIn('Python 0.3.0 is a separate version domain', plugin_notes)
-        self.assertIn('unchanged', plugin_notes.lower())
-        self.assertIn('outrider-recon-bundle-3.1.0.zip', plugin_notes)
+        notes = (ROOT/'docs/releases/4.0.0.md').read_text()
+        self.assertIn('4.0.0', notes)
+        self.assertIn('outrider_recon-4.0.0-py3-none-any.whl', notes)
+        self.assertIn('outrider-recon-bundle-4.0.0.zip', notes)
+        self.assertIn('loopback-only', notes)
+        self.assertIn('v4.0.0', notes)
         readiness = (ROOT/'docs/release-readiness.md').read_text()
-        self.assertIn('**Audit date:** 2026-07-14', readiness)
+        self.assertIn('**Audit date:** 2026-09-11', readiness)
         self.assertIn('This preparation PR does not create release tags or release records', readiness)
         install = (ROOT/'docs/installation.md').read_text()
         self.assertIn('deterministic local run, scope, state, evidence, approval, action-policy, contract, finding, and review controls', install)
@@ -263,10 +255,10 @@ class ReleaseReadinessTests(unittest.TestCase):
         self.assertIn('skill request/result contract creation and validation', architecture)
         self.assertIn('deterministic human-reviewed finding promotion and verification', architecture)
         self.assertNotIn('web UI are' + ' not implemented', architecture)
-        combined = '\n'.join((ROOT/p).read_text(errors='ignore') for p in ['README.md','docs/releases/README.md','docs/releases/python-0.3.0.md','docs/releases/plugin-3.1.0.md','docs/installation.md'])
+        combined = '\n'.join((ROOT/p).read_text(errors='ignore') for p in ['README.md','docs/releases/README.md','docs/releases/4.0.0.md','docs/installation.md'])
         self.assertIn('The same `SHA256SUMS` file covers all three', combined)
-        self.assertIn("grep 'outrider-recon-bundle-3.1.0.zip' SHA256SUMS | sha256sum -c -", combined)
-        self.assertIn("grep -E 'outrider_recon-0.3.0-py3-none-any.whl|outrider_recon-0.3.0.tar.gz' SHA256SUMS | sha256sum -c -", combined)
+        self.assertIn("grep 'outrider-recon-bundle-4.0.0.zip' SHA256SUMS | sha256sum -c -", combined)
+        self.assertIn("grep -E 'outrider_recon-4.0.0-py3-none-any.whl|outrider_recon-4.0.0.tar.gz' SHA256SUMS | sha256sum -c -", combined)
 
     def test_skill_inventory_and_schema_version_preservation(self):
         # Skills are versioned as part of the plugin/content release, not per-file

@@ -12,11 +12,10 @@ import zipfile
 from pathlib import Path, PurePosixPath
 
 ROOT = Path(__file__).resolve().parents[1]
-PYTHON_VERSION = "0.3.0"
-PLUGIN_VERSION = "3.1.0"
+VERSION = "4.0.0"
 BUNDLE = "outrider-recon"
-ARCHIVE_NAME = f"{BUNDLE}-bundle-{PLUGIN_VERSION}.zip"
-ROOT_DIR = f"{BUNDLE}-bundle-{PLUGIN_VERSION}"
+ARCHIVE_NAME = f"{BUNDLE}-bundle-{VERSION}.zip"
+ROOT_DIR = f"{BUNDLE}-bundle-{VERSION}"
 ALLOWLIST_FILES = [
     ".claude-plugin/plugin.json", ".mcp.json", ".gitignore", "pyproject.toml", "README.md", "CHANGELOG.md",
     "LICENSE", "SECURITY.md", "CONTRIBUTING.md", "CLAUDE.md.example", "install.sh", "uninstall.sh",
@@ -50,8 +49,8 @@ def skill_names() -> list[str]:
 def validate_versions() -> list[str]:
     py = read_py_version()
     plugin = json.loads((ROOT / ".claude-plugin/plugin.json").read_text())["version"]
-    if py != PYTHON_VERSION or plugin != PLUGIN_VERSION or py == plugin:
-        raise BundleError(f"version mismatch: python={py!r} plugin={plugin!r}")
+    if py != VERSION or plugin != VERSION:
+        raise BundleError(f"version mismatch: pyproject={py!r} plugin={plugin!r} expected unified {VERSION!r}")
     skills = skill_names()
     if len(skills) != 11:
         raise BundleError(f"expected 11 skills, found {len(skills)}")
@@ -136,8 +135,7 @@ def build(output_dir: Path, epoch: int, force: bool) -> dict[str, object]:
     manifest = {
         "schema_version": 1,
         "bundle": BUNDLE,
-        "plugin_version": PLUGIN_VERSION,
-        "python_version": PYTHON_VERSION,
+        "version": VERSION,
         "generated_at": dt.datetime.fromtimestamp(epoch, dt.timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "skill_count": len(skills),
         "skills": skills,
@@ -149,7 +147,7 @@ def build(output_dir: Path, epoch: int, force: bool) -> dict[str, object]:
             mode = 0o755 if rel.name in {"install.sh", "uninstall.sh", "build_release_bundle.py", "release_audit.py"} else 0o644
             zf.writestr(zip_info(f"{ROOT_DIR}/{rel.as_posix()}", epoch, mode), (ROOT / rel).read_bytes())
         zf.writestr(zip_info(f"{ROOT_DIR}/RELEASE-MANIFEST.json", epoch), json.dumps(manifest, indent=2, sort_keys=True).encode() + b"\n")
-    return {"python_version": PYTHON_VERSION, "plugin_version": PLUGIN_VERSION, "skill_count": len(skills), "file_count": len(files), "bundle_filename": archive.name, "bundle_sha256": digest(archive), "bundle_size": archive.stat().st_size, "bundle_path": str(archive)}
+    return {"version": VERSION, "skill_count": len(skills), "file_count": len(files), "bundle_filename": archive.name, "bundle_sha256": digest(archive), "bundle_size": archive.stat().st_size, "bundle_path": str(archive)}
 
 def main(argv: list[str] | None = None) -> int:
     ap = argparse.ArgumentParser()
@@ -170,8 +168,7 @@ def main(argv: list[str] | None = None) -> int:
     if args.json:
         print(json.dumps(result, sort_keys=True))
     else:
-        print(f"Python version: {result['python_version']}")
-        print(f"Plugin/content version: {result['plugin_version']}")
+        print(f"Version: {result['version']}")
         print(f"Skill count: {result['skill_count']}")
         print(f"File count: {result['file_count']}")
         print(f"Bundle filename: {result['bundle_filename']}")
