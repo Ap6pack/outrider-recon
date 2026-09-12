@@ -33,10 +33,14 @@ stealer-logs/
 .venv/
 venv/
 
+# Local agent/tool mirror directories (installed skill copies) — never commit.
+# The canonical skills live in skills/; these are local install mirrors.
+.agents/
+.claude/
+
 # API keys / config that shouldn't ship
 .env
 .env.local
-.claude/settings.local.json
 *.key
 *.pem
 *.p12
