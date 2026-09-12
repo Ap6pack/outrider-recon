@@ -1,6 +1,6 @@
 # Architecture
 
-Outrider is an external reconnaissance assistant built around deterministic local controls, human review, and explicit workflow boundaries. The web-first loopback portal is the default human entry point while the CLI remains available for automation and recovery.
+Outrider is a governed offensive-OSINT and external attack-surface platform built around deterministic local controls, a governed agent-to-agent orchestrator, human review, and explicit workflow boundaries. The web-first loopback portal is the default human entry point while the CLI remains available for automation and recovery.
 
 ## Implementation status
 
@@ -264,7 +264,7 @@ flowchart LR
     R --> S1["🔍 recon-asset-discovery<br/><i>subdomains · DNS · ASN · CT</i>"]
     R --> S2["🌐 web-surface<br/><i>probes · Swagger · GraphQL · Wayback</i>"]
     R --> S3["🪪 identity-fabric<br/><i>Entra · Okta · ADFS · M365 · LinkedIn</i>"]
-    R --> S4["🔑 secrets-and-dorks<br/><i>48 regexes · 70 dorks · validators</i>"]
+    R --> S4["🔑 secrets-and-dorks<br/><i>secret regexes · dorks · validators</i>"]
     R --> S5["⚡ post-discovery<br/><i>JWT · AWS IAM · GitHub · Slack enum</i>"]
     R --> S6["☁️ cloud-and-infra<br/><i>cloud-native · K8s · CI-CD</i>"]
     R --> S7["👥 people-breach-intel<br/><i>breach · HudsonRock · Slack/Discord/Telegram</i>"]
@@ -328,7 +328,7 @@ flowchart TD
 
 ## Engagement-platform agnostic
 
-These skills are extracted from operational tradecraft accumulated across external attack-surface engagements. The 81 capabilities generalize to any OSINT engagement and slot into any ASM / ticketing / asset-graph platform you already use -- or none.
+These skills are extracted from operational tradecraft accumulated across external attack-surface engagements. The capabilities generalize to any OSINT engagement and slot into any ASM / ticketing / asset-graph platform you already use -- or none.
 
 Use the skills standalone (paste a SKILL.md into a Claude Project) or wired into your own pipeline.
 
